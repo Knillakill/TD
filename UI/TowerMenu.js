@@ -739,36 +739,6 @@ class TowerMenu {
         // Prix (affiché sur le bouton déployer si pas gratuit)
         const costDisplay = towerData.cost === 0 ? 'GRATUIT' : `💰${towerData.cost}`;
         
-        // Badge "PLACÉ" (caché par défaut, style amélioré)
-        const usedBadge = this.scene.add.rectangle(
-            x + width / 2,
-            y + height / 2,
-            width,
-            height,
-            0x0f172a,
-            0.92
-        );
-        usedBadge.setDepth(103);
-        usedBadge.setVisible(false);
-        usedBadge.setScrollFactor(0);
-        
-        const usedText = this.scene.add.text(
-            x + width / 2,
-            y + height / 2,
-            '✓ DÉPLOYÉ',
-            {
-                fontSize: '14px',
-                fill: '#22c55e',
-                fontStyle: 'bold',
-                fontFamily: 'Arial',
-                letterSpacing: 1
-            }
-        );
-        usedText.setOrigin(0.5);
-        usedText.setDepth(104);
-        usedText.setVisible(false);
-        usedText.setScrollFactor(0);
-        
         // Événements
         infosBtn.on('pointerdown', () => {
             this.showTowerInfo(towerId);
@@ -814,9 +784,7 @@ class TowerMenu {
             infosBtn: infosBtn,
             infosText: infosText,
             deployBtn: deployBtn,
-            deployText: deployText,
-            usedBadge: usedBadge,
-            usedText: usedText
+            deployText: deployText
         };
     }
     
@@ -1400,16 +1368,110 @@ class TowerMenu {
         // Marquer la tour comme non disponible
         this.availableTowers[towerId] = false;
         
-        // Afficher le badge "PLACÉ"
+        // Mettre à jour l'apparence de la carte
         if (this.buttons[towerId]) {
             const button = this.buttons[towerId];
-            button.usedBadge.setVisible(true);
-            button.usedText.setVisible(true);
-            button.deployBtn.disableInteractive();
-            button.cardBg.setAlpha(0.5);
-            button.icon.setAlpha(0.3);
-            button.name.setAlpha(0.3);
-            button.level.setAlpha(0.3);
+            
+            // Changer le bouton DÉPLOYER en RETIRER
+            button.deployText.setText('⛔ RETIRER');
+            button.deployBtn.setFillStyle(0xdc2626); // Rouge
+            button.deployBtn.setStrokeStyle(1, 0xef4444, 0.7);
+            
+            // Assombrir légèrement l'icône
+            button.icon.setAlpha(0.6);
+            
+            // Ajouter un indicateur "déployé" sur la carte
+            if (!button.deployedIndicator) {
+                const cardBounds = button.cardBg.getBounds();
+                button.deployedIndicator = this.scene.add.text(
+                    cardBounds.x + cardBounds.width - 8,
+                    cardBounds.y + 8,
+                    '✓',
+                    {
+                        fontSize: '14px',
+                        fill: '#22c55e',
+                        fontStyle: 'bold'
+                    }
+                );
+                button.deployedIndicator.setOrigin(1, 0);
+                button.deployedIndicator.setDepth(103);
+                button.deployedIndicator.setScrollFactor(0);
+            }
+            
+            // Configurer le bouton pour retirer la tour
+            button.deployBtn.removeAllListeners('pointerdown');
+            button.deployBtn.on('pointerdown', () => {
+                this.removeTower(towerId);
+            });
+            
+            button.deployBtn.removeAllListeners('pointerover');
+            button.deployBtn.on('pointerover', () => {
+                button.deployBtn.setFillStyle(0xef4444);
+                button.deployBtn.setStrokeStyle(1, 0xf87171, 0.9);
+            });
+            
+            button.deployBtn.removeAllListeners('pointerout');
+            button.deployBtn.on('pointerout', () => {
+                button.deployBtn.setFillStyle(0xdc2626);
+                button.deployBtn.setStrokeStyle(1, 0xef4444, 0.7);
+            });
+        }
+    }
+    
+    markTowerAsAvailable(towerId) {
+        // Marquer la tour comme disponible
+        this.availableTowers[towerId] = true;
+        
+        // Remettre l'apparence normale de la carte
+        if (this.buttons[towerId]) {
+            const button = this.buttons[towerId];
+            
+            // Remettre le bouton DÉPLOYER
+            button.deployText.setText('⚓ DÉPLOYER');
+            button.deployBtn.setFillStyle(0x0891b2); // Cyan
+            button.deployBtn.setStrokeStyle(1, 0x06b6d4, 0.7);
+            
+            // Remettre l'opacité normale
+            button.icon.setAlpha(1);
+            
+            // Supprimer l'indicateur "déployé"
+            if (button.deployedIndicator) {
+                button.deployedIndicator.destroy();
+                button.deployedIndicator = null;
+            }
+            
+            // Reconfigurer le bouton pour déployer
+            button.deployBtn.removeAllListeners('pointerdown');
+            button.deployBtn.on('pointerdown', () => {
+                if (this.availableTowers[towerId]) {
+                    this.selectTowerForPlacement(towerId);
+                }
+            });
+            
+            button.deployBtn.removeAllListeners('pointerover');
+            button.deployBtn.on('pointerover', () => {
+                if (this.availableTowers[towerId]) {
+                    button.deployBtn.setFillStyle(0x06b6d4);
+                    button.deployBtn.setStrokeStyle(1, 0x22d3ee, 0.9);
+                }
+            });
+            
+            button.deployBtn.removeAllListeners('pointerout');
+            button.deployBtn.on('pointerout', () => {
+                button.deployBtn.setFillStyle(0x0891b2);
+                button.deployBtn.setStrokeStyle(1, 0x06b6d4, 0.7);
+            });
+        }
+    }
+    
+    removeTower(towerId) {
+        // Trouver et retirer la tour du terrain
+        if (this.scene.placementSystem) {
+            const removed = this.scene.placementSystem.removeTowerByType(towerId);
+            if (removed) {
+                this.markTowerAsAvailable(towerId);
+                this.scene.ui.showMessage(`${TOWER_CONFIG[towerId].name} retiré!`, 1500);
+            }
         }
     }
     

@@ -378,18 +378,8 @@ class TowerPlacement {
         }
         
         // Marquer comme disponible dans le menu
-        this.scene.towerMenu.availableTowers[towerId] = true;
-        
-        // Mettre à jour l'interface du menu
-        if (this.scene.towerMenu.buttons[towerId]) {
-            const button = this.scene.towerMenu.buttons[towerId];
-            button.usedBadge.setVisible(false);
-            button.usedText.setVisible(false);
-            button.deployBtn.setInteractive({ useHandCursor: true });
-            button.cardBg.setAlpha(1);
-            button.icon.setAlpha(1);
-            button.name.setAlpha(1);
-            button.level.setAlpha(1);
+        if (this.scene.towerMenu) {
+            this.scene.towerMenu.markTowerAsAvailable(towerId);
         }
         
         // Message de confirmation
@@ -403,9 +393,12 @@ class TowerPlacement {
     removeTower(spot) {
         if (!spot.occupied) return;
         
+        const tower = spot.tower;
+        const towerId = tower ? tower.towerId : null;
+        
         // Détruire la tour
-        if (spot.tower && spot.tower.destroy) {
-            spot.tower.destroy();
+        if (tower && tower.destroy) {
+            tower.destroy();
         }
         
         // Libérer l'emplacement
@@ -415,10 +408,23 @@ class TowerPlacement {
         spot.icon.setVisible(true);
         
         // Retirer du tableau des tours
-        const index = this.scene.towers.indexOf(spot.tower);
+        const index = this.scene.towers.indexOf(tower);
         if (index > -1) {
             this.scene.towers.splice(index, 1);
         }
+        
+        return towerId;
+    }
+    
+    removeTowerByType(towerId) {
+        // Trouver l'emplacement qui contient cette tour
+        for (const spot of this.placementSpots) {
+            if (spot.occupied && spot.tower && spot.tower.towerId === towerId) {
+                this.removeTower(spot);
+                return true;
+            }
+        }
+        return false;
     }
 }
 

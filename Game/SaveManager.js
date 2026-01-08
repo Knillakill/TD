@@ -137,16 +137,24 @@ class SaveManager {
         const player = this.scene.player;
         const collection = player.collection;
 
-        // Utiliser waveManager.currentWave si disponible, sinon scene.waveNumber
-        // Ne pas forcer à 1 si c'est 0 (cela signifie qu'aucune vague n'a été lancée)
-        let currentWave = 0;
-        if (this.scene.waveManager && typeof this.scene.waveManager.currentWave !== 'undefined') {
-            currentWave = this.scene.waveManager.currentWave;
+        // Sauvegarder la DERNIÈRE VAGUE COMPLÉTÉE, pas la vague en cours
+        // Ainsi, quand on recharge, on recommence la vague qu'on n'a pas terminée
+        let lastCompletedWave = 0;
+        
+        if (this.scene.waveManager) {
+            const wm = this.scene.waveManager;
+            // Si une vague est en cours ou s'il reste des ennemis, on sauvegarde la vague précédente
+            if (wm.waveInProgress || wm.enemiesRemainingInWave > 0 || this.scene.enemies.length > 0) {
+                lastCompletedWave = Math.max(0, wm.currentWave - 1);
+            } else {
+                // Vague terminée, on sauvegarde la vague actuelle
+                lastCompletedWave = wm.currentWave;
+            }
         } else if (typeof this.scene.waveNumber !== 'undefined') {
-            currentWave = this.scene.waveNumber;
+            lastCompletedWave = this.scene.waveNumber;
         }
         
-        console.log(`[SaveManager] Collecte sauvegarde - currentWave=${currentWave}, waveManager.currentWave=${this.scene.waveManager?.currentWave}, scene.waveNumber=${this.scene.waveNumber}`);
+        console.log(`[SaveManager] Collecte sauvegarde - lastCompletedWave=${lastCompletedWave}, waveInProgress=${this.scene.waveManager?.waveInProgress}`);
 
         return {
             version: '1.0.0',
@@ -164,8 +172,8 @@ class SaveManager {
                 towerStats: collection.towerStats
             },
             game: {
-                currentWave: currentWave,
-                lastCheckpoint: this.getLastCheckpoint(currentWave),
+                currentWave: lastCompletedWave,
+                lastCheckpoint: this.getLastCheckpoint(lastCompletedWave),
                 highestWave: this.getHighestWave(),
                 isGameOver: player.hp <= 0
             }
