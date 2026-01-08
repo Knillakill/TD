@@ -2,7 +2,7 @@ class WaveManager {
     constructor(scene, path) {
         this.scene = scene;
         this.path = path;
-        this.spawnDelay = 2000; // 2 secondes entre chaque ennemi
+        this.spawnDelay = 600; // 0.6 secondes entre chaque ennemi
         this.lastSpawnTime = 0;
         
         // Système de vagues
@@ -24,7 +24,9 @@ class WaveManager {
             this.lastSpawnTime = time;
             const enemyType = this.currentWaveEnemies[this.enemiesSpawnedInWave];
             this.enemiesSpawnedInWave++;
-            return new Enemy(this.scene, this.path, enemyType);
+            // Choisir un chemin aléatoire pour chaque ennemi
+            const randomPath = getRandomPath();
+            return new Enemy(this.scene, randomPath, enemyType);
         }
         return null;
     }
@@ -51,7 +53,7 @@ class WaveManager {
     
     generateWaveComposition(waveNumber) {
         // Génération dynamique avec plus de variété selon la vague
-        const count = 5 + (waveNumber - 1) * 2;
+        const count = 15 + (waveNumber - 1) * 2;
         const enemies = [];
         
         for (let i = 0; i < count; i++) {
@@ -89,8 +91,27 @@ class WaveManager {
             this.waveInProgress = false;
             this.nextWaveTime = this.scene.time.now + this.waveDelay;
             
+            // Donner une étoile si première fois
+            const newStar = this.scene.player.completeWave(this.currentWave);
+            
             // Afficher message de fin de vague
-            this.scene.ui.showMessage(`Vague ${this.currentWave} terminée!`, 2000);
+            if (newStar) {
+                this.scene.ui.showMessage(`Vague ${this.currentWave} terminée! ★ +1 étoile!`, 2500);
+            } else {
+                this.scene.ui.showMessage(`Vague ${this.currentWave} terminée!`, 2000);
+            }
+            
+            // Jouer l'animation de victoire sur toutes les tours
+            this.scene.towers.forEach(tower => {
+                if (tower.playVictory) {
+                    tower.playVictory();
+                }
+            });
+            
+            // Mettre à jour l'affichage des stats
+            if (this.scene.enemyInfoPanel) {
+                this.scene.enemyInfoPanel.updatePlayerStats(this.scene.player);
+            }
         }
     }
     
@@ -113,13 +134,23 @@ class WaveManager {
         this.prepareWave(this.currentWave);
         this.waveInProgress = true;
         
-        // Augmenter la difficulté (spawn plus rapide)
-        this.spawnDelay = Math.max(800, 2000 - (this.currentWave - 1) * 150);
+        // Délai constant entre les ennemis
+        this.spawnDelay = 600;
         
         // Message de nouvelle vague
         this.scene.ui.showMessage(`⚔️ Vague ${this.currentWave} ⚔️`, 2000);
         
+        // Mettre à jour l'affichage de la vague actuelle
+        this.updateCurrentWaveDisplay();
+        
         return true;
+    }
+    
+    updateCurrentWaveDisplay() {
+        // Afficher la vague actuelle
+        if (this.scene.enemyInfoPanel) {
+            this.scene.enemyInfoPanel.updateWaveEnemies(this.currentWaveEnemies, this.currentWave);
+        }
     }
     
     getWaveInfo() {

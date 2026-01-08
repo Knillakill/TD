@@ -10,30 +10,37 @@ class TowerPlacement {
     }
     
     createPlacementSpots() {
-        // 7 emplacements JUSTE À CÔTÉ du chemin gris
-        // Basé sur map1.jpg : porte (bas-gauche) → croix (haut-droite)
-        const spots = [
-            // 1. BAS-GAUCHE (près de la porte) - dans l'herbe verte avec palmiers
-            { x: 270, y: 650 },
+        // Configuration de la map
+        const MAP_OFFSET_X = 300;
+        const MAP_WIDTH = 1100;
+        const MAP_HEIGHT = 800;
+        
+        // Emplacements en pourcentages (selon les croix de l'utilisateur)
+        const spotsPercent = [
+            // Croix haut-gauche (à gauche de l'arbre orange du haut)
+            { x: 0.19, y: 0.37 },
             
-            // 2. GAUCHE MILIEU (le long du chemin gauche) - herbe verte
-            { x: 260, y: 440 },
+            // Croix bas-gauche (près des plantes bleues, sur le sable)
+            { x: 0.145, y: 0.74 },
             
-            // 3. HAUT-GAUCHE (virage) - sur les ROCHERS GRIS
-            { x: 320, y: 240 },
+            // Croix bas-centre (entre les arbres orange du bas)
+            { x: 0.24, y: 0.70 },
             
-            // 4. HAUT CENTRE (zone sable) - DANS LA PLAINE près pagode
-            { x: 660, y: 80 },
+            // Croix centre (ponton sud du lac)
+            { x: 0.39, y: 0.61 },
             
-            // 5. HAUT-DROITE (virage) - zone sable/désert
-            { x: 1050, y: 240 },
+            // Croix droite du lac (près du ponton est)
+            { x: 0.49, y: 0.46 },
             
-            // 6. DROITE MILIEU (le long du chemin droit) - herbe verte avec rochers
-            { x: 1160, y: 510 },
-            
-            // 7. CENTRE (près du chemin intérieur) - DANS L'EAU (rivière bleue)
-            { x: 600, y: 450 },
+            // Croix bas-droite (sur la plage près de la mer)
+            { x: 0.565, y: 0.75 },
         ];
+        
+        // Convertir en pixels
+        const spots = spotsPercent.map(p => ({
+            x: MAP_OFFSET_X + (p.x * MAP_WIDTH),
+            y: p.y * MAP_HEIGHT
+        }));
         
         spots.forEach((spot, index) => {
             this.createSpot(spot.x, spot.y, index);

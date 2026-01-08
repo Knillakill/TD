@@ -2,33 +2,54 @@
 const ENEMY_CONFIG = {
     pirate_basic: {
         id: 'pirate_basic',
-        name: 'Pirate',
-        hp: 5,
-        speed: 60,
+        name: 'PIRATE',
+        hp: 15,
+        armor: 0,
+        speed: 80,
+        power: 1,
+        regen: 0,
         color: 0x8B4513, // Marron
         size: 10,
         reward: 10,
-        description: 'Pirate basique'
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        invisible: false
     },
     pirate_shield: {
         id: 'pirate_shield',
-        name: 'Pirate Blindé',
-        hp: 15,
-        speed: 40,
+        name: 'BLINDÉ',
+        hp: 150,
+        armor: 5,
+        speed: 50,
+        power: 2,
+        regen: 1,
         color: 0x708090, // Gris métallique
         size: 12,
-        reward: 20,
-        description: 'Pirate avec armure - Lent mais résistant'
+        reward: 25,
+        stunVuln: false,
+        slowVuln: true,
+        burnVuln: false,
+        poisonVuln: true,
+        invisible: false
     },
     pirate_fast: {
         id: 'pirate_fast',
-        name: 'Pirate Rapide',
-        hp: 3,
-        speed: 100,
+        name: 'RAPIDE',
+        hp: 30,
+        armor: 0,
+        speed: 120,
+        power: 1,
+        regen: 0,
         color: 0xFF4500, // Rouge-orange
         size: 8,
         reward: 15,
-        description: 'Pirate agile - Rapide mais fragile'
+        stunVuln: true,
+        slowVuln: false,
+        burnVuln: true,
+        poisonVuln: true,
+        invisible: false
     }
 };
 

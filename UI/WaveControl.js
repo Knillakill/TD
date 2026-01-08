@@ -3,21 +3,17 @@ class WaveControl {
         this.scene = scene;
         this.autoPlay = false;
         
-        const panelX = 320;  // En haut à gauche de la map, sous les HP
-        const panelY = 110;
-        
-        // Fond du panneau de contrôle
-        this.panel = scene.add.rectangle(panelX, panelY, 200, 60, 0x000000, 0.8);
-        this.panel.setOrigin(0, 0);
-        this.panel.setDepth(100);
-        this.panel.setScrollFactor(0);
+        // Position dans le panneau de gauche, au-dessus des stats de vie
+        const panelX = 10;
+        const panelY = 680;  // Au-dessus de la section stats (qui est à 700)
+        const panelWidth = 280;
         
         // Bouton "Lancer Vague"
         this.startWaveButton = scene.add.rectangle(
-            panelX + 20,
-            panelY + 15,
-            85,
-            30,
+            panelX + 10,
+            panelY,
+            125,
+            35,
             0x2ecc71
         );
         this.startWaveButton.setOrigin(0, 0);
@@ -26,11 +22,11 @@ class WaveControl {
         this.startWaveButton.setScrollFactor(0);
         
         this.startWaveText = scene.add.text(
-            panelX + 62.5,
-            panelY + 30,
+            panelX + 72,
+            panelY + 17,
             '▶ VAGUE',
             {
-                fontSize: '12px',
+                fontSize: '14px',
                 fill: '#ffffff',
                 fontStyle: 'bold'
             }
@@ -41,10 +37,10 @@ class WaveControl {
         
         // Bouton "Auto-Play"
         this.autoPlayButton = scene.add.rectangle(
-            panelX + 115,
-            panelY + 15,
-            65,
-            30,
+            panelX + 145,
+            panelY,
+            125,
+            35,
             0x95a5a6
         );
         this.autoPlayButton.setOrigin(0, 0);
@@ -53,11 +49,11 @@ class WaveControl {
         this.autoPlayButton.setScrollFactor(0);
         
         this.autoPlayText = scene.add.text(
-            panelX + 147.5,
-            panelY + 30,
+            panelX + 207,
+            panelY + 17,
             'AUTO',
             {
-                fontSize: '12px',
+                fontSize: '14px',
                 fill: '#ffffff',
                 fontStyle: 'bold'
             }
