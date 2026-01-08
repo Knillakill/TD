@@ -5,7 +5,7 @@ class WaveControl {
         
         // Position juste au-dessus du trait noir (séparateur avant les stats vie)
         const panelX = 10;
-        const panelY = 645;  // Juste au-dessus du trait noir qui est à ~695
+        const panelY = 680;  // Sous le TopMenu
         const panelWidth = 280;
         
         // Bouton "Lancer Vague"

@@ -20,8 +20,9 @@ class TowerMenu {
             epic: { bg: 0x581c87, border: 0x7e22ce, text: '#a855f7' }       // Violet royal
         };
         
-        // Initialiser toutes les tours comme disponibles
-        TOWER_ORDER.forEach(towerId => {
+        // Initialiser les tours équipées comme disponibles
+        const equippedTowers = this.scene.player.collection.getEquippedTowers();
+        equippedTowers.forEach(towerId => {
             this.availableTowers[towerId] = true;
         });
         
@@ -94,7 +95,9 @@ class TowerMenu {
         const gapX = 5;
         const gapY = 5;
         
-        TOWER_ORDER.forEach((towerId, index) => {
+        // N'afficher que les tours équipées
+        const equippedTowers = this.scene.player.collection.getEquippedTowers();
+        equippedTowers.forEach((towerId, index) => {
             const col = index % 2;
             const row = Math.floor(index / 2);
             const x = startX + col * (cardWidth + gapX);
@@ -103,7 +106,7 @@ class TowerMenu {
         });
         
         // Calculer le scroll max
-        const totalRows = Math.ceil(TOWER_ORDER.length / 2);
+        const totalRows = Math.ceil(equippedTowers.length / 2);
         this.maxScroll = Math.max(0, (totalRows * (cardHeight + gapY)) - (this.menuHeight - 170));
     }
     
@@ -469,6 +472,65 @@ class TowerMenu {
         this.playerGoldText.setOrigin(1, 0.5);
         this.playerGoldText.setDepth(103);
         this.playerGoldText.setScrollFactor(0);
+        
+        // Étoiles (avec icône)
+        const starsY = goldY + 25;
+        
+        const starsBarBg = this.scene.add.rectangle(
+            infoX,
+            starsY,
+            185,
+            20,
+            0x0f172a,
+            0.7
+        );
+        starsBarBg.setOrigin(0, 0);
+        starsBarBg.setDepth(102);
+        starsBarBg.setScrollFactor(0);
+        starsBarBg.setStrokeStyle(1, 0x334155, 0.5);
+        
+        // Icône étoile
+        const starIcon = this.scene.add.text(
+            infoX + 8,
+            starsY + 10,
+            '⭐',
+            {
+                fontSize: '12px'
+            }
+        );
+        starIcon.setOrigin(0, 0.5);
+        starIcon.setDepth(103);
+        starIcon.setScrollFactor(0);
+        
+        const starsLabel = this.scene.add.text(
+            infoX + 30,
+            starsY + 10,
+            'ÉTOILES',
+            {
+                fontSize: '10px',
+                fill: '#94a3b8',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        );
+        starsLabel.setOrigin(0, 0.5);
+        starsLabel.setDepth(103);
+        starsLabel.setScrollFactor(0);
+        
+        this.playerStarsText = this.scene.add.text(
+            infoX + 177,
+            starsY + 10,
+            '0',
+            {
+                fontSize: '16px',
+                fill: '#fbbf24',
+                fontStyle: 'bold',
+                fontFamily: 'monospace'
+            }
+        );
+        this.playerStarsText.setOrigin(1, 0.5);
+        this.playerStarsText.setDepth(103);
+        this.playerStarsText.setScrollFactor(0);
     }
     
     createTowerCard(towerId, x, y, width, height) {
@@ -573,7 +635,7 @@ class TowerMenu {
         let icon;
         if (towerId === 'luffy' && this.scene.textures.exists('luffy')) {
             icon = this.scene.add.sprite(x + width / 2, y + 60, 'luffy');
-            icon.setDisplaySize(30, 60); // Ratio 41:83, réduit
+            icon.setDisplaySize(39, 60); // Ratio 44:68 équidistant, réduit
             icon.play('luffy_idle');
         } else if (towerId === 'zoro' && this.scene.textures.exists('zoro')) {
             icon = this.scene.add.sprite(x + width / 2, y + 60, 'zoro');
@@ -581,9 +643,14 @@ class TowerMenu {
             icon.play('zoro_idle');
         } else if (towerId === 'usopp' && this.scene.textures.exists('usopp')) {
             icon = this.scene.add.sprite(x + width / 2, y + 60, 'usopp');
-            icon.setDisplaySize(27, 50); // Analyse précise: 35x63 → 27x50
-            icon.setOrigin(0.5, 0.889); // Pieds à Y=56/63 = 0.889
+            icon.setDisplaySize(36, 50); // 4 frames précises de 36x50
+            icon.setOrigin(0.5, 1.0); // Pieds en bas
             icon.play('usopp_idle');
+        } else if (towerId === 'chopper' && this.scene.textures.exists('chopper')) {
+            icon = this.scene.add.sprite(x + width / 2, y + 60, 'chopper');
+            icon.setDisplaySize(28, 39); // 4 frames de 28x39 (équidistant)
+            icon.setOrigin(0.5, 1.0); // Pieds en bas
+            icon.play('chopper_idle');
         } else if (this.scene.textures.exists(towerId)) {
             icon = this.scene.add.image(
                 x + width / 2,
@@ -1157,11 +1224,8 @@ class TowerMenu {
         
         const towerData = TOWER_CONFIG[towerId];
         
-        // Vérifier si le joueur a assez d'argent
-        if (this.scene.player.gold < towerData.cost) {
-            this.scene.ui.showMessage('Pas assez d\'or!', 1500);
-            return;
-        }
+        // Les tours ne coûtent pas d'or lors de la pose
+        // Elles sont déjà achetées/débloquées dans la boutique
         
         // Activer le mode placement par clic
         if (this.scene.placementSystem) {
@@ -1179,11 +1243,8 @@ class TowerMenu {
         
         const towerData = TOWER_CONFIG[towerId];
         
-        // Vérifier si le joueur a assez d'argent
-        if (this.scene.player.gold < towerData.cost) {
-            this.scene.ui.showMessage('Pas assez d\'or!', 1500);
-            return;
-        }
+        // Les tours ne coûtent pas d'or lors de la pose
+        // Elles sont déjà achetées/débloquées dans la boutique
         
         // Démarrer le drag
         this.isDragging = true;
@@ -1192,7 +1253,7 @@ class TowerMenu {
         // Créer le sprite du personnage qui suit la souris
         if (towerId === 'luffy' && this.scene.textures.exists('luffy')) {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'luffy');
-            this.dragSprite.setDisplaySize(28, 56); // Ratio 41:83, réduit
+            this.dragSprite.setDisplaySize(36, 56); // Ratio 44:68 équidistant, réduit
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('luffy_idle');
         } else if (towerId === 'zoro' && this.scene.textures.exists('zoro')) {
@@ -1202,10 +1263,16 @@ class TowerMenu {
             this.dragSprite.play('zoro_idle');
         } else if (towerId === 'usopp' && this.scene.textures.exists('usopp')) {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'usopp');
-            this.dragSprite.setDisplaySize(27, 50); // Analyse précise: 35x63 → 27x50
-            this.dragSprite.setOrigin(0.5, 0.889); // Pieds à Y=56/63 = 0.889
+            this.dragSprite.setDisplaySize(36, 50); // 4 frames précises de 36x50
+            this.dragSprite.setOrigin(0.5, 1.0); // Pieds en bas
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('usopp_idle');
+        } else if (towerId === 'chopper' && this.scene.textures.exists('chopper')) {
+            this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'chopper');
+            this.dragSprite.setDisplaySize(28, 39); // 4 frames de 28x39 (équidistant)
+            this.dragSprite.setOrigin(0.5, 1.0); // Pieds en bas
+            this.dragSprite.setAlpha(0.8);
+            this.dragSprite.play('chopper_idle');
         } else if (this.scene.textures.exists(towerId)) {
             this.dragSprite = this.scene.add.image(
                 pointer.x,
@@ -1355,6 +1422,11 @@ class TowerMenu {
             this.playerGoldText.setText(`${player.gold}`);
         }
         
+        // Mettre à jour les étoiles
+        if (this.playerStarsText) {
+            this.playerStarsText.setText(`${player.collection.getStars()}`);
+        }
+        
         // Mettre à jour la vie
         if (this.playerHpText) {
             this.playerHpText.setText(`${player.hp}`);
@@ -1380,6 +1452,49 @@ class TowerMenu {
                 }
             }
         }
+    }
+    
+    refreshMenu() {
+        // Détruire toutes les cartes existantes
+        Object.keys(this.buttons).forEach(towerId => {
+            const button = this.buttons[towerId];
+            // Détruire tous les éléments graphiques de la carte
+            Object.keys(button).forEach(key => {
+                if (button[key] && button[key].destroy) {
+                    button[key].destroy();
+                }
+            });
+        });
+        
+        // Réinitialiser
+        this.buttons = {};
+        this.availableTowers = {};
+        
+        // Réinitialiser les tours équipées comme disponibles
+        const equippedTowers = this.scene.player.collection.getEquippedTowers();
+        equippedTowers.forEach(towerId => {
+            this.availableTowers[towerId] = true;
+        });
+        
+        // Recréer les cartes
+        const cardWidth = 135;
+        const cardHeight = 145;
+        const startX = this.menuX + 10;
+        const startY = 155;
+        const gapX = 5;
+        const gapY = 5;
+        
+        equippedTowers.forEach((towerId, index) => {
+            const col = index % 2;
+            const row = Math.floor(index / 2);
+            const x = startX + col * (cardWidth + gapX);
+            const y = startY + row * (cardHeight + gapY);
+            this.createTowerCard(towerId, x, y, cardWidth, cardHeight);
+        });
+        
+        // Recalculer le scroll max
+        const totalRows = Math.ceil(equippedTowers.length / 2);
+        this.maxScroll = Math.max(0, (totalRows * (cardHeight + gapY)) - (this.menuHeight - 170));
     }
     
 }

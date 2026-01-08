@@ -6,13 +6,29 @@ class WaveManager {
         this.lastSpawnTime = 0;
         
         // Système de vagues
-        this.currentWave = 0; // Commence à 0, la première vague sera lancée manuellement
+        // Reprendre à la vague sauvegardée si elle existe
+        this.currentWave = scene.waveNumber || 0;
         this.currentWaveEnemies = []; // Liste des ennemis à spawner dans cette vague
         this.enemiesSpawnedInWave = 0;
         this.enemiesRemainingInWave = 0;
         this.waveInProgress = false; // Attendre que le joueur lance la première vague
         this.waveDelay = 5000; // 5 secondes entre les vagues
         this.nextWaveTime = 0;
+        
+        // Afficher un message si on reprend une vague > 0
+        console.log(`[WaveManager] Initialisé avec scene.waveNumber=${scene.waveNumber}, currentWave=${this.currentWave}`);
+        if (this.currentWave > 0) {
+            console.log(`[WaveManager] Reprise à la vague ${this.currentWave}`);
+            
+            // Préparer la composition de la vague sauvegardée pour l'affichage
+            this.prepareWave(this.currentWave);
+            
+            // Mettre à jour l'affichage de l'UI avec la vague sauvegardée
+            // On le fait avec un délai pour que l'UI soit bien initialisée
+            this.scene.time.delayedCall(500, () => {
+                this.updateCurrentWaveDisplay();
+            });
+        }
     }
     
     update(time) {
@@ -94,6 +110,11 @@ class WaveManager {
             // Donner une étoile si première fois
             const newStar = this.scene.player.completeWave(this.currentWave);
             
+            // Sauvegarder la progression
+            if (this.scene.saveManager) {
+                this.scene.saveManager.autoSave();
+            }
+            
             // Afficher message de fin de vague
             if (newStar) {
                 this.scene.ui.showMessage(`Vague ${this.currentWave} terminée! ★ +1 étoile!`, 2500);
@@ -133,6 +154,9 @@ class WaveManager {
         this.enemiesSpawnedInWave = 0;
         this.prepareWave(this.currentWave);
         this.waveInProgress = true;
+        
+        // Synchroniser avec scene.waveNumber
+        this.scene.waveNumber = this.currentWave;
         
         // Délai constant entre les ennemis
         this.spawnDelay = 600;

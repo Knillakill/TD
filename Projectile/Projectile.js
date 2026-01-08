@@ -1,10 +1,11 @@
 class Projectile {
-    constructor(scene, x, y, target, damage, color = 0xffff00) {
+    constructor(scene, x, y, target, damage, color = 0xffff00, tower = null) {
         this.scene = scene;
         this.target = target;
         this.damage = damage;
         this.speed = 200;
         this.active = true;
+        this.tower = tower; // Référence à la tour pour les stats
 
         this.sprite = scene.add.circle(x, y, 5, color);
         this.sprite.setDepth(5);
@@ -22,7 +23,17 @@ class Projectile {
 
         // Si le projectile touche l'ennemi
         if (dist < 10) {
+            const wasAlive = this.target.alive;
             this.target.takeDamage(this.damage);
+            
+            // Mettre à jour les stats de la tour
+            if (this.tower) {
+                this.tower.totalDamage += this.damage;
+                if (wasAlive && !this.target.alive) {
+                    this.tower.enemyKills++;
+                }
+            }
+            
             this.destroy();
             return false;
         }

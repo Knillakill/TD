@@ -31,12 +31,16 @@ class Tower {
         this.x = x;
         this.y = y;
         this.isAnimated = false;
+        
+        // Stats de combat pour l'onglet Stats
+        this.totalDamage = 0;
+        this.enemyKills = 0;
 
         // Sprite de la tour (animé pour Luffy/Zoro, image pour les autres, sinon rectangle)
         if (this.type === 'luffy' && scene.textures.exists('luffy')) {
             // Créer un sprite animé pour Luffy
             this.sprite = scene.add.sprite(x, y, 'luffy');
-            this.sprite.setDisplaySize(28, 56); // Ratio 41:83, réduit
+            this.sprite.setDisplaySize(36, 56); // Ratio 44:68 équidistant, réduit
             this.sprite.play('luffy_idle');
             this.isAnimated = true;
         } else if (this.type === 'zoro' && scene.textures.exists('zoro')) {
@@ -48,9 +52,16 @@ class Tower {
         } else if (this.type === 'usopp' && scene.textures.exists('usopp')) {
             // Créer un sprite animé pour Usopp
             this.sprite = scene.add.sprite(x, y, 'usopp');
-            this.sprite.setDisplaySize(27, 50); // Analyse précise: 35x63 → 27x50
-            this.sprite.setOrigin(0.5, 0.889); // Pieds à Y=56/63 = 0.889
+            this.sprite.setDisplaySize(36, 50); // 4 frames précises de 36x50
+            this.sprite.setOrigin(0.5, 1.0); // Pieds en bas
             this.sprite.play('usopp_idle');
+            this.isAnimated = true;
+        } else if (this.type === 'chopper' && scene.textures.exists('chopper')) {
+            // Créer un sprite animé pour Chopper
+            this.sprite = scene.add.sprite(x, y, 'chopper');
+            this.sprite.setDisplaySize(28, 39); // 4 frames de 28x39 (équidistant)
+            this.sprite.setOrigin(0.5, 1.0); // Pieds en bas
+            this.sprite.play('chopper_idle');
             this.isAnimated = true;
         } else if (scene.textures.exists(this.type)) {
             this.sprite = scene.add.image(x, y, this.type);
@@ -133,7 +144,8 @@ class Tower {
             enemy.sprite.y
         );
 
-        if (dist <= this.range && time > this.lastShot) {
+        // Ne pas attaquer si la tour est en train d'être déplacée
+        if (dist <= this.range && time > this.lastShot && !this.isBeingDragged) {
             this.lastShot = time + this.fireRate;
             
             // Luffy tape en cône vers l'ennemi ciblé
@@ -328,7 +340,12 @@ class Tower {
                             let angleDiff = Math.abs(angleToE - angleToEnemy);
                             if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
                             if (angleDiff <= coneAngle / 2) {
+                                const wasAlive = e.alive;
                                 e.takeDamage(damage);
+                                this.totalDamage += damage;
+                                if (wasAlive && !e.alive) {
+                                    this.enemyKills++;
+                                }
                             }
                         }
                     }
@@ -524,7 +541,12 @@ class Tower {
                             e.sprite.y
                         );
                         if (d <= this.range) {
+                            const wasAlive = e.alive;
                             e.takeDamage(damage);
+                            this.totalDamage += damage;
+                            if (wasAlive && !e.alive) {
+                                this.enemyKills++;
+                            }
                         }
                     }
                 });
@@ -535,27 +557,45 @@ class Tower {
             if (this.type === 'usopp' && this.isAnimated) {
                 // Jouer l'animation de tir
                 this.sprite.setTexture('usopp_attack_sheet');
-                this.sprite.setDisplaySize(55, 50); // Analyse précise: 51x46 → 55x50
+                this.sprite.setDisplaySize(51, 50); // 7 frames normalisées de 47x46 → 51x50
                 this.sprite.setOrigin(0.5, 0.891); // Pieds à Y=41/46 = 0.891
                 this.sprite.play('usopp_attack');
                 
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle
                     this.sprite.setTexture('usopp');
-                    this.sprite.setDisplaySize(27, 50);
-                    this.sprite.setOrigin(0.5, 0.889);
+                    this.sprite.setDisplaySize(36, 50); // 4 frames précises de 36x50
+                    this.sprite.setOrigin(0.5, 1.0);
                     this.sprite.play('usopp_idle');
                 });
             }
             
-            // Les autres tours (et Usopp) lancent des projectiles
+            // Attaque projectile pour Chopper
+            if (this.type === 'chopper' && this.isAnimated) {
+                // Jouer l'animation d'attaque
+                this.sprite.setTexture('chopper_attack_sheet');
+                this.sprite.setDisplaySize(28, 36); // 7 frames de 28x36 (équidistant)
+                this.sprite.setOrigin(0.5, 1.0); // Pieds en bas
+                this.sprite.play('chopper_attack');
+                
+                this.sprite.once('animationcomplete', () => {
+                    // Revenir à la texture idle
+                    this.sprite.setTexture('chopper');
+                    this.sprite.setDisplaySize(28, 39); // 4 frames de 28x39 (équidistant)
+                    this.sprite.setOrigin(0.5, 1.0);
+                    this.sprite.play('chopper_idle');
+                });
+            }
+            
+            // Les autres tours (et Usopp et Chopper) lancent des projectiles
             const projectile = new Projectile(
                 this.scene, 
                 this.sprite.x, 
                 this.sprite.y, 
                 enemy, 
                 this.damage,
-                this.color
+                this.color,
+                this // Passer la référence de la tour pour les stats
             );
             return projectile;
         }

@@ -179,16 +179,8 @@ class TowerPlacement {
         
         const towerData = TOWER_CONFIG[towerId];
         
-        // Vérifier si le joueur a assez d'argent
-        if (this.scene.player.gold < towerData.cost) {
-            this.scene.ui.showMessage('Pas assez d\'or!', 1500);
-            this.isDragging = false;
-            this.selectedTowerType = null;
-            return false;
-        }
-        
-        // Déduire le coût
-        this.scene.player.gold -= towerData.cost;
+        // Les tours ne coûtent pas d'or lors de la pose
+        // Elles sont déjà achetées/débloquées dans la boutique
         
         // Créer la tour
         const tower = new Tower(
@@ -251,6 +243,9 @@ class TowerPlacement {
             tower.rangeCircle.setAlpha(0.5);
             tower.rangeCircle.setVisible(true);
             
+            // Désactiver la tour pendant le drag
+            tower.isBeingDragged = true;
+            
             // Libérer temporairement l'emplacement
             spot.occupied = false;
             spot.circle.setVisible(true);
@@ -312,10 +307,11 @@ class TowerPlacement {
                 spot.icon.setVisible(false);
             }
             
-            // Restaurer l'apparence
+            // Restaurer l'apparence et réactiver la tour
             tower.sprite.setAlpha(1);
             tower.rangeCircle.setAlpha(0);
             tower.rangeCircle.setVisible(false);
+            tower.isBeingDragged = false;
             this.draggedTower = null;
             
             // Restaurer tous les emplacements

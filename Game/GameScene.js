@@ -36,17 +36,18 @@ class GameScene extends Phaser.Scene {
         });
         
         // Charger la spritesheet de Luffy idle
-        // 369x83 pixels - 9 frames de 41x83
-        this.load.spritesheet('luffy', 'assets/luffysprite.png', {
-            frameWidth: 41,
-            frameHeight: 83
+        // Charger la spritesheet de Luffy idle (9 frames équidistants)
+        // 396x68 pixels - 9 frames de 44x68 (équidistant, centré)
+        this.load.spritesheet('luffy', 'assets/luffysprite_normalized.png', {
+            frameWidth: 44,
+            frameHeight: 68
         });
         
-        // Charger la spritesheet de Luffy attaque (coups de poings)
-        // 1088x73 pixels - 17 frames uniformes de 64x73
-        this.load.spritesheet('luffy_attack_sheet', 'assets/luffyspritecb_uniform.png', {
+        // Charger la spritesheet de Luffy attaque (13 frames équidistants)
+        // 832x61 pixels - 13 frames de 64x61 (équidistant, centré)
+        this.load.spritesheet('luffy_attack_sheet', 'assets/luffyspritecb_normalized.png', {
             frameWidth: 64,
-            frameHeight: 73
+            frameHeight: 61
         });
         
         // Charger la spritesheet de Zoro idle
@@ -63,23 +64,37 @@ class GameScene extends Phaser.Scene {
             frameHeight: 84
         });
         
-        // Charger la spritesheet d'Usopp idle
-        // 140x63 pixels - 4 frames de 35x63
-        this.load.spritesheet('usopp', 'assets/ussopsprite.png', {
-            frameWidth: 35,
-            frameHeight: 63
+        // Charger la spritesheet d'Usopp idle (normalisée précise)
+        // 4 frames de 36x50 (découpage précis des vraies limites)
+        this.load.spritesheet('usopp', 'assets/ussopsprite_normalized.png', {
+            frameWidth: 36,
+            frameHeight: 50
         });
         
-        // Charger la spritesheet d'Usopp attaque
-        // 412x46 pixels - 8 frames de 51x46
-        this.load.spritesheet('usopp_attack_sheet', 'assets/ussopspritecb.png', {
-            frameWidth: 51,
+        // Charger la spritesheet d'Usopp attaque (normalisée)
+        // 7 frames de 47x46 (frames uniformément espacées)
+        this.load.spritesheet('usopp_attack_sheet', 'assets/ussopspritecb_normalized.png', {
+            frameWidth: 47,
             frameHeight: 46
+        });
+        
+        // Charger la spritesheet de Chopper idle (4 frames équidistants)
+        // 4 frames de 28x39 (équidistant, centré)
+        this.load.spritesheet('chopper', 'assets/choppersprite_normalized.png', {
+            frameWidth: 28,
+            frameHeight: 39
+        });
+        
+        // Charger la spritesheet de Chopper attaque
+        // 7 frames de 28x36 (équidistant)
+        this.load.spritesheet('chopper_attack_sheet', 'assets/chopperspritecb_normalized.png', {
+            frameWidth: 28,
+            frameHeight: 36
         });
         
         // Charger les sprites des autres personnages
         this.load.image('nami', 'assets/nami.png');
-        // À ajouter : sanji, robin, franky, chopper, brook
+        // À ajouter : sanji, robin, franky, brook
     }
 
     create() {
@@ -96,6 +111,34 @@ class GameScene extends Phaser.Scene {
         this.enemies = [];
         this.projectiles = [];
         this.towers = [];
+        
+        // Initialiser la vague de départ
+        this.waveNumber = 0; // Par défaut, commence à 0
+        
+        // Gestionnaire de sauvegarde
+        this.saveManager = new SaveManager(this);
+        
+        // Charger la sauvegarde si elle existe
+        const saveData = this.saveManager.loadSave();
+        if (saveData) {
+            this.saveManager.applySaveData(saveData);
+            // applySaveData définit this.waveNumber
+            
+            // Afficher un message de bienvenue avec la vague actuelle
+            if (this.waveNumber > 0) {
+                const checkpoints = [1, 25, 50, 75, 100];
+                const isCheckpoint = checkpoints.includes(this.waveNumber);
+                const message = isCheckpoint 
+                    ? `🎯 Checkpoint atteint - Vague ${this.waveNumber}`
+                    : `📍 Reprise à la vague ${this.waveNumber}`;
+                
+                this.time.delayedCall(1000, () => {
+                    if (this.ui) {
+                        this.ui.showMessage(message, 3000);
+                    }
+                });
+            }
+        }
         
         // Ne pas dessiner le chemin par-dessus l'image (commenté)
         // MapRenderer.drawPath(this, PATH);
@@ -117,6 +160,9 @@ class GameScene extends Phaser.Scene {
         
         // Créer le panneau d'informations des ennemis
         this.enemyInfoPanel = new EnemyInfoPanel(this);
+        
+        // Créer le menu horizontal en haut
+        this.topMenu = new TopMenu(this, this.player);
         
         // Afficher "Vague 1" avec les ennemis de la première vague (avant de lancer)
         if (WAVE_ENEMY_DISTRIBUTION[1]) {
@@ -230,8 +276,110 @@ class GameScene extends Phaser.Scene {
     }
     
     gameOver() {
+        // Sauvegarder avec le flag game over
+        if (this.saveManager) {
+            this.saveManager.autoSave();
+        }
+        
+        // Déterminer le checkpoint de respawn
+        const checkpoint = this.saveManager.getLastCheckpoint();
+        
+        // Afficher le message de game over
         this.ui.showMessage('GAME OVER!', 5000);
+        
+        // Créer un overlay de game over avec option de redémarrer
+        this.createGameOverScreen(checkpoint);
+        
         this.scene.pause();
+    }
+    
+    createGameOverScreen(checkpoint) {
+        // Overlay sombre
+        const overlay = this.add.rectangle(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            this.cameras.main.width,
+            this.cameras.main.height,
+            0x000000,
+            0.8
+        );
+        overlay.setDepth(3000);
+        overlay.setScrollFactor(0);
+        
+        // Texte GAME OVER
+        const gameOverText = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY - 100,
+            '☠️ GAME OVER ☠️',
+            {
+                fontSize: '64px',
+                fontFamily: 'Arial',
+                color: '#ff6b6b',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 6
+            }
+        );
+        gameOverText.setOrigin(0.5);
+        gameOverText.setDepth(3001);
+        gameOverText.setScrollFactor(0);
+        
+        // Message de checkpoint
+        const checkpointText = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            `Retour au checkpoint: Vague ${checkpoint}`,
+            {
+                fontSize: '28px',
+                fontFamily: 'Arial',
+                color: '#ffd700',
+                fontStyle: 'bold'
+            }
+        );
+        checkpointText.setOrigin(0.5);
+        checkpointText.setDepth(3001);
+        checkpointText.setScrollFactor(0);
+        
+        // Bouton redémarrer
+        const restartBtn = this.add.rectangle(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY + 80,
+            250, 60,
+            0x51cf66,
+            0.9
+        );
+        restartBtn.setDepth(3001);
+        restartBtn.setScrollFactor(0);
+        restartBtn.setStrokeStyle(3, 0xffffff, 0.8);
+        restartBtn.setInteractive({ useHandCursor: true });
+        
+        const restartText = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY + 80,
+            '🔄 REDÉMARRER',
+            {
+                fontSize: '24px',
+                fontFamily: 'Arial',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }
+        );
+        restartText.setOrigin(0.5);
+        restartText.setDepth(3002);
+        restartText.setScrollFactor(0);
+        
+        restartBtn.on('pointerover', () => {
+            restartBtn.setFillStyle(0x8ce99a, 0.9);
+        });
+        
+        restartBtn.on('pointerout', () => {
+            restartBtn.setFillStyle(0x51cf66, 0.9);
+        });
+        
+        restartBtn.on('pointerdown', () => {
+            // Recharger la page pour redémarrer au checkpoint
+            window.location.reload();
+        });
     }
     
     createAnimations() {
@@ -245,10 +393,10 @@ class GameScene extends Phaser.Scene {
         });
         
         // Animation d'attaque de Luffy (spritesheet séparée - coups de poings)
-        // luffyspritecb_uniform.png : 1088x73, 17 frames uniformes de 64x73
+        // luffyspritecb_normalized.png : 832x61, 13 frames équidistants de 64x61
         this.anims.create({
             key: 'luffy_attack',
-            frames: this.anims.generateFrameNumbers('luffy_attack_sheet', { start: 0, end: 16 }),
+            frames: this.anims.generateFrameNumbers('luffy_attack_sheet', { start: 0, end: 12 }),
             frameRate: 12,
             repeat: 0
         });
@@ -272,7 +420,7 @@ class GameScene extends Phaser.Scene {
         });
         
         // Animation idle d'Usopp
-        // 140x63 - 4 frames de 35x63
+        // 4 frames de 35x63 (normalisées)
         this.anims.create({
             key: 'usopp_idle',
             frames: this.anims.generateFrameNumbers('usopp', { start: 0, end: 3 }),
@@ -281,11 +429,29 @@ class GameScene extends Phaser.Scene {
         });
         
         // Animation d'attaque d'Usopp
-        // 412x46 - 8 frames de 51x46
+        // 7 frames de 47x46 (normalisées)
         this.anims.create({
             key: 'usopp_attack',
-            frames: this.anims.generateFrameNumbers('usopp_attack_sheet', { start: 0, end: 7 }),
-            frameRate: 12,
+            frames: this.anims.generateFrameNumbers('usopp_attack_sheet', { start: 0, end: 6 }),
+            frameRate: 14,
+            repeat: 0
+        });
+        
+        // Animation idle de Chopper
+        // 4 frames de 28x39 (équidistant)
+        this.anims.create({
+            key: 'chopper_idle',
+            frames: this.anims.generateFrameNumbers('chopper', { start: 0, end: 3 }),
+            frameRate: 6,
+            repeat: -1
+        });
+        
+        // Animation d'attaque de Chopper
+        // 7 frames de 28x36 (équidistant)
+        this.anims.create({
+            key: 'chopper_attack',
+            frames: this.anims.generateFrameNumbers('chopper_attack_sheet', { start: 0, end: 6 }),
+            frameRate: 14,
             repeat: 0
         });
         

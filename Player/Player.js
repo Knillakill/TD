@@ -2,8 +2,10 @@ class Player {
     constructor() {
         this.hp = 10;
         this.gold = 100;
-        this.stars = 0;  // Étoiles gagnées
         this.completedWaves = {};  // Vagues déjà complétées (pour éviter de donner plusieurs étoiles)
+        
+        // Collection de tours
+        this.collection = new PlayerCollection();
         
         // Niveaux des personnages (par défaut niveau 1)
         this.towerLevels = {};
@@ -43,8 +45,8 @@ class Player {
         // Si la vague n'a jamais été complétée, gagner une étoile
         if (!this.completedWaves[waveNumber]) {
             this.completedWaves[waveNumber] = true;
-            this.stars++;
-            console.log(`★ Étoile gagnée ! Total: ${this.stars}`);
+            this.collection.addStars(1);
+            console.log(`★ Étoile gagnée ! Total: ${this.collection.getStars()}`);
             return true;  // Nouvelle étoile gagnée
         }
         return false;  // Vague déjà complétée
