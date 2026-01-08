@@ -7,6 +7,34 @@ class GameScene extends Phaser.Scene {
         // Charger l'image de la map Arlong Park
         this.load.image('arlong_park', 'assets/map1.png');
         
+        // Charger le spritesheet du pirate à l'épée (SwdPirate - pirate_basic)
+        // 253x50 pixels - 6 frames de 42x50
+        this.load.spritesheet('swd_pirate_walk', 'assets/SwdPirates.png', {
+            frameWidth: 42,
+            frameHeight: 50
+        });
+        
+        // Charger le spritesheet de mort du pirate à l'épée
+        // 100x60 pixels - 2 frames de 50x60
+        this.load.spritesheet('swd_pirate_death', 'assets/SwdPiratesdeath.png', {
+            frameWidth: 50,
+            frameHeight: 60
+        });
+        
+        // Charger le spritesheet du pirate au pistolet (GunPirate - pirate_fast)
+        // 299x58 pixels - 6 frames de 49x58
+        this.load.spritesheet('gun_pirate_walk', 'assets/GunPirate.png', {
+            frameWidth: 49,
+            frameHeight: 58
+        });
+        
+        // Charger le spritesheet de mort du pirate au pistolet
+        // 279x51 pixels - 5 frames de 55x51
+        this.load.spritesheet('gun_pirate_death', 'assets/GunPiratedeath.png', {
+            frameWidth: 55,
+            frameHeight: 51
+        });
+        
         // Charger la spritesheet de Luffy idle
         // 369x83 pixels - 9 frames de 41x83
         this.load.spritesheet('luffy', 'assets/luffysprite.png', {
@@ -33,6 +61,20 @@ class GameScene extends Phaser.Scene {
         this.load.spritesheet('zoro_attack_sheet', 'assets/zorrospritecb_uniform.png', {
             frameWidth: 71,
             frameHeight: 84
+        });
+        
+        // Charger la spritesheet d'Usopp idle
+        // 140x63 pixels - 4 frames de 35x63
+        this.load.spritesheet('usopp', 'assets/ussopsprite.png', {
+            frameWidth: 35,
+            frameHeight: 63
+        });
+        
+        // Charger la spritesheet d'Usopp attaque
+        // 412x46 pixels - 8 frames de 51x46
+        this.load.spritesheet('usopp_attack_sheet', 'assets/ussopspritecb.png', {
+            frameWidth: 51,
+            frameHeight: 46
         });
         
         // Charger les sprites des autres personnages
@@ -104,6 +146,9 @@ class GameScene extends Phaser.Scene {
         
         // Mettre à jour les contrôles de vagues
         this.waveControl.update();
+        
+        // Mettre à jour le menu des tours (stats joueur)
+        this.towerMenu.update();
         
         // Mettre à jour les stats du joueur dans le panneau
         this.enemyInfoPanel.updatePlayerStats(this.player);
@@ -223,6 +268,62 @@ class GameScene extends Phaser.Scene {
             key: 'zoro_attack',
             frames: this.anims.generateFrameNumbers('zoro_attack_sheet', { start: 0, end: 12 }),
             frameRate: 14,
+            repeat: 0
+        });
+        
+        // Animation idle d'Usopp
+        // 140x63 - 4 frames de 35x63
+        this.anims.create({
+            key: 'usopp_idle',
+            frames: this.anims.generateFrameNumbers('usopp', { start: 0, end: 3 }),
+            frameRate: 6,
+            repeat: -1
+        });
+        
+        // Animation d'attaque d'Usopp
+        // 412x46 - 8 frames de 51x46
+        this.anims.create({
+            key: 'usopp_attack',
+            frames: this.anims.generateFrameNumbers('usopp_attack_sheet', { start: 0, end: 7 }),
+            frameRate: 12,
+            repeat: 0
+        });
+        
+        // Animation du pirate à l'épée (pirate_basic)
+        // 253x50 - 6 frames de 42x50
+        this.anims.create({
+            key: 'swd_pirate_walk',
+            frames: this.anims.generateFrameNumbers('swd_pirate_walk', { start: 0, end: 5 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Animation de mort du pirate à l'épée
+        // 100x60 - 2 frames de 50x60
+        // frameRate: 2 = 2 frames par seconde = 1 seconde pour toute l'animation
+        this.anims.create({
+            key: 'swd_pirate_death_anim',
+            frames: this.anims.generateFrameNumbers('swd_pirate_death', { start: 0, end: 1 }),
+            frameRate: 2,
+            repeat: 0
+        });
+        
+        // Animation du pirate au pistolet (pirate_fast)
+        // 299x58 - 6 frames de 49x58
+        this.anims.create({
+            key: 'gun_pirate_walk',
+            frames: this.anims.generateFrameNumbers('gun_pirate_walk', { start: 0, end: 5 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Animation de mort du pirate au pistolet
+        // 279x51 - 5 frames de 55x51
+        // frameRate: 5 = 5 frames par seconde = 1 seconde pour toute l'animation
+        this.anims.create({
+            key: 'gun_pirate_death_anim',
+            frames: this.anims.generateFrameNumbers('gun_pirate_death', { start: 0, end: 4 }),
+            frameRate: 5,
             repeat: 0
         });
     }

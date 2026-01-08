@@ -5,6 +5,9 @@ class TowerPlacement {
         this.placementSpots = [];
         this.previewTower = null;
         this.isDragging = false;
+        this.clickPlacementMode = false; // Mode placement au clic
+        this.clickPlacementTowerId = null;
+        this.draggedTower = null; // Tour en cours de déplacement
         
         this.createPlacementSpots();
     }
@@ -73,9 +76,9 @@ class TowerPlacement {
             towerId: null
         };
         
-        // Événements pour le placement (pendant le drag)
+        // Événements pour le placement (pendant le drag ou mode clic)
         spotCircle.on('pointerover', () => {
-            if (!spot.occupied && this.isDragging) {
+            if (!spot.occupied && (this.isDragging || this.clickPlacementMode)) {
                 spotCircle.setFillStyle(0x00ff00, 0.6);
                 spotCircle.setStrokeStyle(4, 0x00ff00, 1);
                 icon.setColor('#00ff00');
@@ -87,6 +90,14 @@ class TowerPlacement {
                 spotCircle.setFillStyle(0xffffff, 0.3);
                 spotCircle.setStrokeStyle(3, 0xffd700, 0.7);
                 icon.setColor('#ffd700');
+            }
+        });
+        
+        // Clic sur un emplacement pour placer (mode clic)
+        spotCircle.on('pointerdown', () => {
+            if (!spot.occupied && this.clickPlacementMode && this.clickPlacementTowerId) {
+                this.tryPlaceTower(this.clickPlacementTowerId, spot.x, spot.y);
+                this.deactivateClickPlacement();
             }
         });
         
@@ -102,18 +113,47 @@ class TowerPlacement {
         this.selectedTowerType = type;
     }
     
+    activateClickPlacement(towerId) {
+        // Activer le mode placement au clic
+        this.clickPlacementMode = true;
+        this.clickPlacementTowerId = towerId;
+        
+        // Mettre en évidence les emplacements disponibles
+        this.placementSpots.forEach(spot => {
+            if (!spot.occupied) {
+                spot.circle.setStrokeStyle(4, 0x00ff00, 0.9);
+                spot.circle.setFillStyle(0x00ff00, 0.2);
+            }
+        });
+    }
+    
+    deactivateClickPlacement() {
+        // Désactiver le mode placement au clic
+        this.clickPlacementMode = false;
+        this.clickPlacementTowerId = null;
+        
+        // Restaurer l'apparence des emplacements
+        this.placementSpots.forEach(spot => {
+            if (!spot.occupied) {
+                spot.circle.setStrokeStyle(3, 0xffd700, 0.7);
+                spot.circle.setFillStyle(0xffffff, 0.3);
+            }
+        });
+    }
+    
     checkValidPlacement(x, y) {
         // Vérifier si on est proche d'un emplacement disponible
         const spot = this.findNearestSpot(x, y, 30); // 30 pixels de tolérance
         return spot && !spot.occupied;
     }
     
-    findNearestSpot(x, y, maxDistance = 30) {
+    findNearestSpot(x, y, maxDistance = 30, allowOccupied = false) {
         let nearestSpot = null;
         let minDist = maxDistance;
         
         this.placementSpots.forEach(spot => {
-            if (spot.occupied) return;
+            // Si allowOccupied est false, ignorer les spots occupés
+            if (!allowOccupied && spot.occupied) return;
             
             const dist = Math.sqrt(
                 Math.pow(spot.x - x, 2) + Math.pow(spot.y - y, 2)
@@ -169,6 +209,9 @@ class TowerPlacement {
         // Ajouter la tour au tableau des tours
         this.scene.towers.push(tower);
         
+        // Configurer les événements sur la tour placée
+        this.setupTowerInteractions(tower, spot);
+        
         // Marquer la tour comme utilisée dans le menu
         this.scene.towerMenu.markTowerAsUsed(towerId);
         
@@ -186,6 +229,180 @@ class TowerPlacement {
         return true;
     }
     
+    
+    setupTowerInteractions(tower, spot) {
+        // Nettoyer les anciens événements
+        tower.sprite.removeAllListeners();
+        
+        // Rendre le sprite de la tour draggable
+        tower.sprite.setInteractive({ draggable: true, useHandCursor: true });
+        this.scene.input.setDraggable(tower.sprite);
+        
+        // Variable pour tracker si on est en train de drag
+        let isDragging = false;
+        let dragStartTime = 0;
+        
+        // Drag start : commencer le déplacement
+        tower.sprite.on('dragstart', (pointer) => {
+            isDragging = true;
+            dragStartTime = Date.now();
+            this.draggedTower = { tower, originalSpot: spot };
+            tower.sprite.setAlpha(0.7);
+            tower.rangeCircle.setAlpha(0.5);
+            tower.rangeCircle.setVisible(true);
+            
+            // Libérer temporairement l'emplacement
+            spot.occupied = false;
+            spot.circle.setVisible(true);
+            spot.icon.setVisible(true);
+        });
+        
+        // Drag : suivre la souris
+        tower.sprite.on('drag', (pointer, dragX, dragY) => {
+            tower.sprite.x = dragX;
+            tower.sprite.y = dragY;
+            tower.rangeCircle.x = dragX;
+            tower.rangeCircle.y = dragY;
+            
+            // Vérifier si on est sur un emplacement valide
+            const nearestSpot = this.findNearestSpot(dragX, dragY, 50);
+            if (nearestSpot && !nearestSpot.occupied) {
+                nearestSpot.circle.setFillStyle(0x00ff00, 0.6);
+                nearestSpot.circle.setStrokeStyle(4, 0x00ff00, 1);
+            }
+        });
+        
+        // Drag end : placer ou remettre à l'emplacement d'origine
+        tower.sprite.on('dragend', (pointer) => {
+            isDragging = false;
+            const nearestSpot = this.findNearestSpot(pointer.x, pointer.y, 50);
+            
+            if (nearestSpot && !nearestSpot.occupied) {
+                // Placer sur le nouvel emplacement
+                tower.sprite.x = nearestSpot.x;
+                tower.sprite.y = nearestSpot.y;
+                tower.rangeCircle.x = nearestSpot.x;
+                tower.rangeCircle.y = nearestSpot.y;
+                tower.x = nearestSpot.x;
+                tower.y = nearestSpot.y;
+                
+                // Libérer l'ancien emplacement
+                spot.occupied = false;
+                spot.tower = null;
+                
+                // Occuper le nouvel emplacement
+                nearestSpot.occupied = true;
+                nearestSpot.tower = tower;
+                nearestSpot.towerId = tower.towerId;
+                nearestSpot.circle.setVisible(false);
+                nearestSpot.icon.setVisible(false);
+                
+                // Reconfigurer les événements avec le nouveau spot
+                this.setupTowerInteractions(tower, nearestSpot);
+                
+                this.scene.ui.showMessage('Tour déplacée !', 1500);
+            } else {
+                // Remettre à l'emplacement d'origine
+                tower.sprite.x = spot.x;
+                tower.sprite.y = spot.y;
+                tower.rangeCircle.x = spot.x;
+                tower.rangeCircle.y = spot.y;
+                spot.occupied = true;
+                spot.circle.setVisible(false);
+                spot.icon.setVisible(false);
+            }
+            
+            // Restaurer l'apparence
+            tower.sprite.setAlpha(1);
+            tower.rangeCircle.setAlpha(0);
+            tower.rangeCircle.setVisible(false);
+            this.draggedTower = null;
+            
+            // Restaurer tous les emplacements
+            this.placementSpots.forEach(s => {
+                if (!s.occupied) {
+                    s.circle.setFillStyle(0xffffff, 0.3);
+                    s.circle.setStrokeStyle(3, 0xffd700, 0.7);
+                }
+            });
+        });
+        
+        // Clic simple : rappeler la tour
+        tower.sprite.on('pointerup', (pointer) => {
+            const clickDuration = Date.now() - dragStartTime;
+            
+            // Si c'est un clic rapide (< 200ms) et qu'on n'a pas draggé
+            if (!isDragging && clickDuration < 200 && !pointer.wasMoved) {
+                this.recallTower(tower, spot);
+            }
+        });
+        
+        // Réactiver les événements de survol pour les stats
+        tower.sprite.on('pointerover', () => {
+            if (!isDragging) {
+                tower.rangeCircle.setFillStyle(tower.color, 0.1);
+                tower.rangeCircle.setStrokeStyle(2, tower.color, 0.4);
+                tower.rangeCircle.setVisible(true);
+                tower.showStats();
+            }
+        });
+        
+        tower.sprite.on('pointerout', () => {
+            if (!isDragging) {
+                tower.rangeCircle.setFillStyle(tower.color, 0);
+                tower.rangeCircle.setStrokeStyle(2, tower.color, 0);
+                tower.rangeCircle.setVisible(false);
+                tower.hideStats();
+            }
+        });
+    }
+    
+    recallTower(tower, spot) {
+        // Rappeler la tour dans le menu
+        const towerId = tower.towerId;
+        const towerData = TOWER_CONFIG[towerId];
+        
+        // Rembourser le coût
+        this.scene.player.gold += towerData.cost;
+        
+        // Détruire la tour
+        tower.destroy();
+        
+        // Libérer l'emplacement
+        spot.occupied = false;
+        spot.tower = null;
+        spot.towerId = null;
+        spot.circle.setVisible(true);
+        spot.icon.setVisible(true);
+        
+        // Retirer du tableau des tours
+        const index = this.scene.towers.indexOf(tower);
+        if (index > -1) {
+            this.scene.towers.splice(index, 1);
+        }
+        
+        // Marquer comme disponible dans le menu
+        this.scene.towerMenu.availableTowers[towerId] = true;
+        
+        // Mettre à jour l'interface du menu
+        if (this.scene.towerMenu.buttons[towerId]) {
+            const button = this.scene.towerMenu.buttons[towerId];
+            button.usedBadge.setVisible(false);
+            button.usedText.setVisible(false);
+            button.deployBtn.setInteractive({ useHandCursor: true });
+            button.cardBg.setAlpha(1);
+            button.icon.setAlpha(1);
+            button.name.setAlpha(1);
+            button.level.setAlpha(1);
+        }
+        
+        // Message de confirmation
+        this.scene.ui.showMessage(`${towerData.name} rappelé(e) ! (+${towerData.cost}💰)`, 1500);
+        
+        // Mettre à jour l'interface
+        const waveInfo = this.scene.waveManager.getWaveInfo();
+        this.scene.ui.update(waveInfo);
+    }
     
     removeTower(spot) {
         if (!spot.occupied) return;

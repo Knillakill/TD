@@ -3,9 +3,9 @@ class WaveControl {
         this.scene = scene;
         this.autoPlay = false;
         
-        // Position dans le panneau de gauche, au-dessus des stats de vie
+        // Position juste au-dessus du trait noir (séparateur avant les stats vie)
         const panelX = 10;
-        const panelY = 680;  // Au-dessus de la section stats (qui est à 700)
+        const panelY = 645;  // Juste au-dessus du trait noir qui est à ~695
         const panelWidth = 280;
         
         // Bouton "Lancer Vague"

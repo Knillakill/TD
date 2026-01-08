@@ -21,7 +21,7 @@ const TOWER_CONFIG = {
         shape: 'Cône',
         terrain: 'Tous',
         target: 'Cône',
-        color: 0xff0000,
+        color: 0xef4444, // Rouge doux
         rarity: 'common',
         level: 1,
         maxLevel: 50,
@@ -45,7 +45,7 @@ const TOWER_CONFIG = {
         shape: 'Cercle',
         terrain: 'Tous',
         target: 'Zone',
-        color: 0x00ff00,
+        color: 0x22c55e, // Vert émeraude
         rarity: 'rare',
         level: 1,
         maxLevel: 50,
@@ -69,7 +69,7 @@ const TOWER_CONFIG = {
         shape: 'Cercle',
         terrain: 'Tous',
         target: 'Solo',
-        color: 0xff8800,
+        color: 0xf97316, // Orange mandarine
         rarity: 'common',
         level: 1,
         maxLevel: 50,
@@ -93,7 +93,7 @@ const TOWER_CONFIG = {
         shape: 'Cercle',
         terrain: 'Tous',
         target: 'Solo',
-        color: 0xffff00,
+        color: 0xfbbf24, // Jaune doré
         rarity: 'rare',
         level: 1,
         maxLevel: 50,
@@ -117,7 +117,7 @@ const TOWER_CONFIG = {
         shape: 'Cercle',
         terrain: 'Tous',
         target: 'Zone',
-        color: 0x9900ff,
+        color: 0xa855f7, // Violet améthyste
         rarity: 'epic',
         level: 1,
         maxLevel: 50,
@@ -141,7 +141,7 @@ const TOWER_CONFIG = {
         shape: 'Ligne',
         terrain: 'Tous',
         target: 'Perçant',
-        color: 0x00ffff,
+        color: 0x06b6d4, // Cyan turquoise
         rarity: 'epic',
         level: 1,
         maxLevel: 50,
@@ -165,7 +165,7 @@ const TOWER_CONFIG = {
         shape: 'Cercle',
         terrain: 'Tous',
         target: 'Solo',
-        color: 0xff69b4,
+        color: 0xf472b6, // Rose bonbon
         rarity: 'common',
         level: 1,
         maxLevel: 50,
@@ -189,11 +189,35 @@ const TOWER_CONFIG = {
         shape: 'Cercle',
         terrain: 'Tous',
         target: 'Solo',
-        color: 0xffffff,
+        color: 0xe2e8f0, // Blanc-gris
         rarity: 'rare',
         level: 1,
         maxLevel: 50,
         passive: ''
+    },
+    usopp: {
+        id: 'usopp',
+        name: 'Usopp',
+        description: 'Tireur d\'élite, longue portée',
+        cost: 90,
+        baseDamage: 3,
+        baseFireRate: 0.5,
+        baseCritChance: 12,
+        baseRange: 200,
+        // Spécialité: sniper (portée + critique)
+        damagePerLevel: 3,
+        fireRatePerLevel: -0.03,
+        critPerLevel: 1.2,
+        rangePerLevel: 6,
+        upgradeCost: 70,
+        shape: 'Cercle',
+        terrain: 'Tous',
+        target: 'Solo',
+        color: 0xeab308, // Jaune doré
+        rarity: 'rare',
+        level: 1,
+        maxLevel: 50,
+        passive: 'Sniper'
     }
 };
 
@@ -226,4 +250,4 @@ function getUpgradeCost(towerId, currentLevel) {
 }
 
 // Ordre d'affichage dans le menu
-const TOWER_ORDER = ['luffy', 'zoro', 'nami', 'sanji', 'robin', 'franky', 'chopper', 'brook'];
+const TOWER_ORDER = ['luffy', 'zoro', 'nami', 'sanji', 'robin', 'franky', 'chopper', 'brook', 'usopp'];

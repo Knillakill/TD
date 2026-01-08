@@ -13,11 +13,11 @@ class TowerMenu {
         this.scrollY = 0;
         this.maxScroll = 0;
         
-        // Couleurs de rareté
+        // Couleurs de rareté (plus douces et élégantes)
         this.rarityColors = {
-            common: { bg: 0x2563eb, border: 0x3b82f6, text: '#60a5fa' },    // Bleu
-            rare: { bg: 0x059669, border: 0x10b981, text: '#34d399' },      // Vert
-            epic: { bg: 0x7c3aed, border: 0x8b5cf6, text: '#a78bfa' }       // Violet
+            common: { bg: 0x1e293b, border: 0x475569, text: '#94a3b8' },    // Gris-bleu sombre
+            rare: { bg: 0x164e63, border: 0x0891b2, text: '#06b6d4' },      // Cyan profond
+            epic: { bg: 0x581c87, border: 0x7e22ce, text: '#a855f7' }       // Violet royal
         };
         
         // Initialiser toutes les tours comme disponibles
@@ -29,40 +29,68 @@ class TowerMenu {
     }
     
     createMenu() {
-        // Fond du menu (à droite de la map)
+        // Fond du menu (à droite de la map) - style moderne
         this.background = this.scene.add.rectangle(
             this.menuX + this.menuWidth / 2,
             this.menuHeight / 2,
             this.menuWidth,
             this.menuHeight,
-            0x1a1a1a,
-            0.95
+            0x0f172a,
+            0.98
         );
         this.background.setDepth(100);
         this.background.setScrollFactor(0);
         
-        // Titre du menu
+        // Bordure gauche décorative
+        const leftBorder = this.scene.add.rectangle(
+            this.menuX + 2,
+            this.menuHeight / 2,
+            3,
+            this.menuHeight,
+            0x0891b2,
+            0.6
+        );
+        leftBorder.setDepth(100);
+        leftBorder.setScrollFactor(0);
+        
+        // === PANNEAU STATS JOUEUR (en haut) ===
+        this.createPlayerPanel();
+        
+        // Titre du menu amélioré
         this.title = this.scene.add.text(
             this.menuX + this.menuWidth / 2,
-            15,
-            '⚓ ÉQUIPAGE ⚓',
+            130,
+            'ÉQUIPAGE',
             {
-                fontSize: '18px',
-                fill: '#ffd700',
+                fontSize: '16px',
+                fill: '#cbd5e1',
                 fontStyle: 'bold',
-                fontFamily: 'monospace'
+                fontFamily: 'Arial',
+                letterSpacing: 2
             }
         );
         this.title.setOrigin(0.5);
         this.title.setDepth(101);
         this.title.setScrollFactor(0);
         
+        // Ligne décorative sous le titre
+        const titleLine = this.scene.add.rectangle(
+            this.menuX + this.menuWidth / 2,
+            142,
+            120,
+            2,
+            0x475569,
+            1
+        );
+        titleLine.setDepth(101);
+        titleLine.setScrollFactor(0);
+        
         // Créer les cartes pour chaque personnage (2 colonnes)
         this.buttons = {};
         const cardWidth = 135;
-        const cardHeight = 175;
+        const cardHeight = 145;  // Réduit de 175 à 145
         const startX = this.menuX + 10;
-        const startY = 45;
+        const startY = 155;  // Décalé vers le bas pour laisser place au panneau joueur
         const gapX = 5;
         const gapY = 5;
         
@@ -76,14 +104,378 @@ class TowerMenu {
         
         // Calculer le scroll max
         const totalRows = Math.ceil(TOWER_ORDER.length / 2);
-        this.maxScroll = Math.max(0, (totalRows * (cardHeight + gapY)) - (this.menuHeight - 60));
+        this.maxScroll = Math.max(0, (totalRows * (cardHeight + gapY)) - (this.menuHeight - 170));
+    }
+    
+    createPlayerPanel() {
+        const panelX = this.menuX;
+        const panelY = 8;
+        const panelWidth = this.menuWidth;
+        const panelHeight = 115;
+        
+        // Fond principal avec effet de profondeur
+        const mainBg = this.scene.add.rectangle(
+            panelX + panelWidth / 2,
+            panelY + panelHeight / 2,
+            panelWidth - 16,
+            panelHeight,
+            0x1e293b,
+            1
+        );
+        mainBg.setDepth(100);
+        mainBg.setScrollFactor(0);
+        
+        // Bordure lumineuse dégradée
+        const borderGlow = this.scene.add.rectangle(
+            panelX + panelWidth / 2,
+            panelY + panelHeight / 2,
+            panelWidth - 16,
+            panelHeight,
+            0x000000,
+            0
+        );
+        borderGlow.setDepth(101);
+        borderGlow.setScrollFactor(0);
+        borderGlow.setStrokeStyle(3, 0x0891b2, 0.8);
+        
+        // Barre supérieure brillante
+        const topAccent = this.scene.add.rectangle(
+            panelX + panelWidth / 2,
+            panelY + 3,
+            panelWidth - 22,
+            4,
+            0x06b6d4,
+            1
+        );
+        topAccent.setDepth(102);
+        topAccent.setScrollFactor(0);
+        
+        // Effet de dégradé sur le fond (simulation)
+        const gradientOverlay = this.scene.add.rectangle(
+            panelX + panelWidth / 2,
+            panelY + 15,
+            panelWidth - 20,
+            30,
+            0x0f172a,
+            0.5
+        );
+        gradientOverlay.setDepth(101);
+        gradientOverlay.setScrollFactor(0);
+        
+        // Section Avatar (gauche)
+        const avatarX = panelX + 50;
+        const avatarY = panelY + panelHeight / 2 + 8;
+        
+        // Hexagone décoratif derrière l'avatar (simulation avec cercle)
+        const hexaBg = this.scene.add.circle(avatarX, avatarY, 40, 0x0f172a, 0.8);
+        hexaBg.setDepth(102);
+        hexaBg.setScrollFactor(0);
+        
+        // Double bordure pour l'avatar
+        const outerRing = this.scene.add.circle(avatarX, avatarY, 38, 0x000000, 0);
+        outerRing.setDepth(103);
+        outerRing.setScrollFactor(0);
+        outerRing.setStrokeStyle(3, 0xfbbf24, 0.9);
+        
+        const innerRing = this.scene.add.circle(avatarX, avatarY, 35, 0x000000, 0);
+        innerRing.setDepth(103);
+        innerRing.setScrollFactor(0);
+        innerRing.setStrokeStyle(2, 0x0891b2, 0.6);
+        
+        // Fond de l'avatar
+        const avatarBg = this.scene.add.circle(avatarX, avatarY, 33, 0x0f172a);
+        avatarBg.setDepth(103);
+        avatarBg.setScrollFactor(0);
+        
+        // Avatar Luffy
+        if (this.scene.textures.exists('luffy')) {
+            this.playerAvatar = this.scene.add.image(avatarX, avatarY, 'luffy');
+            this.playerAvatar.setDisplaySize(64, 64);
+            this.playerAvatar.setDepth(104);
+            this.playerAvatar.setScrollFactor(0);
+            
+            const mask = this.scene.make.graphics();
+            mask.fillStyle(0xffffff);
+            mask.fillCircle(avatarX, avatarY, 32);
+            this.playerAvatar.setMask(mask.createGeometryMask());
+        }
+        
+        // Badge de niveau sur l'avatar
+        const levelBadge = this.scene.add.circle(avatarX + 28, avatarY - 25, 12, 0xef4444, 1);
+        levelBadge.setDepth(105);
+        levelBadge.setScrollFactor(0);
+        levelBadge.setStrokeStyle(2, 0x1e293b);
+        
+        const levelText = this.scene.add.text(
+            avatarX + 28,
+            avatarY - 25,
+            '1',
+            {
+                fontSize: '12px',
+                fill: '#ffffff',
+                fontStyle: 'bold',
+                fontFamily: 'Arial'
+            }
+        );
+        levelText.setOrigin(0.5);
+        levelText.setDepth(106);
+        levelText.setScrollFactor(0);
+        
+        // Bouton pour uploader une image de profil
+        const uploadBtn = this.scene.add.circle(avatarX + 28, avatarY + 25, 14, 0x0891b2, 1);
+        uploadBtn.setDepth(105);
+        uploadBtn.setScrollFactor(0);
+        uploadBtn.setStrokeStyle(2, 0x06b6d4);
+        uploadBtn.setInteractive({ useHandCursor: true });
+        
+        const uploadIcon = this.scene.add.text(
+            avatarX + 28,
+            avatarY + 25,
+            '📷',
+            {
+                fontSize: '16px'
+            }
+        );
+        uploadIcon.setOrigin(0.5);
+        uploadIcon.setDepth(106);
+        uploadIcon.setScrollFactor(0);
+        
+        // Créer un input file invisible
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+        
+        // Effet hover sur le bouton
+        uploadBtn.on('pointerover', () => {
+            uploadBtn.setFillStyle(0x06b6d4);
+            uploadBtn.setScale(1.1);
+        });
+        
+        uploadBtn.on('pointerout', () => {
+            uploadBtn.setFillStyle(0x0891b2);
+            uploadBtn.setScale(1);
+        });
+        
+        // Clic pour ouvrir le sélecteur de fichier
+        uploadBtn.on('pointerdown', () => {
+            fileInput.click();
+        });
+        
+        // Quand un fichier est sélectionné
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    // Créer une nouvelle texture avec l'image uploadée
+                    const img = new Image();
+                    img.onload = () => {
+                        // Ajouter la texture à Phaser
+                        if (this.scene.textures.exists('custom_profile')) {
+                            this.scene.textures.remove('custom_profile');
+                        }
+                        this.scene.textures.addImage('custom_profile', img);
+                        
+                        // Remplacer l'avatar
+                        if (this.playerAvatar) {
+                            this.playerAvatar.destroy();
+                        }
+                        
+                        this.playerAvatar = this.scene.add.image(avatarX, avatarY, 'custom_profile');
+                        this.playerAvatar.setDisplaySize(64, 64);
+                        this.playerAvatar.setDepth(104);
+                        this.playerAvatar.setScrollFactor(0);
+                        
+                        // Recréer le masque circulaire
+                        const mask = this.scene.make.graphics();
+                        mask.fillStyle(0xffffff);
+                        mask.fillCircle(avatarX, avatarY, 32);
+                        this.playerAvatar.setMask(mask.createGeometryMask());
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Section Info (droite)
+        const infoX = panelX + 105;
+        const infoY = panelY + 20;
+        
+        // Titre "CAPITAINE"
+        this.playerLabel = this.scene.add.text(
+            infoX,
+            infoY,
+            'CAPITAINE',
+            {
+                fontSize: '11px',
+                fill: '#64748b',
+                fontStyle: 'normal',
+                fontFamily: 'Arial',
+                letterSpacing: 2
+            }
+        );
+        this.playerLabel.setOrigin(0, 0);
+        this.playerLabel.setDepth(103);
+        this.playerLabel.setScrollFactor(0);
+        
+        // Nom du joueur
+        const playerName = this.scene.add.text(
+            infoX,
+            infoY + 16,
+            'MONKEY D. LUFFY',
+            {
+                fontSize: '14px',
+                fill: '#f1f5f9',
+                fontStyle: 'bold',
+                fontFamily: 'Arial',
+                letterSpacing: 0.5
+            }
+        );
+        playerName.setOrigin(0, 0);
+        playerName.setDepth(103);
+        playerName.setScrollFactor(0);
+        
+        // Container de stats moderne
+        const statsY = infoY + 42;
+        
+        // Vie (avec barre de progression)
+        const hpBarBg = this.scene.add.rectangle(
+            infoX,
+            statsY,
+            185,
+            26,
+            0x0f172a,
+            0.7
+        );
+        hpBarBg.setOrigin(0, 0);
+        hpBarBg.setDepth(102);
+        hpBarBg.setScrollFactor(0);
+        hpBarBg.setStrokeStyle(1, 0x334155, 0.5);
+        
+        // Icône coeur
+        const hpIcon = this.scene.add.text(
+            infoX + 8,
+            statsY + 13,
+            '❤️',
+            {
+                fontSize: '14px'
+            }
+        );
+        hpIcon.setOrigin(0, 0.5);
+        hpIcon.setDepth(103);
+        hpIcon.setScrollFactor(0);
+        
+        const hpLabel = this.scene.add.text(
+            infoX + 30,
+            statsY + 13,
+            'VIE',
+            {
+                fontSize: '10px',
+                fill: '#94a3b8',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        );
+        hpLabel.setOrigin(0, 0.5);
+        hpLabel.setDepth(103);
+        hpLabel.setScrollFactor(0);
+        
+        this.playerHpText = this.scene.add.text(
+            infoX + 177,
+            statsY + 13,
+            '14',
+            {
+                fontSize: '16px',
+                fill: '#22c55e',
+                fontStyle: 'bold',
+                fontFamily: 'monospace'
+            }
+        );
+        this.playerHpText.setOrigin(1, 0.5);
+        this.playerHpText.setDepth(103);
+        this.playerHpText.setScrollFactor(0);
+        
+        // Barre de progression HP (visuelle)
+        this.hpBarFill = this.scene.add.rectangle(
+            infoX + 2,
+            statsY + 23,
+            181,
+            2,
+            0x22c55e,
+            0.8
+        );
+        this.hpBarFill.setOrigin(0, 0);
+        this.hpBarFill.setDepth(103);
+        this.hpBarFill.setScrollFactor(0);
+        
+        // Or (avec icône)
+        const goldY = statsY + 32;
+        
+        const goldBarBg = this.scene.add.rectangle(
+            infoX,
+            goldY,
+            185,
+            20,
+            0x0f172a,
+            0.7
+        );
+        goldBarBg.setOrigin(0, 0);
+        goldBarBg.setDepth(102);
+        goldBarBg.setScrollFactor(0);
+        goldBarBg.setStrokeStyle(1, 0x334155, 0.5);
+        
+        // Icône pièce
+        const goldIcon = this.scene.add.text(
+            infoX + 8,
+            goldY + 10,
+            '💰',
+            {
+                fontSize: '12px'
+            }
+        );
+        goldIcon.setOrigin(0, 0.5);
+        goldIcon.setDepth(103);
+        goldIcon.setScrollFactor(0);
+        
+        const goldLabel = this.scene.add.text(
+            infoX + 30,
+            goldY + 10,
+            'OR',
+            {
+                fontSize: '10px',
+                fill: '#94a3b8',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }
+        );
+        goldLabel.setOrigin(0, 0.5);
+        goldLabel.setDepth(103);
+        goldLabel.setScrollFactor(0);
+        
+        this.playerGoldText = this.scene.add.text(
+            infoX + 177,
+            goldY + 10,
+            '10',
+            {
+                fontSize: '16px',
+                fill: '#fbbf24',
+                fontStyle: 'bold',
+                fontFamily: 'monospace'
+            }
+        );
+        this.playerGoldText.setOrigin(1, 0.5);
+        this.playerGoldText.setDepth(103);
+        this.playerGoldText.setScrollFactor(0);
     }
     
     createTowerCard(towerId, x, y, width, height) {
         const towerData = TOWER_CONFIG[towerId];
         const rarity = this.rarityColors[towerData.rarity] || this.rarityColors.common;
         
-        // Fond de la carte avec couleur de rareté
+        // Fond de la carte avec couleur de rareté (plus sombre)
         const cardBg = this.scene.add.rectangle(
             x + width / 2,
             y + height / 2,
@@ -95,7 +487,7 @@ class TowerMenu {
         cardBg.setDepth(100);
         cardBg.setScrollFactor(0);
         
-        // Bordure colorée
+        // Bordure subtile
         const cardBorder = this.scene.add.rectangle(
             x + width / 2,
             y + height / 2,
@@ -104,46 +496,72 @@ class TowerMenu {
             0x000000,
             0
         );
-        cardBorder.setStrokeStyle(3, rarity.border);
+        cardBorder.setStrokeStyle(2, rarity.border, 0.8);
         cardBorder.setDepth(100);
         cardBorder.setScrollFactor(0);
         
-        // Section haute (nom + niveau)
+        // Barre de rareté en haut
+        const rarityBar = this.scene.add.rectangle(
+            x + width / 2,
+            y + 2,
+            width - 4,
+            3,
+            rarity.border,
+            0.9
+        );
+        rarityBar.setDepth(101);
+        rarityBar.setScrollFactor(0);
+        
+        // Section haute (nom + niveau) avec fond subtil
         const headerBg = this.scene.add.rectangle(
             x + width / 2,
             y + 20,
-            width - 4,
-            36,
-            0x000000,
-            0.3
+            width - 8,
+            32,
+            0x0f172a,
+            0.5
         );
         headerBg.setDepth(101);
         headerBg.setScrollFactor(0);
+        headerBg.setStrokeStyle(1, 0x334155, 0.3);
         
-        // Nom du personnage
+        // Nom du personnage (plus élégant)
         const name = this.scene.add.text(
             x + width / 2,
             y + 12,
             towerData.name.toUpperCase(),
             {
-                fontSize: '13px',
-                fill: '#ffffff',
+                fontSize: '12px',
+                fill: '#f1f5f9',
                 fontStyle: 'bold',
-                fontFamily: 'monospace'
+                fontFamily: 'Arial',
+                letterSpacing: 0.5
             }
         );
         name.setOrigin(0.5);
         name.setDepth(102);
         name.setScrollFactor(0);
         
-        // Niveau
+        // Niveau avec badge
+        const levelBadge = this.scene.add.rectangle(
+            x + width / 2,
+            y + 28,
+            35,
+            14,
+            rarity.border,
+            0.3
+        );
+        levelBadge.setDepth(101);
+        levelBadge.setScrollFactor(0);
+        levelBadge.setStrokeStyle(1, rarity.border, 0.5);
+        
         const level = this.scene.add.text(
             x + width / 2,
             y + 28,
-            `Lv ${towerData.level || 1}`,
+            `Nv.${towerData.level || 1}`,
             {
-                fontSize: '11px',
-                fill: '#cccccc',
+                fontSize: '9px',
+                fill: rarity.text,
                 fontFamily: 'monospace'
             }
         );
@@ -154,101 +572,114 @@ class TowerMenu {
         // Zone icône (sprite animé pour Luffy/Zoro, image pour les autres, sinon carré coloré)
         let icon;
         if (towerId === 'luffy' && this.scene.textures.exists('luffy')) {
-            icon = this.scene.add.sprite(x + width / 2, y + 75, 'luffy');
-            icon.setDisplaySize(35, 70); // Ratio 41:83
+            icon = this.scene.add.sprite(x + width / 2, y + 60, 'luffy');
+            icon.setDisplaySize(30, 60); // Ratio 41:83, réduit
             icon.play('luffy_idle');
         } else if (towerId === 'zoro' && this.scene.textures.exists('zoro')) {
-            icon = this.scene.add.sprite(x + width / 2, y + 75, 'zoro');
-            icon.setDisplaySize(35, 75); // Ratio 39:85
+            icon = this.scene.add.sprite(x + width / 2, y + 60, 'zoro');
+            icon.setDisplaySize(30, 65); // Ratio 39:85, réduit
             icon.play('zoro_idle');
+        } else if (towerId === 'usopp' && this.scene.textures.exists('usopp')) {
+            icon = this.scene.add.sprite(x + width / 2, y + 60, 'usopp');
+            icon.setDisplaySize(27, 50); // Analyse précise: 35x63 → 27x50
+            icon.setOrigin(0.5, 0.889); // Pieds à Y=56/63 = 0.889
+            icon.play('usopp_idle');
         } else if (this.scene.textures.exists(towerId)) {
             icon = this.scene.add.image(
                 x + width / 2,
-                y + 75,
+                y + 60,
                 towerId
             );
-            icon.setDisplaySize(50, 50);
+            icon.setDisplaySize(45, 45);
         } else {
             icon = this.scene.add.rectangle(
                 x + width / 2,
-                y + 75,
-                45,
-                45,
+                y + 60,
+                40,
+                40,
                 towerData.color
             );
         }
         icon.setDepth(102);
         icon.setScrollFactor(0);
+        icon.setInteractive({ draggable: true, useHandCursor: true });
         
-        // Bouton INFOS
+        // Drag and drop sur le sprite de la tour
+        icon.on('dragstart', (pointer) => {
+            if (this.availableTowers[towerId]) {
+                this.startDrag(towerId, pointer, icon);
+            }
+        });
+        
+        // Bouton INFOS (style moderne)
         const infosBtn = this.scene.add.rectangle(
             x + width / 2,
-            y + 120,
+            y + 100,
             width - 16,
             22,
-            0x1e3a5f,
+            0x334155,
             1
         );
         infosBtn.setDepth(101);
         infosBtn.setScrollFactor(0);
         infosBtn.setInteractive({ useHandCursor: true });
-        infosBtn.setStrokeStyle(1, 0x3b82f6);
+        infosBtn.setStrokeStyle(1, 0x475569, 0.5);
         
         const infosText = this.scene.add.text(
             x + width / 2,
-            y + 120,
-            'INFOS',
+            y + 100,
+            'ⓘ INFOS',
             {
-                fontSize: '11px',
-                fill: '#ffffff',
+                fontSize: '9px',
+                fill: '#cbd5e1',
                 fontStyle: 'bold',
-                fontFamily: 'monospace'
+                fontFamily: 'Arial'
             }
         );
         infosText.setOrigin(0.5);
         infosText.setDepth(102);
         infosText.setScrollFactor(0);
         
-        // Bouton DÉPLOYER
+        // Bouton DÉPLOYER (style moderne avec dégradé visuel)
         const deployBtn = this.scene.add.rectangle(
             x + width / 2,
-            y + 148,
+            y + 127,
             width - 16,
             22,
-            0x1e3a5f,
+            0x0891b2,
             1
         );
         deployBtn.setDepth(101);
         deployBtn.setScrollFactor(0);
         deployBtn.setInteractive({ useHandCursor: true });
-        deployBtn.setStrokeStyle(1, 0x3b82f6);
+        deployBtn.setStrokeStyle(1, 0x06b6d4, 0.7);
         
         const deployText = this.scene.add.text(
             x + width / 2,
-            y + 148,
-            'DÉPLOYER',
+            y + 127,
+            '⚓ DÉPLOYER',
             {
-                fontSize: '11px',
-                fill: '#ffffff',
+                fontSize: '9px',
+                fill: '#f0f9ff',
                 fontStyle: 'bold',
-                fontFamily: 'monospace'
+                fontFamily: 'Arial'
             }
         );
         deployText.setOrigin(0.5);
         deployText.setDepth(102);
-        deployBtn.setScrollFactor(0);
+        deployText.setScrollFactor(0);
         
         // Prix (affiché sur le bouton déployer si pas gratuit)
         const costDisplay = towerData.cost === 0 ? 'GRATUIT' : `💰${towerData.cost}`;
         
-        // Badge "PLACÉ" (caché par défaut)
+        // Badge "PLACÉ" (caché par défaut, style amélioré)
         const usedBadge = this.scene.add.rectangle(
             x + width / 2,
             y + height / 2,
             width,
             height,
-            0x000000,
-            0.8
+            0x0f172a,
+            0.92
         );
         usedBadge.setDepth(103);
         usedBadge.setVisible(false);
@@ -257,12 +688,13 @@ class TowerMenu {
         const usedText = this.scene.add.text(
             x + width / 2,
             y + height / 2,
-            '✓ PLACÉ',
+            '✓ DÉPLOYÉ',
             {
-                fontSize: '16px',
-                fill: '#666666',
+                fontSize: '14px',
+                fill: '#22c55e',
                 fontStyle: 'bold',
-                fontFamily: 'monospace'
+                fontFamily: 'Arial',
+                letterSpacing: 1
             }
         );
         usedText.setOrigin(0.5);
@@ -276,27 +708,32 @@ class TowerMenu {
         });
         
         infosBtn.on('pointerover', () => {
-            infosBtn.setFillStyle(0x2563eb);
+            infosBtn.setFillStyle(0x475569);
+            infosBtn.setStrokeStyle(1, 0x64748b, 0.8);
         });
         
         infosBtn.on('pointerout', () => {
-            infosBtn.setFillStyle(0x1e3a5f);
+            infosBtn.setFillStyle(0x334155);
+            infosBtn.setStrokeStyle(1, 0x475569, 0.5);
         });
         
         deployBtn.on('pointerdown', (pointer) => {
             if (this.availableTowers[towerId]) {
-                this.startDrag(towerId, pointer, deployBtn);
+                // Mode clic : activer la sélection pour placement au clic
+                this.selectTowerForPlacement(towerId);
             }
         });
         
         deployBtn.on('pointerover', () => {
             if (this.availableTowers[towerId]) {
-                deployBtn.setFillStyle(0x059669);
+                deployBtn.setFillStyle(0x06b6d4);
+                deployBtn.setStrokeStyle(1, 0x22d3ee, 0.9);
             }
         });
         
         deployBtn.on('pointerout', () => {
-            deployBtn.setFillStyle(0x1e3a5f);
+            deployBtn.setFillStyle(0x0891b2);
+            deployBtn.setStrokeStyle(1, 0x06b6d4, 0.7);
         });
         
         // Stocker les références
@@ -711,6 +1148,28 @@ class TowerMenu {
         this.currentInfoTower = null;
     }
     
+    selectTowerForPlacement(towerId) {
+        // Mode clic : sélectionner une tour pour placement au clic
+        if (!this.availableTowers[towerId]) {
+            this.scene.ui.showMessage('Déjà placé!', 1000);
+            return;
+        }
+        
+        const towerData = TOWER_CONFIG[towerId];
+        
+        // Vérifier si le joueur a assez d'argent
+        if (this.scene.player.gold < towerData.cost) {
+            this.scene.ui.showMessage('Pas assez d\'or!', 1500);
+            return;
+        }
+        
+        // Activer le mode placement par clic
+        if (this.scene.placementSystem) {
+            this.scene.placementSystem.activateClickPlacement(towerId);
+            this.scene.ui.showMessage(`Cliquez sur un emplacement pour placer ${towerData.name}`, 3000);
+        }
+    }
+    
     startDrag(towerId, pointer, buttonBg) {
         // Vérifier si la tour est disponible
         if (!this.availableTowers[towerId]) {
@@ -733,28 +1192,34 @@ class TowerMenu {
         // Créer le sprite du personnage qui suit la souris
         if (towerId === 'luffy' && this.scene.textures.exists('luffy')) {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'luffy');
-            this.dragSprite.setDisplaySize(45, 90); // Ratio 41:83
+            this.dragSprite.setDisplaySize(28, 56); // Ratio 41:83, réduit
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('luffy_idle');
         } else if (towerId === 'zoro' && this.scene.textures.exists('zoro')) {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'zoro');
-            this.dragSprite.setDisplaySize(45, 95); // Ratio 39:85
+            this.dragSprite.setDisplaySize(28, 60); // Ratio 39:85, réduit
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('zoro_idle');
+        } else if (towerId === 'usopp' && this.scene.textures.exists('usopp')) {
+            this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'usopp');
+            this.dragSprite.setDisplaySize(27, 50); // Analyse précise: 35x63 → 27x50
+            this.dragSprite.setOrigin(0.5, 0.889); // Pieds à Y=56/63 = 0.889
+            this.dragSprite.setAlpha(0.8);
+            this.dragSprite.play('usopp_idle');
         } else if (this.scene.textures.exists(towerId)) {
             this.dragSprite = this.scene.add.image(
                 pointer.x,
                 pointer.y,
                 towerId
             );
-            this.dragSprite.setDisplaySize(50, 50);
+            this.dragSprite.setDisplaySize(35, 35); // Réduit
             this.dragSprite.setAlpha(0.8);
         } else {
             this.dragSprite = this.scene.add.rectangle(
                 pointer.x,
                 pointer.y,
-                40,
-                40,
+                30,
+                30,
                 towerData.color,
                 0.8
             );
@@ -881,6 +1346,41 @@ class TowerMenu {
         }
     }
     
+    update() {
+        // Mettre à jour les stats du joueur
+        const player = this.scene.player;
+        
+        // Mettre à jour l'or
+        if (this.playerGoldText) {
+            this.playerGoldText.setText(`${player.gold}`);
+        }
+        
+        // Mettre à jour la vie
+        if (this.playerHpText) {
+            this.playerHpText.setText(`${player.hp}`);
+            
+            // Calculer le pourcentage de vie (max = 10)
+            const maxHp = 10;
+            const hpPercent = Math.max(0, Math.min(1, player.hp / maxHp));
+            
+            // Mettre à jour la barre de vie
+            if (this.hpBarFill) {
+                this.hpBarFill.width = 181 * hpPercent;
+                
+                // Changer la couleur de la barre selon les HP
+                if (hpPercent > 0.7) {
+                    this.hpBarFill.setFillStyle(0x22c55e, 0.8); // Vert
+                    this.playerHpText.setColor('#22c55e');
+                } else if (hpPercent > 0.3) {
+                    this.hpBarFill.setFillStyle(0xf59e0b, 0.8); // Orange
+                    this.playerHpText.setColor('#f59e0b');
+                } else {
+                    this.hpBarFill.setFillStyle(0xef4444, 0.9); // Rouge
+                    this.playerHpText.setColor('#ef4444');
+                }
+            }
+        }
+    }
     
 }
 

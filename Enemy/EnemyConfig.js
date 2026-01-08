@@ -3,9 +3,9 @@ const ENEMY_CONFIG = {
     pirate_basic: {
         id: 'pirate_basic',
         name: 'PIRATE',
-        hp: 15,
+        hp: 25,
         armor: 0,
-        speed: 80,
+        speed: 30,
         power: 1,
         regen: 0,
         color: 0x8B4513, // Marron
@@ -20,7 +20,7 @@ const ENEMY_CONFIG = {
     pirate_shield: {
         id: 'pirate_shield',
         name: 'BLINDÉ',
-        hp: 150,
+        hp: 50,
         armor: 5,
         speed: 50,
         power: 2,
@@ -37,7 +37,7 @@ const ENEMY_CONFIG = {
     pirate_fast: {
         id: 'pirate_fast',
         name: 'RAPIDE',
-        hp: 30,
+        hp: 15,
         armor: 0,
         speed: 120,
         power: 1,
