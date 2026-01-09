@@ -19,15 +19,16 @@ const ENEMY_CONFIG = {
     },
     pirate_shield: {
         id: 'pirate_shield',
-        name: 'BLINDÉ',
+        name: 'TANK',
         hp: 50,
+        shield: 30, // Bouclier bleu qui absorbe les dégâts en premier
         armor: 5,
-        speed: 50,
+        speed: 40,
         power: 2,
         regen: 1,
         color: 0x708090, // Gris métallique
         size: 12,
-        reward: 25,
+        reward: 35,
         stunVuln: false,
         slowVuln: true,
         burnVuln: false,

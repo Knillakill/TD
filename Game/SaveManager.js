@@ -129,6 +129,80 @@ class SaveManager {
             console.error('[SaveManager] Erreur lors de la sauvegarde automatique:', error);
         }
     }
+    
+    /**
+     * Sauvegarde à une vague spécifique (pour les boutons de restart)
+     */
+    saveAtWave(waveNumber) {
+        try {
+            const player = this.scene.player;
+            const collection = player.collection;
+            
+            // Réinitialiser les HP
+            player.hp = 10;
+            
+            // Garder les tours placées sur la map
+            const placedTowers = this.collectPlacedTowers();
+            
+            // Collecter les niveaux des tours du joueur
+            const towerLevels = player.towerLevels || {};
+            
+            // Collecter les réglages
+            const settings = this.collectSettings();
+            
+            const saveData = {
+                version: this.saveVersion,
+                timestamp: Date.now(),
+                game: {
+                    currentWave: waveNumber,
+                    lastCheckpoint: this.getLastCheckpoint(waveNumber),
+                    isGameOver: false
+                },
+                player: {
+                    hp: 10,
+                    gold: player.gold,
+                    completedWaves: player.completedWaves || {},
+                    towerLevels: towerLevels
+                },
+                collection: {
+                    unlockedTowers: collection.getUnlockedTowers(),
+                    equippedTowers: collection.getEquippedTowers(),
+                    unlockedSlots: collection.unlockedSlots,
+                    stars: collection.stars,
+                    stats: collection.stats
+                },
+                towers: {
+                    placed: placedTowers // Garder les tours placées
+                },
+                settings: settings
+            };
+            
+            const encrypted = this.encrypt(saveData);
+            
+            if (encrypted) {
+                localStorage.setItem(this.saveKey, encrypted);
+                console.log(`[SaveManager] Sauvegarde à la vague ${waveNumber} réussie (${placedTowers.length} tours conservées)`);
+            }
+        } catch (error) {
+            console.error('[SaveManager] Erreur lors de la sauvegarde:', error);
+        }
+    }
+    
+    /**
+     * Obtient le dernier checkpoint atteint pour une vague donnée
+     */
+    getLastCheckpoint(waveNumber = null) {
+        const checkpoints = [1, 25, 50, 75, 100];
+        const wave = waveNumber !== null ? waveNumber : (this.scene.waveManager ? this.scene.waveManager.currentWave : 0);
+        
+        let lastCheckpoint = 1;
+        for (const cp of checkpoints) {
+            if (wave >= cp) {
+                lastCheckpoint = cp;
+            }
+        }
+        return lastCheckpoint;
+    }
 
     /**
      * Collecte toutes les données à sauvegarder
@@ -154,29 +228,82 @@ class SaveManager {
             lastCompletedWave = this.scene.waveNumber;
         }
         
-        console.log(`[SaveManager] Collecte sauvegarde - lastCompletedWave=${lastCompletedWave}, waveInProgress=${this.scene.waveManager?.waveInProgress}`);
+        // Collecter les tours placées sur la map
+        const placedTowers = this.collectPlacedTowers();
+        
+        // Collecter les niveaux des tours du joueur
+        const towerLevels = player.towerLevels || {};
+        
+        // Collecter les réglages
+        const settings = this.collectSettings();
+        
+        console.log(`[SaveManager] Collecte sauvegarde - lastCompletedWave=${lastCompletedWave}, tours placées: ${placedTowers.length}`);
 
         return {
-            version: '1.0.0',
+            version: '1.1.0',
             timestamp: Date.now(),
+            mapId: this.scene.mapId || 'map1',
             player: {
                 hp: player.hp,
                 gold: player.gold,
                 stars: player.stars,
-                completedWaves: player.completedWaves
+                completedWaves: player.completedWaves,
+                towerLevels: towerLevels
             },
             collection: {
                 unlockedTowers: Array.from(collection.unlockedTowers),
                 equippedTowers: Array.from(collection.equippedTowers),
                 unlockedSlots: collection.unlockedSlots,
-                towerStats: collection.towerStats
+                towerStats: collection.towerStats,
+                stars: collection.stars || 0
             },
             game: {
                 currentWave: lastCompletedWave,
                 lastCheckpoint: this.getLastCheckpoint(lastCompletedWave),
                 highestWave: this.getHighestWave(),
-                isGameOver: player.hp <= 0
-            }
+                isGameOver: player.hp <= 0,
+                autoPlay: this.scene.waveControl ? this.scene.waveControl.autoPlay : false
+            },
+            towers: {
+                placed: placedTowers
+            },
+            settings: settings
+        };
+    }
+    
+    /**
+     * Collecte les tours placées sur la map
+     */
+    collectPlacedTowers() {
+        const placedTowers = [];
+        
+        if (this.scene.placementSystem && this.scene.placementSystem.placementSpots) {
+            this.scene.placementSystem.placementSpots.forEach((spot, index) => {
+                if (spot.occupied && spot.tower) {
+                    placedTowers.push({
+                        spotIndex: index,
+                        towerId: spot.tower.towerId,
+                        level: spot.tower.level || 1,
+                        x: spot.x,
+                        y: spot.y
+                    });
+                }
+            });
+        }
+        
+        return placedTowers;
+    }
+    
+    /**
+     * Collecte les réglages du jeu
+     */
+    collectSettings() {
+        return {
+            musicVolume: localStorage.getItem('musicVolume') || 0.5,
+            sfxVolume: localStorage.getItem('sfxVolume') || 0.7,
+            showDamageNumbers: localStorage.getItem('showDamageNumbers') !== 'false',
+            showRangeOnHover: localStorage.getItem('showRangeOnHover') !== 'false',
+            gameSpeed: localStorage.getItem('gameSpeed') || 1
         };
     }
     
@@ -282,25 +409,95 @@ class SaveManager {
             player.gold = saveData.player.gold || 0;
             player.stars = saveData.player.stars || 0;
             player.completedWaves = saveData.player.completedWaves || {};
+            
+            // Restaurer les niveaux des tours (garder les valeurs par défaut si non sauvegardées)
+            if (saveData.player.towerLevels) {
+                Object.keys(saveData.player.towerLevels).forEach(towerId => {
+                    player.towerLevels[towerId] = saveData.player.towerLevels[towerId];
+                });
+            }
 
             // Restaurer la collection
             collection.unlockedTowers = new Set(saveData.collection.unlockedTowers || ['luffy']);
             collection.equippedTowers = new Set(saveData.collection.equippedTowers || ['luffy']);
             collection.unlockedSlots = saveData.collection.unlockedSlots || 6;
             collection.towerStats = saveData.collection.towerStats || {};
+            collection.stars = saveData.collection.stars || 0;
 
             // Définir la vague de départ
             this.scene.waveNumber = startWave;
+            
+            // Stocker les tours à placer (seront placées après l'initialisation du placement system)
+            this.scene.towersToRestore = saveData.towers ? saveData.towers.placed : [];
+            
+            // Restaurer les réglages
+            if (saveData.settings) {
+                this.applySettings(saveData.settings);
+            }
+            
+            // Restaurer l'autoPlay
+            if (saveData.game && typeof saveData.game.autoPlay !== 'undefined') {
+                this.scene.savedAutoPlay = saveData.game.autoPlay;
+            }
 
             // Sauvegarder dans le localStorage de la collection
             collection.save();
 
-            console.log(`[SaveManager] Données appliquées avec succès - Vague de départ: ${startWave}`);
+            console.log(`[SaveManager] Données appliquées avec succès - Vague de départ: ${startWave}, Tours à restaurer: ${this.scene.towersToRestore.length}`);
             return true;
         } catch (error) {
             console.error('[SaveManager] Erreur lors de l\'application de la sauvegarde:', error);
             return false;
         }
+    }
+    
+    /**
+     * Applique les réglages sauvegardés
+     */
+    applySettings(settings) {
+        if (settings.musicVolume !== undefined) {
+            localStorage.setItem('musicVolume', settings.musicVolume);
+        }
+        if (settings.sfxVolume !== undefined) {
+            localStorage.setItem('sfxVolume', settings.sfxVolume);
+        }
+        if (settings.showDamageNumbers !== undefined) {
+            localStorage.setItem('showDamageNumbers', settings.showDamageNumbers);
+        }
+        if (settings.showRangeOnHover !== undefined) {
+            localStorage.setItem('showRangeOnHover', settings.showRangeOnHover);
+        }
+        if (settings.gameSpeed !== undefined) {
+            localStorage.setItem('gameSpeed', settings.gameSpeed);
+        }
+    }
+    
+    /**
+     * Restaure les tours placées sur la map (appelé après l'initialisation)
+     */
+    restorePlacedTowers() {
+        if (!this.scene.towersToRestore || this.scene.towersToRestore.length === 0) {
+            return;
+        }
+        
+        if (!this.scene.placementSystem) {
+            console.warn('[SaveManager] PlacementSystem non disponible pour restaurer les tours');
+            return;
+        }
+        
+        console.log(`[SaveManager] Restauration de ${this.scene.towersToRestore.length} tours...`);
+        
+        this.scene.towersToRestore.forEach(towerData => {
+            const spot = this.scene.placementSystem.placementSpots[towerData.spotIndex];
+            if (spot && !spot.occupied) {
+                // Placer la tour
+                this.scene.placementSystem.placeTowerAtSpot(spot, towerData.towerId);
+                console.log(`[SaveManager] Tour ${towerData.towerId} restaurée à l'emplacement ${towerData.spotIndex}`);
+            }
+        });
+        
+        // Vider la liste après restauration
+        this.scene.towersToRestore = [];
     }
 
     /**

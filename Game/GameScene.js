@@ -35,6 +35,16 @@ class GameScene extends Phaser.Scene {
             frameHeight: 51
         });
         
+        // Charger le spritesheet du pirate tank (knife_pirate - pirate_shield)
+        // 140x53 pixels - 4 frames de 35x53 (31px contenu + 4px espacement)
+        this.load.spritesheet('knife_pirate_walk', 'assets/knife_pirate_walk.png', {
+            frameWidth: 35,
+            frameHeight: 53
+        });
+        
+        // Charger le mug de Luffy (fond de carte)
+        this.load.image('luffymug', 'assets/luffymug.png');
+        
         // Charger la spritesheet de Luffy idle
         // Charger la spritesheet de Luffy idle (9 frames équidistants)
         // 396x68 pixels - 9 frames de 44x68 (équidistant, centré)
@@ -43,11 +53,18 @@ class GameScene extends Phaser.Scene {
             frameHeight: 68
         });
         
-        // Charger la spritesheet de Luffy attaque (13 frames équidistants)
-        // 832x61 pixels - 13 frames de 64x61 (équidistant, centré)
-        this.load.spritesheet('luffy_attack_sheet', 'assets/luffyspritecb_normalized.png', {
+        // Charger la spritesheet de Luffy attaque (12 frames uniformes)
+        // 768x73 pixels - 12 frames de 64x73 (uniforme, centré)
+        this.load.spritesheet('luffy_attack_sheet', 'assets/luffyspritecb_uniform.png', {
             frameWidth: 64,
-            frameHeight: 61
+            frameHeight: 73
+        });
+        
+        // Charger la spritesheet des projectiles de Luffy (poings)
+        // 120x71 pixels - 5 frames de 24x71 (uniforme)
+        this.load.spritesheet('luffy_projectile', 'assets/luffyspriteproject_uniform.png', {
+            frameWidth: 24,
+            frameHeight: 71
         });
         
         // Charger la spritesheet de Zoro idle
@@ -64,18 +81,18 @@ class GameScene extends Phaser.Scene {
             frameHeight: 84
         });
         
-        // Charger la spritesheet d'Usopp idle (normalisée précise)
-        // 4 frames de 36x50 (découpage précis des vraies limites)
-        this.load.spritesheet('usopp', 'assets/ussopsprite_normalized.png', {
-            frameWidth: 36,
-            frameHeight: 50
+        // Charger la spritesheet d'Usopp idle
+        // 236x65 pixels - 4 frames de 59x65
+        this.load.spritesheet('usopp', 'assets/usoppsprite.png', {
+            frameWidth: 59,
+            frameHeight: 65
         });
         
-        // Charger la spritesheet d'Usopp attaque (normalisée)
-        // 7 frames de 47x46 (frames uniformément espacées)
-        this.load.spritesheet('usopp_attack_sheet', 'assets/ussopspritecb_normalized.png', {
-            frameWidth: 47,
-            frameHeight: 46
+        // Charger la spritesheet d'Usopp attaque (position de tir)
+        // 176x58 pixels - 4 frames de 44x58
+        this.load.spritesheet('usopp_attack_sheet', 'assets/usoppspritecb.png', {
+            frameWidth: 44,
+            frameHeight: 58
         });
         
         // Charger la spritesheet de Chopper idle (4 frames équidistants)
@@ -92,9 +109,52 @@ class GameScene extends Phaser.Scene {
             frameHeight: 36
         });
         
-        // Charger les sprites des autres personnages
-        this.load.image('nami', 'assets/nami.png');
-        // À ajouter : sanji, robin, franky, brook
+        // Charger la spritesheet de Franky idle
+        // 327x102 pixels - 4 frames de 81x102
+        this.load.spritesheet('franky', 'assets/frankysprite.png', {
+            frameWidth: 81,
+            frameHeight: 102
+        });
+        
+        // Charger la spritesheet de Sanji idle
+        // 111x77 pixels - 4 frames de 27x77
+        this.load.spritesheet('sanji', 'assets/sanjisprite_normalized.png', {
+            frameWidth: 27,
+            frameHeight: 77
+        });
+        
+        // Charger la spritesheet de Sanji attaque
+        // 1545x106 pixels - 15 frames de 103x106
+        this.load.spritesheet('sanji_attack_sheet', 'assets/sanjispritecb_uniform.png', {
+            frameWidth: 103,
+            frameHeight: 106
+        });
+        
+        // Charger la spritesheet de Nami idle (espacement 10px à droite)
+        // 150x86 pixels - 3 frames de 50x86 (40px contenu + 10px espacement)
+        this.load.spritesheet('nami', 'assets/namisprite_spaced.png', {
+            frameWidth: 50,
+            frameHeight: 86
+        });
+        
+        // Charger la spritesheet de Nami attaque (espacement 10px à droite)
+        // 912x104 pixels - 12 frames de 76x104 (66px contenu + 10px espacement)
+        this.load.spritesheet('nami_attack_sheet', 'assets/namispritecb_spaced.png', {
+            frameWidth: 76,
+            frameHeight: 104
+        });
+        
+        // Charger la spritesheet du nuage de Nami (espacement 10px à droite)
+        // 1054x176 pixels - 5 frames de ~210x176 (200px contenu + 10px espacement)
+        this.load.spritesheet('nami_cloud', 'assets/namispriteproject_spaced.png', {
+            frameWidth: 210,
+            frameHeight: 176
+        });
+        
+        // À ajouter : robin, brook
+        
+        // Charger l'icône berry (monnaie)
+        this.load.image('berry', 'assets/berry.webp');
     }
 
     create() {
@@ -106,6 +166,16 @@ class GameScene extends Phaser.Scene {
         
         // Créer les animations pour Luffy et Zoro
         this.createAnimations();
+        
+        // Vérifier si on doit forcer un reset (paramètre URL ?reset=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('reset') === '1') {
+            console.log('[GameScene] FORCE RESET détecté - Suppression de toutes les sauvegardes');
+            localStorage.clear();
+            sessionStorage.clear();
+            // Supprimer le paramètre reset de l'URL et recharger
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
         
         this.player = new Player();
         this.enemies = [];
@@ -155,8 +225,22 @@ class GameScene extends Phaser.Scene {
         // Créer le système de placement des tours
         this.placementSystem = new TowerPlacement(this);
         
+        // Restaurer les tours placées depuis la sauvegarde
+        if (this.saveManager) {
+            this.saveManager.restorePlacedTowers();
+        }
+        
         // Créer les contrôles de vagues
         this.waveControl = new WaveControl(this);
+        
+        // Restaurer l'autoPlay depuis la sauvegarde
+        if (this.savedAutoPlay && this.waveControl) {
+            this.waveControl.autoPlay = this.savedAutoPlay;
+            if (this.savedAutoPlay) {
+                this.waveControl.autoPlayButton.setFillStyle(0x3498db);
+                this.waveControl.autoPlayText.setText('AUTO ✓');
+            }
+        }
         
         // Créer le panneau d'informations des ennemis
         this.enemyInfoPanel = new EnemyInfoPanel(this);
@@ -309,7 +393,7 @@ class GameScene extends Phaser.Scene {
         // Texte GAME OVER
         const gameOverText = this.add.text(
             this.cameras.main.centerX,
-            this.cameras.main.centerY - 100,
+            this.cameras.main.centerY - 120,
             '☠️ GAME OVER ☠️',
             {
                 fontSize: '64px',
@@ -324,27 +408,15 @@ class GameScene extends Phaser.Scene {
         gameOverText.setDepth(3001);
         gameOverText.setScrollFactor(0);
         
-        // Message de checkpoint
-        const checkpointText = this.add.text(
-            this.cameras.main.centerX,
-            this.cameras.main.centerY,
-            `Retour au checkpoint: Vague ${checkpoint}`,
-            {
-                fontSize: '28px',
-                fontFamily: 'Arial',
-                color: '#ffd700',
-                fontStyle: 'bold'
-            }
-        );
-        checkpointText.setOrigin(0.5);
-        checkpointText.setDepth(3001);
-        checkpointText.setScrollFactor(0);
+        // Calculer les boutons à afficher
+        const hasCheckpoint = checkpoint > 1;
+        const buttonY = hasCheckpoint ? this.cameras.main.centerY + 20 : this.cameras.main.centerY + 50;
         
-        // Bouton redémarrer
+        // Bouton "Recommencer à la vague 1"
         const restartBtn = this.add.rectangle(
             this.cameras.main.centerX,
-            this.cameras.main.centerY + 80,
-            250, 60,
+            buttonY,
+            280, 55,
             0x51cf66,
             0.9
         );
@@ -355,10 +427,10 @@ class GameScene extends Phaser.Scene {
         
         const restartText = this.add.text(
             this.cameras.main.centerX,
-            this.cameras.main.centerY + 80,
-            '🔄 REDÉMARRER',
+            buttonY,
+            '🔄 Recommencer (Vague 1)',
             {
-                fontSize: '24px',
+                fontSize: '20px',
                 fontFamily: 'Arial',
                 color: '#ffffff',
                 fontStyle: 'bold'
@@ -377,9 +449,89 @@ class GameScene extends Phaser.Scene {
         });
         
         restartBtn.on('pointerdown', () => {
-            // Recharger la page pour redémarrer au checkpoint
+            // Sauvegarder avec vague 0 pour recommencer à la vague 1
+            if (this.saveManager) {
+                this.saveManager.saveAtWave(0);
+            }
             window.location.reload();
         });
+        
+        // Bouton "Reprendre au checkpoint" (seulement si checkpoint > 1)
+        if (hasCheckpoint) {
+            const checkpointBtn = this.add.rectangle(
+                this.cameras.main.centerX,
+                buttonY + 70,
+                280, 55,
+                0x3b82f6,
+                0.9
+            );
+            checkpointBtn.setDepth(3001);
+            checkpointBtn.setScrollFactor(0);
+            checkpointBtn.setStrokeStyle(3, 0xffffff, 0.8);
+            checkpointBtn.setInteractive({ useHandCursor: true });
+            
+            const checkpointText = this.add.text(
+                this.cameras.main.centerX,
+                buttonY + 70,
+                `🎯 Reprendre (Vague ${checkpoint})`,
+                {
+                    fontSize: '20px',
+                    fontFamily: 'Arial',
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                }
+            );
+            checkpointText.setOrigin(0.5);
+            checkpointText.setDepth(3002);
+            checkpointText.setScrollFactor(0);
+            
+            checkpointBtn.on('pointerover', () => {
+                checkpointBtn.setFillStyle(0x60a5fa, 0.9);
+            });
+            
+            checkpointBtn.on('pointerout', () => {
+                checkpointBtn.setFillStyle(0x3b82f6, 0.9);
+            });
+            
+            checkpointBtn.on('pointerdown', () => {
+                // Sauvegarder avec le checkpoint pour reprendre à cette vague
+                if (this.saveManager) {
+                    this.saveManager.saveAtWave(checkpoint);
+                }
+                window.location.reload();
+            });
+            
+            // Info sur le checkpoint
+            const infoText = this.add.text(
+                this.cameras.main.centerX,
+                this.cameras.main.centerY - 40,
+                `Checkpoints atteints: ${this.getCheckpointsReached().join(', ') || 'Aucun'}`,
+                {
+                    fontSize: '16px',
+                    fontFamily: 'Arial',
+                    color: '#94a3b8'
+                }
+            );
+            infoText.setOrigin(0.5);
+            infoText.setDepth(3001);
+            infoText.setScrollFactor(0);
+        }
+    }
+    
+    getCheckpointsReached() {
+        const checkpoints = [25, 50, 75, 100];
+        const reached = [];
+        const completedWaves = this.player.completedWaves || {};
+        
+        checkpoints.forEach(cp => {
+            // Vérifier si on a complété au moins une vague >= checkpoint
+            const hasReached = Object.keys(completedWaves).some(wave => parseInt(wave) >= cp);
+            if (hasReached) {
+                reached.push(cp);
+            }
+        });
+        
+        return reached;
     }
     
     createAnimations() {
@@ -393,12 +545,21 @@ class GameScene extends Phaser.Scene {
         });
         
         // Animation d'attaque de Luffy (spritesheet séparée - coups de poings)
-        // luffyspritecb_normalized.png : 832x61, 13 frames équidistants de 64x61
+        // luffyspritecb_uniform.png : 768x73, 12 frames uniformes de 64x73
         this.anims.create({
             key: 'luffy_attack',
-            frames: this.anims.generateFrameNumbers('luffy_attack_sheet', { start: 0, end: 12 }),
-            frameRate: 12,
+            frames: this.anims.generateFrameNumbers('luffy_attack_sheet', { start: 0, end: 11 }),
+            frameRate: 14,
             repeat: 0
+        });
+        
+        // Animation du projectile de Luffy (poing qui vole)
+        // luffyspriteproject_uniform.png : 120x71, 5 frames de 24x71
+        this.anims.create({
+            key: 'luffy_projectile',
+            frames: this.anims.generateFrameNumbers('luffy_projectile', { start: 0, end: 4 }),
+            frameRate: 10,
+            repeat: -1
         });
         
         // Animation idle de Zoro
@@ -420,7 +581,7 @@ class GameScene extends Phaser.Scene {
         });
         
         // Animation idle d'Usopp
-        // 4 frames de 35x63 (normalisées)
+        // 4 frames de 59x65
         this.anims.create({
             key: 'usopp_idle',
             frames: this.anims.generateFrameNumbers('usopp', { start: 0, end: 3 }),
@@ -428,12 +589,12 @@ class GameScene extends Phaser.Scene {
             repeat: -1
         });
         
-        // Animation d'attaque d'Usopp
-        // 7 frames de 47x46 (normalisées)
+        // Animation d'attaque d'Usopp (position de tir)
+        // 4 frames de 44x58
         this.anims.create({
             key: 'usopp_attack',
-            frames: this.anims.generateFrameNumbers('usopp_attack_sheet', { start: 0, end: 6 }),
-            frameRate: 14,
+            frames: this.anims.generateFrameNumbers('usopp_attack_sheet', { start: 0, end: 3 }),
+            frameRate: 12,
             repeat: 0
         });
         
@@ -452,6 +613,64 @@ class GameScene extends Phaser.Scene {
             key: 'chopper_attack',
             frames: this.anims.generateFrameNumbers('chopper_attack_sheet', { start: 0, end: 6 }),
             frameRate: 14,
+            repeat: 0
+        });
+        
+        // Animation idle de Franky
+        // 327x102 - 4 frames de 81x102
+        this.anims.create({
+            key: 'franky_idle',
+            frames: this.anims.generateFrameNumbers('franky', { start: 0, end: 3 }),
+            frameRate: 6,
+            repeat: -1
+        });
+        
+        // Animation idle de Sanji
+        // 111x77 - 4 frames de 27x77
+        this.anims.create({
+            key: 'sanji_idle',
+            frames: this.anims.generateFrameNumbers('sanji', { start: 0, end: 3 }),
+            frameRate: 6,
+            repeat: -1
+        });
+        
+        // Animation d'attaque de Sanji
+        // 1545x106 - 15 frames de 103x106
+        this.anims.create({
+            key: 'sanji_attack',
+            frames: this.anims.generateFrameNumbers('sanji_attack_sheet', { start: 0, end: 14 }),
+            frameRate: 18,
+            repeat: 0
+        });
+        
+        // Animation idle de Nami - légère animation de respiration
+        // 3 frames de 44x86 (avec espacement)
+        this.anims.create({
+            key: 'nami_idle',
+            frames: [
+                { key: 'nami', frame: 0 },
+                { key: 'nami', frame: 1 },
+                { key: 'nami', frame: 0 }
+            ],
+            frameRate: 3, // Très lent pour un effet subtil
+            repeat: -1
+        });
+        
+        // Animation d'attaque de Nami - coup de bâton climatique
+        // 12 frames de 70x104 (avec espacement)
+        this.anims.create({
+            key: 'nami_attack',
+            frames: this.anims.generateFrameNumbers('nami_attack_sheet', { start: 0, end: 11 }),
+            frameRate: 16,
+            repeat: 0
+        });
+        
+        // Animation du nuage de foudre de Nami - éclair qui frappe
+        // 5 frames de 208x176 (avec espacement)
+        this.anims.create({
+            key: 'nami_cloud',
+            frames: this.anims.generateFrameNumbers('nami_cloud', { start: 0, end: 4 }),
+            frameRate: 10,
             repeat: 0
         });
         
@@ -491,6 +710,15 @@ class GameScene extends Phaser.Scene {
             frames: this.anims.generateFrameNumbers('gun_pirate_death', { start: 0, end: 4 }),
             frameRate: 5,
             repeat: 0
+        });
+        
+        // Animation du pirate tank (knife_pirate - pirate_shield)
+        // 140x53 - 4 frames de 35x53
+        this.anims.create({
+            key: 'knife_pirate_walk',
+            frames: this.anims.generateFrameNumbers('knife_pirate_walk', { start: 0, end: 3 }),
+            frameRate: 6, // Plus lent car c'est un tank
+            repeat: -1
         });
     }
 }

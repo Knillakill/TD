@@ -108,9 +108,31 @@ class EnemyInfoPanel {
         item.hitArea.setDepth(103);
         item.hitArea.setScrollFactor(0);
         item.hitArea.setInteractive({ useHandCursor: true });
+        
+        // Déterminer le sprite à utiliser selon le type d'ennemi
+        let spriteKey = 'swd_pirate_walk'; // Par défaut
+        if (type === 'pirate_fast') {
+            spriteKey = 'gun_pirate_walk';
+        } else if (type === 'pirate_shield') {
+            spriteKey = 'swd_pirate_walk';
+        }
+        
+        // Icône de l'ennemi (sprite animé)
+        if (this.scene.textures.exists(spriteKey)) {
+            item.icon = this.scene.add.sprite(xPos, this.enemyIconsY + 18, spriteKey);
+            item.icon.setDisplaySize(28, 28);
+            item.icon.play(spriteKey === 'swd_pirate_walk' ? 'swd_pirate_walk' : 'gun_pirate_walk');
             
-            // Icône de l'ennemi
-        item.icon = this.scene.add.circle(xPos, this.enemyIconsY + 18, config.size + 2, config.color);
+            // Teinter selon le type
+            if (type === 'pirate_shield') {
+                item.icon.setTint(0x708090); // Gris métallique pour blindé
+            } else if (type === 'pirate_fast') {
+                item.icon.setTint(0xFF6B35); // Orange pour rapide
+            }
+        } else {
+            // Fallback sur cercle coloré
+            item.icon = this.scene.add.circle(xPos, this.enemyIconsY + 18, config.size + 2, config.color);
+        }
         item.icon.setDepth(102);
         item.icon.setScrollFactor(0);
         
@@ -133,12 +155,20 @@ class EnemyInfoPanel {
         });
         
         item.hitArea.on('pointerover', () => {
-            item.icon.setStrokeStyle(2, 0xffffff);
+            if (item.icon.setStrokeStyle) {
+                item.icon.setStrokeStyle(2, 0xffffff);
+            } else {
+                item.icon.setScale(1.2);
+            }
         });
         
         item.hitArea.on('pointerout', () => {
             if (this.selectedEnemyType !== type) {
-                item.icon.setStrokeStyle(0);
+                if (item.icon.setStrokeStyle) {
+                    item.icon.setStrokeStyle(0);
+                } else {
+                    item.icon.setScale(1);
+                }
             }
         });
         
@@ -251,9 +281,17 @@ class EnemyInfoPanel {
         // Highlight l'icône sélectionnée
         this.enemyIcons.forEach(item => {
             if (item.type === type) {
-                item.icon.setStrokeStyle(2, 0xffffff);
+                if (item.icon.setStrokeStyle) {
+                    item.icon.setStrokeStyle(2, 0xffffff);
+                } else {
+                    item.icon.setScale(1.2);
+                }
             } else {
-                item.icon.setStrokeStyle(0);
+                if (item.icon.setStrokeStyle) {
+                    item.icon.setStrokeStyle(0);
+                } else {
+                    item.icon.setScale(1);
+                }
             }
         });
     }

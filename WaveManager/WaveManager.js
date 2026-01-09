@@ -48,10 +48,14 @@ class WaveManager {
     }
     
     canSpawn(time) {
+        // Appliquer le multiplicateur de vitesse au délai de spawn
+        const gameSpeed = this.scene.waveControl ? this.scene.waveControl.gameSpeed : 1;
+        const adjustedDelay = this.spawnDelay / gameSpeed;
+        
         return (
             this.waveInProgress &&
             this.enemiesSpawnedInWave < this.currentWaveEnemies.length &&
-            time > this.lastSpawnTime + this.spawnDelay
+            time > this.lastSpawnTime + adjustedDelay
         );
     }
     

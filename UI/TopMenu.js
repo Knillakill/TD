@@ -15,7 +15,7 @@ class TopMenu {
         // Onglets
         this.tabs = [
             { id: 'stats', label: 'STATS', icon: '📊' },
-            { id: 'pokedex', label: 'POKEDEX', icon: '📖' },
+            { id: 'pokedex', label: 'COLLECTION', icon: '📚' },
             { id: 'shop', label: 'BOUTIQUE', icon: '🛒' },
             { id: 'maps', label: 'MAPS', icon: '🗺️' },
             { id: 'settings', label: 'RÉGLAGES', icon: '⚙️' },

@@ -2,18 +2,22 @@ class WaveControl {
     constructor(scene) {
         this.scene = scene;
         this.autoPlay = false;
+        this.gameSpeed = 1; // Vitesse du jeu : 1, 2 ou 3
         
         // Position juste au-dessus du trait noir (séparateur avant les stats vie)
         const panelX = 10;
-        const panelY = 680;  // Sous le TopMenu
+        const panelY = 650;  // Remonté pour être au-dessus du trait
         const panelWidth = 280;
+        const btnWidth = 82;
+        const btnHeight = 32;
+        const gap = 5;
         
         // Bouton "Lancer Vague"
         this.startWaveButton = scene.add.rectangle(
             panelX + 10,
             panelY,
-            125,
-            35,
+            btnWidth,
+            btnHeight,
             0x2ecc71
         );
         this.startWaveButton.setOrigin(0, 0);
@@ -22,11 +26,11 @@ class WaveControl {
         this.startWaveButton.setScrollFactor(0);
         
         this.startWaveText = scene.add.text(
-            panelX + 72,
-            panelY + 17,
+            panelX + 10 + btnWidth / 2,
+            panelY + btnHeight / 2,
             '▶ VAGUE',
             {
-                fontSize: '14px',
+                fontSize: '12px',
                 fill: '#ffffff',
                 fontStyle: 'bold'
             }
@@ -37,10 +41,10 @@ class WaveControl {
         
         // Bouton "Auto-Play"
         this.autoPlayButton = scene.add.rectangle(
-            panelX + 145,
+            panelX + 10 + btnWidth + gap,
             panelY,
-            125,
-            35,
+            btnWidth,
+            btnHeight,
             0x95a5a6
         );
         this.autoPlayButton.setOrigin(0, 0);
@@ -49,11 +53,11 @@ class WaveControl {
         this.autoPlayButton.setScrollFactor(0);
         
         this.autoPlayText = scene.add.text(
-            panelX + 207,
-            panelY + 17,
+            panelX + 10 + btnWidth + gap + btnWidth / 2,
+            panelY + btnHeight / 2,
             'AUTO',
             {
-                fontSize: '14px',
+                fontSize: '12px',
                 fill: '#ffffff',
                 fontStyle: 'bold'
             }
@@ -61,6 +65,33 @@ class WaveControl {
         this.autoPlayText.setOrigin(0.5);
         this.autoPlayText.setDepth(102);
         this.autoPlayText.setScrollFactor(0);
+        
+        // Bouton "Vitesse"
+        this.speedButton = scene.add.rectangle(
+            panelX + 10 + (btnWidth + gap) * 2,
+            panelY,
+            btnWidth,
+            btnHeight,
+            0x9b59b6
+        );
+        this.speedButton.setOrigin(0, 0);
+        this.speedButton.setDepth(101);
+        this.speedButton.setInteractive({ useHandCursor: true });
+        this.speedButton.setScrollFactor(0);
+        
+        this.speedText = scene.add.text(
+            panelX + 10 + (btnWidth + gap) * 2 + btnWidth / 2,
+            panelY + btnHeight / 2,
+            '⚡ x1',
+            {
+                fontSize: '12px',
+                fill: '#ffffff',
+                fontStyle: 'bold'
+            }
+        );
+        this.speedText.setOrigin(0.5);
+        this.speedText.setDepth(102);
+        this.speedText.setScrollFactor(0);
         
         // Événements
         this.startWaveButton.on('pointerdown', () => {
@@ -88,19 +119,82 @@ class WaveControl {
             const color = this.autoPlay ? 0x3498db : 0x95a5a6;
             this.autoPlayButton.setFillStyle(color);
         });
+        
+        this.speedButton.on('pointerdown', () => {
+            this.toggleSpeed();
+        });
+        
+        this.speedButton.on('pointerover', () => {
+            this.speedButton.setFillStyle(0x8e44ad);
+        });
+        
+        this.speedButton.on('pointerout', () => {
+            this.updateSpeedButtonColor();
+        });
+        
+        // Appliquer la vitesse sauvegardée
+        const savedSpeed = localStorage.getItem('gameSpeed');
+        if (savedSpeed) {
+            this.gameSpeed = parseInt(savedSpeed) || 1;
+            this.applyGameSpeed();
+        }
+    }
+    
+    toggleSpeed() {
+        // Cycle: 1 -> 2 -> 3 -> 1
+        this.gameSpeed = this.gameSpeed >= 3 ? 1 : this.gameSpeed + 1;
+        this.applyGameSpeed();
+        
+        // Sauvegarder la vitesse
+        localStorage.setItem('gameSpeed', this.gameSpeed);
+        
+        this.scene.ui.showMessage(`Vitesse x${this.gameSpeed}`, 1000);
+    }
+    
+    applyGameSpeed() {
+        // Mettre à jour le texte du bouton
+        this.speedText.setText(`⚡ x${this.gameSpeed}`);
+        this.updateSpeedButtonColor();
+        
+        // Appliquer la vitesse au jeu via le timeScale de Phaser
+        this.scene.time.timeScale = this.gameSpeed;
+        this.scene.tweens.timeScale = this.gameSpeed;
+        this.scene.physics.world.timeScale = 1 / this.gameSpeed;
+        
+        // Mettre à jour la vitesse des animations
+        this.scene.anims.globalTimeScale = this.gameSpeed;
+    }
+    
+    updateSpeedButtonColor() {
+        // Couleur selon la vitesse
+        const colors = {
+            1: 0x9b59b6,  // Violet normal
+            2: 0xe67e22,  // Orange
+            3: 0xe74c3c   // Rouge
+        };
+        this.speedButton.setFillStyle(colors[this.gameSpeed] || 0x9b59b6);
     }
     
     startNextWave() {
         if (this.scene.waveManager) {
-            // Vérifier si on peut lancer la vague
-            if (!this.scene.waveManager.waveInProgress && 
-                this.scene.waveManager.enemiesRemainingInWave === 0) {
-                this.scene.waveManager.startNextWave();
-            } else if (this.scene.waveManager.waveInProgress) {
+            const wm = this.scene.waveManager;
+            
+            // Si une vague est en cours, on ne peut pas en lancer une autre
+            if (wm.waveInProgress) {
                 this.scene.ui.showMessage('Vague en cours!', 1000);
-            } else {
-                this.scene.ui.showMessage('Terminez la vague actuelle!', 1000);
+                return;
             }
+            
+            // Vérifier s'il reste des ennemis vivants sur le terrain
+            const enemiesOnField = this.scene.enemies ? this.scene.enemies.length : 0;
+            
+            if (enemiesOnField > 0) {
+                this.scene.ui.showMessage('Terminez la vague actuelle!', 1000);
+                return;
+            }
+            
+            // On peut lancer la prochaine vague
+            wm.startNextWave();
         }
     }
     

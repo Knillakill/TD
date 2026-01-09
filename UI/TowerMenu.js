@@ -57,14 +57,14 @@ class TowerMenu {
         // === PANNEAU STATS JOUEUR (en haut) ===
         this.createPlayerPanel();
         
-        // Titre du menu amélioré
+        // Titre du menu "ÉQUIPAGE"
         this.title = this.scene.add.text(
             this.menuX + this.menuWidth / 2,
-            130,
+            190,
             'ÉQUIPAGE',
             {
-                fontSize: '16px',
-                fill: '#cbd5e1',
+                fontSize: '12px',
+                fill: '#64748b',
                 fontStyle: 'bold',
                 fontFamily: 'Arial',
                 letterSpacing: 2
@@ -77,44 +77,295 @@ class TowerMenu {
         // Ligne décorative sous le titre
         const titleLine = this.scene.add.rectangle(
             this.menuX + this.menuWidth / 2,
-            142,
-            120,
-            2,
+            200,
+            80,
+            1,
             0x475569,
-            1
+            0.5
         );
         titleLine.setDepth(101);
         titleLine.setScrollFactor(0);
         
-        // Créer les cartes pour chaque personnage (2 colonnes)
+        // Créer les cartes pour chaque personnage (2 colonnes, 10 emplacements)
         this.buttons = {};
+        this.lockedSlots = {}; // Emplacements verrouillés
         const cardWidth = 135;
-        const cardHeight = 145;  // Réduit de 175 à 145
+        const cardHeight = 108;  // Réduit pour afficher 10 slots (5 lignes)
         const startX = this.menuX + 10;
-        const startY = 155;  // Décalé vers le bas pour laisser place au panneau joueur
+        const startY = 210;  // Décalé pour laisser place au panneau joueur + titre
         const gapX = 5;
-        const gapY = 5;
+        const gapY = 4;
         
-        // N'afficher que les tours équipées
+        // Coût en étoiles pour débloquer les slots 7-10
+        this.slotUnlockCosts = {
+            6: 10,   // Slot 7 (index 6) : 10 étoiles
+            7: 25,   // Slot 8 (index 7) : 25 étoiles
+            8: 50,   // Slot 9 (index 8) : 50 étoiles
+            9: 100   // Slot 10 (index 9) : 100 étoiles
+        };
+        
+        // Récupérer les tours équipées
         const equippedTowers = this.scene.player.collection.getEquippedTowers();
-        equippedTowers.forEach((towerId, index) => {
+        
+        // Créer 10 emplacements
+        for (let index = 0; index < 10; index++) {
             const col = index % 2;
             const row = Math.floor(index / 2);
             const x = startX + col * (cardWidth + gapX);
             const y = startY + row * (cardHeight + gapY);
-            this.createTowerCard(towerId, x, y, cardWidth, cardHeight);
-        });
+            
+            // Vérifier si cet emplacement est débloqué
+            const isLocked = index >= 6 && !this.isSlotUnlocked(index);
+            
+            if (isLocked) {
+                // Créer un emplacement verrouillé
+                this.createLockedSlot(index, x, y, cardWidth, cardHeight);
+            } else if (index < equippedTowers.length) {
+                // Créer une carte de tour
+                const towerId = equippedTowers[index];
+                this.createTowerCard(towerId, x, y, cardWidth, cardHeight);
+            } else {
+                // Créer un emplacement vide (débloqué mais pas de tour équipée)
+                this.createEmptySlot(index, x, y, cardWidth, cardHeight);
+            }
+        }
         
-        // Calculer le scroll max
-        const totalRows = Math.ceil(equippedTowers.length / 2);
+        // Calculer le scroll max (5 lignes pour 10 emplacements)
+        const totalRows = 5;
         this.maxScroll = Math.max(0, (totalRows * (cardHeight + gapY)) - (this.menuHeight - 170));
+    }
+    
+    isSlotUnlocked(slotIndex) {
+        // Les 6 premiers slots sont toujours débloqués
+        if (slotIndex < 6) return true;
+        
+        // Vérifier si le slot a été débloqué (stocké dans la collection du joueur)
+        return this.scene.player.collection.unlockedSlots > slotIndex;
+    }
+    
+    createLockedSlot(slotIndex, x, y, width, height) {
+        const cost = this.slotUnlockCosts[slotIndex];
+        const playerStars = this.scene.player.collection.getStars();
+        const canUnlock = playerStars >= cost;
+        
+        // Fond grisé
+        const cardBg = this.scene.add.rectangle(
+            x + width / 2,
+            y + height / 2,
+            width,
+            height,
+            0x1a1a2e,
+            1
+        );
+        cardBg.setDepth(100);
+        cardBg.setScrollFactor(0);
+        
+        // Bordure
+        const cardBorder = this.scene.add.rectangle(
+            x + width / 2,
+            y + height / 2,
+            width,
+            height,
+            0x000000,
+            0
+        );
+        cardBorder.setStrokeStyle(2, 0x333344, 0.8);
+        cardBorder.setDepth(100);
+        cardBorder.setScrollFactor(0);
+        
+        // Icône de cadenas
+        const lockIcon = this.scene.add.text(
+            x + width / 2,
+            y + 35,
+            '🔒',
+            {
+                fontSize: '24px'
+            }
+        );
+        lockIcon.setOrigin(0.5);
+        lockIcon.setDepth(101);
+        lockIcon.setScrollFactor(0);
+        
+        // Texte "SLOT X"
+        const slotText = this.scene.add.text(
+            x + width / 2,
+            y + 58,
+            `SLOT ${slotIndex + 1}`,
+            {
+                fontSize: '10px',
+                fill: '#666688',
+                fontStyle: 'bold',
+                fontFamily: 'Arial'
+            }
+        );
+        slotText.setOrigin(0.5);
+        slotText.setDepth(101);
+        slotText.setScrollFactor(0);
+        
+        // Coût en étoiles
+        const costText = this.scene.add.text(
+            x + width / 2,
+            y + 75,
+            `⭐ ${cost}`,
+            {
+                fontSize: '12px',
+                fill: canUnlock ? '#fbbf24' : '#666666',
+                fontStyle: 'bold',
+                fontFamily: 'Arial'
+            }
+        );
+        costText.setOrigin(0.5);
+        costText.setDepth(101);
+        costText.setScrollFactor(0);
+        
+        // Bouton débloquer
+        const unlockBtn = this.scene.add.rectangle(
+            x + width / 2,
+            y + 95,
+            width - 12,
+            16,
+            canUnlock ? 0xfbbf24 : 0x444444,
+            1
+        );
+        unlockBtn.setDepth(101);
+        unlockBtn.setScrollFactor(0);
+        unlockBtn.setStrokeStyle(1, canUnlock ? 0xfcd34d : 0x555555, 0.7);
+        
+        const unlockText = this.scene.add.text(
+            x + width / 2,
+            y + 95,
+            canUnlock ? '🔓 DÉBLOQUER' : '🔒 VERROUILLÉ',
+            {
+                fontSize: '8px',
+                fill: canUnlock ? '#1a1a2e' : '#888888',
+                fontStyle: 'bold',
+                fontFamily: 'Arial'
+            }
+        );
+        unlockText.setOrigin(0.5);
+        unlockText.setDepth(102);
+        unlockText.setScrollFactor(0);
+        
+        if (canUnlock) {
+            unlockBtn.setInteractive({ useHandCursor: true });
+            unlockBtn.on('pointerdown', () => {
+                this.unlockSlot(slotIndex);
+            });
+            unlockBtn.on('pointerover', () => {
+                unlockBtn.setFillStyle(0xfcd34d);
+            });
+            unlockBtn.on('pointerout', () => {
+                unlockBtn.setFillStyle(0xfbbf24);
+            });
+        }
+        
+        // Stocker les références
+        this.lockedSlots[slotIndex] = {
+            cardBg,
+            cardBorder,
+            lockIcon,
+            slotText,
+            costText,
+            unlockBtn,
+            unlockText
+        };
+    }
+    
+    createEmptySlot(slotIndex, x, y, width, height) {
+        // Fond semi-transparent
+        const cardBg = this.scene.add.rectangle(
+            x + width / 2,
+            y + height / 2,
+            width,
+            height,
+            0x1e293b,
+            0.5
+        );
+        cardBg.setDepth(100);
+        cardBg.setScrollFactor(0);
+        
+        // Bordure pointillée (simulée)
+        const cardBorder = this.scene.add.rectangle(
+            x + width / 2,
+            y + height / 2,
+            width,
+            height,
+            0x000000,
+            0
+        );
+        cardBorder.setStrokeStyle(2, 0x475569, 0.5);
+        cardBorder.setDepth(100);
+        cardBorder.setScrollFactor(0);
+        
+        // Icône "+"
+        const plusIcon = this.scene.add.text(
+            x + width / 2,
+            y + 45,
+            '+',
+            {
+                fontSize: '30px',
+                fill: '#475569',
+                fontStyle: 'bold'
+            }
+        );
+        plusIcon.setOrigin(0.5);
+        plusIcon.setDepth(101);
+        plusIcon.setScrollFactor(0);
+        
+        // Texte
+        const emptyText = this.scene.add.text(
+            x + width / 2,
+            y + 75,
+            'VIDE',
+            {
+                fontSize: '10px',
+                fill: '#64748b',
+                fontStyle: 'bold',
+                fontFamily: 'Arial'
+            }
+        );
+        emptyText.setOrigin(0.5);
+        emptyText.setDepth(101);
+        emptyText.setScrollFactor(0);
+        
+        // Stocker les références
+        this.lockedSlots[`empty_${slotIndex}`] = {
+            cardBg,
+            cardBorder,
+            plusIcon,
+            emptyText
+        };
+    }
+    
+    unlockSlot(slotIndex) {
+        const cost = this.slotUnlockCosts[slotIndex];
+        const collection = this.scene.player.collection;
+        
+        // Vérifier si le joueur a assez d'étoiles
+        if (collection.getStars() < cost) {
+            this.scene.ui.showMessage('Pas assez d\'étoiles!', 1500);
+            return;
+        }
+        
+        // Dépenser les étoiles
+        collection.spendStars(cost);
+        
+        // Débloquer le slot
+        collection.unlockedSlots = Math.max(collection.unlockedSlots, slotIndex + 1);
+        collection.save();
+        
+        // Message de confirmation
+        this.scene.ui.showMessage(`Slot ${slotIndex + 1} débloqué!`, 1500);
+        
+        // Rafraîchir le menu
+        this.refreshMenu();
     }
     
     createPlayerPanel() {
         const panelX = this.menuX;
         const panelY = 8;
         const panelWidth = this.menuWidth;
-        const panelHeight = 115;
+        const panelHeight = 160;
         
         // Fond principal avec effet de profondeur
         const mainBg = this.scene.add.rectangle(
@@ -549,6 +800,16 @@ class TowerMenu {
         cardBg.setDepth(100);
         cardBg.setScrollFactor(0);
         
+        // Image de fond personnalisée pour certaines tours (mug)
+        let cardMug = null;
+        if (towerId === 'luffy' && this.scene.textures.exists('luffymug')) {
+            cardMug = this.scene.add.image(x + width / 2, y + height / 2, 'luffymug');
+            cardMug.setDisplaySize(width - 4, height - 4);
+            cardMug.setAlpha(0.3); // Semi-transparent pour ne pas cacher le sprite
+            cardMug.setDepth(100);
+            cardMug.setScrollFactor(0);
+        }
+        
         // Bordure subtile
         const cardBorder = this.scene.add.rectangle(
             x + width / 2,
@@ -567,37 +828,23 @@ class TowerMenu {
             x + width / 2,
             y + 2,
             width - 4,
-            3,
+            2,
             rarity.border,
             0.9
         );
         rarityBar.setDepth(101);
         rarityBar.setScrollFactor(0);
         
-        // Section haute (nom + niveau) avec fond subtil
-        const headerBg = this.scene.add.rectangle(
-            x + width / 2,
-            y + 20,
-            width - 8,
-            32,
-            0x0f172a,
-            0.5
-        );
-        headerBg.setDepth(101);
-        headerBg.setScrollFactor(0);
-        headerBg.setStrokeStyle(1, 0x334155, 0.3);
-        
-        // Nom du personnage (plus élégant)
+        // Nom du personnage (compact)
         const name = this.scene.add.text(
             x + width / 2,
-            y + 12,
+            y + 10,
             towerData.name.toUpperCase(),
             {
-                fontSize: '12px',
+                fontSize: '10px',
                 fill: '#f1f5f9',
                 fontStyle: 'bold',
-                fontFamily: 'Arial',
-                letterSpacing: 0.5
+                fontFamily: 'Arial'
             }
         );
         name.setOrigin(0.5);
@@ -607,22 +854,21 @@ class TowerMenu {
         // Niveau avec badge
         const levelBadge = this.scene.add.rectangle(
             x + width / 2,
-            y + 28,
-            35,
-            14,
+            y + 23,
+            30,
+            12,
             rarity.border,
             0.3
         );
         levelBadge.setDepth(101);
         levelBadge.setScrollFactor(0);
-        levelBadge.setStrokeStyle(1, rarity.border, 0.5);
         
         const level = this.scene.add.text(
             x + width / 2,
-            y + 28,
+            y + 23,
             `Nv.${towerData.level || 1}`,
             {
-                fontSize: '9px',
+                fontSize: '8px',
                 fill: rarity.text,
                 fontFamily: 'monospace'
             }
@@ -633,39 +879,46 @@ class TowerMenu {
         
         // Zone icône (sprite animé pour Luffy/Zoro, image pour les autres, sinon carré coloré)
         let icon;
+        const iconY = y + 52; // Position de l'icône ajustée
         if (towerId === 'luffy' && this.scene.textures.exists('luffy')) {
-            icon = this.scene.add.sprite(x + width / 2, y + 60, 'luffy');
-            icon.setDisplaySize(39, 60); // Ratio 44:68 équidistant, réduit
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'luffy');
+            icon.setDisplaySize(22, 34); // Réduit pour correspondre à Zoro
+            icon.setFlipX(true);
             icon.play('luffy_idle');
         } else if (towerId === 'zoro' && this.scene.textures.exists('zoro')) {
-            icon = this.scene.add.sprite(x + width / 2, y + 60, 'zoro');
-            icon.setDisplaySize(30, 65); // Ratio 39:85, réduit
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'zoro');
+            icon.setDisplaySize(22, 48); // Réduit
             icon.play('zoro_idle');
         } else if (towerId === 'usopp' && this.scene.textures.exists('usopp')) {
-            icon = this.scene.add.sprite(x + width / 2, y + 60, 'usopp');
-            icon.setDisplaySize(36, 50); // 4 frames précises de 36x50
-            icon.setOrigin(0.5, 1.0); // Pieds en bas
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'usopp');
+            icon.setDisplaySize(22, 45); // Taille réduite pour la carte
+            icon.setOrigin(0.5, 0.5);
             icon.play('usopp_idle');
         } else if (towerId === 'chopper' && this.scene.textures.exists('chopper')) {
-            icon = this.scene.add.sprite(x + width / 2, y + 60, 'chopper');
-            icon.setDisplaySize(28, 39); // 4 frames de 28x39 (équidistant)
-            icon.setOrigin(0.5, 1.0); // Pieds en bas
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'chopper');
+            icon.setDisplaySize(22, 30);
+            icon.setOrigin(0.5, 0.5);
             icon.play('chopper_idle');
+        } else if (towerId === 'franky' && this.scene.textures.exists('franky')) {
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'franky');
+            icon.setDisplaySize(32, 40);
+            icon.setOrigin(0.5, 0.5);
+            icon.play('franky_idle');
+        } else if (towerId === 'sanji' && this.scene.textures.exists('sanji')) {
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'sanji');
+            icon.setDisplaySize(18, 45); // Réduit pour la carte
+            icon.setOrigin(0.5, 0.5);
+            icon.play('sanji_idle');
+        } else if (towerId === 'nami' && this.scene.textures.exists('nami')) {
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'nami');
+            icon.setDisplaySize(24, 52);
+            icon.setOrigin(0.5, 0.5);
+            icon.play('nami_idle');
         } else if (this.scene.textures.exists(towerId)) {
-            icon = this.scene.add.image(
-                x + width / 2,
-                y + 60,
-                towerId
-            );
-            icon.setDisplaySize(45, 45);
+            icon = this.scene.add.image(x + width / 2, iconY, towerId);
+            icon.setDisplaySize(35, 35);
         } else {
-            icon = this.scene.add.rectangle(
-                x + width / 2,
-                y + 60,
-                40,
-                40,
-                towerData.color
-            );
+            icon = this.scene.add.rectangle(x + width / 2, iconY, 30, 30, towerData.color);
         }
         icon.setDepth(102);
         icon.setScrollFactor(0);
@@ -678,12 +931,12 @@ class TowerMenu {
             }
         });
         
-        // Bouton INFOS (style moderne)
+        // Bouton INFOS (style moderne) - position ajustée
         const infosBtn = this.scene.add.rectangle(
             x + width / 2,
-            y + 100,
-            width - 16,
-            22,
+            y + 78,
+            width - 12,
+            16,
             0x334155,
             1
         );
@@ -694,10 +947,10 @@ class TowerMenu {
         
         const infosText = this.scene.add.text(
             x + width / 2,
-            y + 100,
+            y + 78,
             'ⓘ INFOS',
             {
-                fontSize: '9px',
+                fontSize: '8px',
                 fill: '#cbd5e1',
                 fontStyle: 'bold',
                 fontFamily: 'Arial'
@@ -707,12 +960,12 @@ class TowerMenu {
         infosText.setDepth(102);
         infosText.setScrollFactor(0);
         
-        // Bouton DÉPLOYER (style moderne avec dégradé visuel)
+        // Bouton DÉPLOYER (style moderne) - position ajustée
         const deployBtn = this.scene.add.rectangle(
             x + width / 2,
-            y + 127,
-            width - 16,
-            22,
+            y + 96,
+            width - 12,
+            16,
             0x0891b2,
             1
         );
@@ -723,10 +976,10 @@ class TowerMenu {
         
         const deployText = this.scene.add.text(
             x + width / 2,
-            y + 127,
+            y + 96,
             '⚓ DÉPLOYER',
             {
-                fontSize: '9px',
+                fontSize: '8px',
                 fill: '#f0f9ff',
                 fontStyle: 'bold',
                 fontFamily: 'Arial'
@@ -777,10 +1030,11 @@ class TowerMenu {
         this.buttons[towerId] = {
             cardBg: cardBg,
             cardBorder: cardBorder,
-            headerBg: headerBg,
+            cardMug: cardMug,
             icon: icon,
             name: name,
             level: level,
+            levelBadge: levelBadge,
             infosBtn: infosBtn,
             infosText: infosText,
             deployBtn: deployBtn,
@@ -1221,7 +1475,8 @@ class TowerMenu {
         // Créer le sprite du personnage qui suit la souris
         if (towerId === 'luffy' && this.scene.textures.exists('luffy')) {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'luffy');
-            this.dragSprite.setDisplaySize(36, 56); // Ratio 44:68 équidistant, réduit
+            this.dragSprite.setDisplaySize(28, 44); // Réduit pour correspondre à Zoro
+            this.dragSprite.setFlipX(true); // Retourner horizontalement
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('luffy_idle');
         } else if (towerId === 'zoro' && this.scene.textures.exists('zoro')) {
@@ -1231,8 +1486,7 @@ class TowerMenu {
             this.dragSprite.play('zoro_idle');
         } else if (towerId === 'usopp' && this.scene.textures.exists('usopp')) {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'usopp');
-            this.dragSprite.setDisplaySize(36, 50); // 4 frames précises de 36x50
-            this.dragSprite.setOrigin(0.5, 1.0); // Pieds en bas
+            this.dragSprite.setDisplaySize(28, 55); // Même taille que sur la map
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('usopp_idle');
         } else if (towerId === 'chopper' && this.scene.textures.exists('chopper')) {
@@ -1241,6 +1495,21 @@ class TowerMenu {
             this.dragSprite.setOrigin(0.5, 1.0); // Pieds en bas
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('chopper_idle');
+        } else if (towerId === 'franky' && this.scene.textures.exists('franky')) {
+            this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'franky');
+            this.dragSprite.setDisplaySize(40, 50); // 4 frames de 81x102 -> réduit
+            this.dragSprite.setAlpha(0.8);
+            this.dragSprite.play('franky_idle');
+        } else if (towerId === 'sanji' && this.scene.textures.exists('sanji')) {
+            this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'sanji');
+            this.dragSprite.setDisplaySize(22, 55); // Même taille que sur la map
+            this.dragSprite.setAlpha(0.8);
+            this.dragSprite.play('sanji_idle');
+        } else if (towerId === 'nami' && this.scene.textures.exists('nami')) {
+            this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'nami');
+            this.dragSprite.setDisplaySize(30, 65); // 3 frames de 40x86 réduit
+            this.dragSprite.setAlpha(0.8);
+            this.dragSprite.play('nami_idle');
         } else if (this.scene.textures.exists(towerId)) {
             this.dragSprite = this.scene.add.image(
                 pointer.x,
@@ -1315,10 +1584,21 @@ class TowerMenu {
             
             // Changer la couleur selon la validité
             if (isValid) {
+                // Utiliser setTint pour les sprites animés, setFillStyle pour les cercles
+                if (this.dragSprite.setTint) {
+                    this.dragSprite.clearTint();
+                    this.dragSprite.setAlpha(0.8);
+                } else if (this.dragSprite.setFillStyle) {
                 this.dragSprite.setFillStyle(TOWER_CONFIG[this.dragTowerType].color, 0.8);
+                }
                 this.dragRangeCircle.setStrokeStyle(2, 0x00ff00, 0.5);
             } else {
+                if (this.dragSprite.setTint) {
+                    this.dragSprite.setTint(0xff0000);
+                    this.dragSprite.setAlpha(0.5);
+                } else if (this.dragSprite.setFillStyle) {
                 this.dragSprite.setFillStyle(0xff0000, 0.5);
+                }
                 this.dragRangeCircle.setStrokeStyle(2, 0xff0000, 0.5);
             }
         }
@@ -1528,8 +1808,19 @@ class TowerMenu {
             });
         });
         
+        // Détruire les emplacements verrouillés/vides
+        Object.keys(this.lockedSlots).forEach(slotKey => {
+            const slot = this.lockedSlots[slotKey];
+            Object.keys(slot).forEach(key => {
+                if (slot[key] && slot[key].destroy) {
+                    slot[key].destroy();
+                }
+            });
+        });
+        
         // Réinitialiser
         this.buttons = {};
+        this.lockedSlots = {};
         this.availableTowers = {};
         
         // Réinitialiser les tours équipées comme disponibles
@@ -1538,24 +1829,39 @@ class TowerMenu {
             this.availableTowers[towerId] = true;
         });
         
-        // Recréer les cartes
+        // Recréer les emplacements
         const cardWidth = 135;
-        const cardHeight = 145;
+        const cardHeight = 108;
         const startX = this.menuX + 10;
-        const startY = 155;
+        const startY = 210;
         const gapX = 5;
-        const gapY = 5;
+        const gapY = 4;
         
-        equippedTowers.forEach((towerId, index) => {
+        // Créer 10 emplacements
+        for (let index = 0; index < 10; index++) {
             const col = index % 2;
             const row = Math.floor(index / 2);
             const x = startX + col * (cardWidth + gapX);
             const y = startY + row * (cardHeight + gapY);
-            this.createTowerCard(towerId, x, y, cardWidth, cardHeight);
-        });
+            
+            // Vérifier si cet emplacement est débloqué
+            const isLocked = index >= 6 && !this.isSlotUnlocked(index);
+            
+            if (isLocked) {
+                // Créer un emplacement verrouillé
+                this.createLockedSlot(index, x, y, cardWidth, cardHeight);
+            } else if (index < equippedTowers.length) {
+                // Créer une carte de tour
+                const towerId = equippedTowers[index];
+                this.createTowerCard(towerId, x, y, cardWidth, cardHeight);
+            } else {
+                // Créer un emplacement vide (débloqué mais pas de tour équipée)
+                this.createEmptySlot(index, x, y, cardWidth, cardHeight);
+            }
+        }
         
-        // Recalculer le scroll max
-        const totalRows = Math.ceil(equippedTowers.length / 2);
+        // Recalculer le scroll max (5 lignes pour 10 emplacements)
+        const totalRows = 5;
         this.maxScroll = Math.max(0, (totalRows * (cardHeight + gapY)) - (this.menuHeight - 170));
     }
     

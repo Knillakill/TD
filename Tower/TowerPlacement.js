@@ -22,12 +22,13 @@ class TowerPlacement {
         const spotsPercent = [
             // Croix haut-gauche (à gauche de l'arbre orange du haut)
             { x: 0.19, y: 0.37 },
+            { x: 0.19, y: 0.44 },
             
             // Croix bas-gauche (près des plantes bleues, sur le sable)
-            { x: 0.145, y: 0.74 },
+            // { x: 0.145, y: 0.74 },
             
             // Croix bas-centre (entre les arbres orange du bas)
-            { x: 0.24, y: 0.70 },
+            { x: 0.24, y: 0.82 },
             
             // Croix centre (ponton sud du lac)
             { x: 0.39, y: 0.61 },
@@ -425,6 +426,52 @@ class TowerPlacement {
             }
         }
         return false;
+    }
+    
+    /**
+     * Place une tour à un emplacement spécifique (utilisé pour la restauration de sauvegarde)
+     */
+    placeTowerAtSpot(spot, towerId) {
+        if (!spot || spot.occupied) {
+            console.warn(`[TowerPlacement] Impossible de placer ${towerId} - spot invalide ou occupé`);
+            return false;
+        }
+        
+        const towerData = TOWER_CONFIG[towerId];
+        if (!towerData) {
+            console.warn(`[TowerPlacement] Tour inconnue: ${towerId}`);
+            return false;
+        }
+        
+        // Créer la tour
+        const tower = new Tower(
+            this.scene,
+            spot.x,
+            spot.y,
+            towerId,
+            towerData
+        );
+        
+        // Marquer l'emplacement comme occupé
+        spot.occupied = true;
+        spot.tower = tower;
+        spot.towerId = towerId;
+        spot.circle.setVisible(false);
+        spot.icon.setVisible(false);
+        
+        // Ajouter la tour au tableau des tours
+        this.scene.towers.push(tower);
+        
+        // Marquer la tour comme utilisée dans le menu
+        if (this.scene.towerMenu) {
+            this.scene.towerMenu.markTowerAsUsed(towerId);
+        }
+        
+        // Configurer les interactions
+        this.setupTowerInteractions(tower, spot);
+        
+        console.log(`[TowerPlacement] Tour ${towerId} placée à l'emplacement (${spot.x}, ${spot.y})`);
+        return true;
     }
 }
 

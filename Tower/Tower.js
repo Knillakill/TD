@@ -40,7 +40,8 @@ class Tower {
         if (this.type === 'luffy' && scene.textures.exists('luffy')) {
             // Créer un sprite animé pour Luffy
             this.sprite = scene.add.sprite(x, y, 'luffy');
-            this.sprite.setDisplaySize(36, 56); // Ratio 44:68 équidistant, réduit
+            this.sprite.setDisplaySize(28, 44); // Réduit pour correspondre à Zoro
+            this.sprite.setFlipX(true); // Retourner horizontalement
             this.sprite.play('luffy_idle');
             this.isAnimated = true;
         } else if (this.type === 'zoro' && scene.textures.exists('zoro')) {
@@ -50,10 +51,9 @@ class Tower {
             this.sprite.play('zoro_idle');
             this.isAnimated = true;
         } else if (this.type === 'usopp' && scene.textures.exists('usopp')) {
-            // Créer un sprite animé pour Usopp
+            // Créer un sprite animé pour Usopp (sniper)
             this.sprite = scene.add.sprite(x, y, 'usopp');
-            this.sprite.setDisplaySize(36, 50); // 4 frames précises de 36x50
-            this.sprite.setOrigin(0.5, 1.0); // Pieds en bas
+            this.sprite.setDisplaySize(28, 55); // Taille similaire à Zoro/Luffy
             this.sprite.play('usopp_idle');
             this.isAnimated = true;
         } else if (this.type === 'chopper' && scene.textures.exists('chopper')) {
@@ -62,6 +62,24 @@ class Tower {
             this.sprite.setDisplaySize(28, 39); // 4 frames de 28x39 (équidistant)
             this.sprite.setOrigin(0.5, 1.0); // Pieds en bas
             this.sprite.play('chopper_idle');
+            this.isAnimated = true;
+        } else if (this.type === 'franky' && scene.textures.exists('franky')) {
+            // Créer un sprite animé pour Franky
+            this.sprite = scene.add.sprite(x, y, 'franky');
+            this.sprite.setDisplaySize(40, 50); // Réduit proportionnellement (81x102 -> 40x50)
+            this.sprite.play('franky_idle');
+            this.isAnimated = true;
+        } else if (this.type === 'sanji' && scene.textures.exists('sanji')) {
+            // Créer un sprite animé pour Sanji
+            this.sprite = scene.add.sprite(x, y, 'sanji');
+            this.sprite.setDisplaySize(22, 55); // Réduit pour correspondre à Zoro/Luffy
+            this.sprite.play('sanji_idle');
+            this.isAnimated = true;
+        } else if (this.type === 'nami' && scene.textures.exists('nami')) {
+            // Créer un sprite pour Nami (image statique, pas d'animation idle)
+            this.sprite = scene.add.sprite(x, y, 'nami');
+            this.sprite.setDisplaySize(28, 60); // 40x86 réduit proportionnellement
+            this.sprite.play('nami_idle');
             this.isAnimated = true;
         } else if (scene.textures.exists(this.type)) {
             this.sprite = scene.add.image(x, y, this.type);
@@ -145,8 +163,12 @@ class Tower {
         );
 
         // Ne pas attaquer si la tour est en train d'être déplacée
+        // Appliquer le multiplicateur de vitesse du jeu au cooldown
+        const gameSpeed = this.scene.waveControl ? this.scene.waveControl.gameSpeed : 1;
+        const adjustedFireRate = this.fireRate / gameSpeed;
+        
         if (dist <= this.range && time > this.lastShot && !this.isBeingDragged) {
-            this.lastShot = time + this.fireRate;
+            this.lastShot = time + adjustedFireRate;
             
             // Luffy tape en cône vers l'ennemi ciblé
             if (this.type === 'luffy' && this.isAnimated) {
@@ -158,12 +180,15 @@ class Tower {
                     enemy.sprite.y
                 );
                 
-                // Retourner le sprite si l'ennemi est à droite (inverser pour que Luffy regarde le cône)
-                this.sprite.setFlipX(Math.cos(angleToEnemy) >= 0);
+                // Retourner le sprite vers l'ennemi (Luffy est flippé par défaut, donc on inverse la logique)
+                // Si l'ennemi est à droite (cos > 0), on garde le flip (true)
+                // Si l'ennemi est à gauche (cos < 0), on enlève le flip (false)
+                this.sprite.setFlipX(Math.cos(angleToEnemy) > 0);
                 
                 // Changer la texture pour l'animation d'attaque
+                // 768x73 - 12 frames de 64x73
                 this.sprite.setTexture('luffy_attack_sheet');
-                this.sprite.setDisplaySize(50, 46); // Réduit proportionnellement
+                this.sprite.setDisplaySize(38, 44); // Réduit pour correspondre à Zoro
                 this.sprite.play('luffy_attack');
                 
                 // Effet visuel du cône ULTRA QUALI
@@ -223,24 +248,38 @@ class Tower {
                 );
                 border3.strokePath();
                 
-                // 3. Particules d'impact le long du cône
-                for (let i = 0; i < 20; i++) {
-                    const particleAngle = angleToEnemy - coneAngle / 2 + (Math.random() * coneAngle);
-                    const particleDist = Math.random() * this.range;
-                    const px = this.sprite.x + Math.cos(particleAngle) * particleDist;
-                    const py = this.sprite.y + Math.sin(particleAngle) * particleDist;
+                // 3. Poings animés qui volent dans le cône
+                for (let i = 0; i < 5; i++) {
+                    const fistAngle = angleToEnemy - coneAngle / 3 + (Math.random() * coneAngle * 2 / 3);
+                    const startDist = 20 + Math.random() * 30;
+                    const startX = this.sprite.x + Math.cos(fistAngle) * startDist;
+                    const startY = this.sprite.y + Math.sin(fistAngle) * startDist;
                     
-                    const particle = this.scene.add.circle(px, py, 3 + Math.random() * 3, 0xffff00, 1);
-                    particle.setDepth(7);
+                    // Créer un sprite de poing animé
+                    let fist;
+                    if (this.scene.textures.exists('luffy_projectile')) {
+                        fist = this.scene.add.sprite(startX, startY, 'luffy_projectile');
+                        fist.setDisplaySize(18, 50);
+                        fist.play('luffy_projectile');
+                        fist.setRotation(fistAngle + Math.PI / 2);
+                    } else {
+                        fist = this.scene.add.circle(startX, startY, 5, 0xffcc99, 1);
+                    }
+                    fist.setDepth(7);
+                    
+                    // Animation du poing qui vole vers l'extérieur
+                    const endX = this.sprite.x + Math.cos(fistAngle) * this.range * 0.95;
+                    const endY = this.sprite.y + Math.sin(fistAngle) * this.range * 0.95;
                     
                     this.scene.tweens.add({
-                        targets: particle,
-                        scaleX: 0,
-                        scaleY: 0,
+                        targets: fist,
+                        x: endX,
+                        y: endY,
                         alpha: 0,
-                        duration: 200 + Math.random() * 150,
-                        ease: 'Power2',
-                        onComplete: () => particle.destroy()
+                        duration: 200 + i * 30,
+                        delay: i * 25,
+                        ease: 'Power1',
+                        onComplete: () => fist.destroy()
                     });
                 }
                 
@@ -306,9 +345,9 @@ class Tower {
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle
                     this.sprite.setTexture('luffy');
-                    this.sprite.setDisplaySize(28, 56); // Réduit
+                    this.sprite.setDisplaySize(28, 44); // Réduit pour correspondre à Zoro
                     this.sprite.play('luffy_idle');
-                    this.sprite.setFlipX(false);
+                    this.sprite.setFlipX(true); // Luffy regarde à droite par défaut
                 });
                 
                 // Calculer les dégâts (avec critique possible)
@@ -553,19 +592,28 @@ class Tower {
                 return null; // Pas de projectile
             }
             
-            // Usopp tire avec son lance-pierre (animation d'attaque)
+            // Usopp tire avec son lance-pierre (sniper - longue portée, rapide, faibles dégâts)
             if (this.type === 'usopp' && this.isAnimated) {
+                // Calculer l'angle vers l'ennemi ciblé
+                const angleToEnemy = Phaser.Math.Angle.Between(
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy.sprite.x,
+                    enemy.sprite.y
+                );
+                
+                // Retourner le sprite vers l'ennemi (comme Luffy)
+                this.sprite.setFlipX(Math.cos(angleToEnemy) < 0);
+                
                 // Jouer l'animation de tir
                 this.sprite.setTexture('usopp_attack_sheet');
-                this.sprite.setDisplaySize(51, 50); // 7 frames normalisées de 47x46 → 51x50
-                this.sprite.setOrigin(0.5, 0.891); // Pieds à Y=41/46 = 0.891
+                this.sprite.setDisplaySize(22, 50); // Taille réduite pour correspondre
                 this.sprite.play('usopp_attack');
                 
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle
                     this.sprite.setTexture('usopp');
-                    this.sprite.setDisplaySize(36, 50); // 4 frames précises de 36x50
-                    this.sprite.setOrigin(0.5, 1.0);
+                    this.sprite.setDisplaySize(28, 55);
                     this.sprite.play('usopp_idle');
                 });
             }
@@ -587,6 +635,155 @@ class Tower {
                 });
             }
             
+            // Sanji attaque avec ses coups de pied enflammés (DOT de feu)
+            if (this.type === 'sanji' && this.isAnimated) {
+                // Calculer l'angle vers l'ennemi
+                const angleToEnemy = Phaser.Math.Angle.Between(
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy.sprite.x,
+                    enemy.sprite.y
+                );
+                
+                // Retourner le sprite vers l'ennemi
+                this.sprite.setFlipX(Math.cos(angleToEnemy) < 0);
+                
+                // Jouer l'animation d'attaque
+                this.sprite.setTexture('sanji_attack_sheet');
+                this.sprite.setDisplaySize(55, 57); // Réduit pour correspondre à Zoro/Luffy
+                this.sprite.play('sanji_attack');
+                
+                // Effet visuel de feu 🔥
+                const fireEffect = this.scene.add.graphics();
+                fireEffect.setDepth(6);
+                
+                // Cercle de feu qui s'étend
+                fireEffect.fillGradientStyle(0xff6600, 0xff0000, 0xffaa00, 0xff4400, 0.6, 0.6, 0.3, 0.3);
+                fireEffect.fillCircle(this.sprite.x, this.sprite.y, 20);
+                
+                this.scene.tweens.add({
+                    targets: fireEffect,
+                    alpha: 0,
+                    duration: 400,
+                    ease: 'Power2',
+                    onUpdate: () => {
+                        const progress = 1 - fireEffect.alpha;
+                        const currentRadius = 20 + (this.range - 20) * progress;
+                        fireEffect.clear();
+                        fireEffect.fillGradientStyle(0xff6600, 0xff0000, 0xffaa00, 0xff4400, 
+                            0.6 * fireEffect.alpha, 0.6 * fireEffect.alpha, 
+                            0.3 * fireEffect.alpha, 0.3 * fireEffect.alpha);
+                        fireEffect.fillCircle(this.sprite.x, this.sprite.y, currentRadius);
+                    },
+                    onComplete: () => fireEffect.destroy()
+                });
+                
+                // Particules de feu
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const flame = this.scene.add.circle(
+                        this.sprite.x + Math.cos(angle) * 15,
+                        this.sprite.y + Math.sin(angle) * 15,
+                        6,
+                        0xff6600,
+                        0.8
+                    );
+                    flame.setDepth(7);
+                    
+                    this.scene.tweens.add({
+                        targets: flame,
+                        x: this.sprite.x + Math.cos(angle) * this.range,
+                        y: this.sprite.y + Math.sin(angle) * this.range,
+                        alpha: 0,
+                        scale: 0.3,
+                        duration: 350,
+                        ease: 'Power2',
+                        onComplete: () => flame.destroy()
+                    });
+                }
+                
+                // Revenir à l'animation idle après l'attaque
+                this.sprite.once('animationcomplete', () => {
+                    this.sprite.setTexture('sanji');
+                    this.sprite.setDisplaySize(22, 55); // Même taille que idle
+                    this.sprite.play('sanji_idle');
+                });
+                
+                // Calculer les dégâts avec critique
+                let damage = this.damage;
+                if (Math.random() < this.critChance) {
+                    damage = Math.floor(damage * 1.5);
+                }
+                
+                // Dégâts de brûlure : 10% des dégâts par seconde pendant 10 secondes
+                const burnDamagePerTick = Math.max(1, Math.floor(damage * 0.1));
+                const burnDuration = 10; // 10 secondes
+                
+                // Appliquer les dégâts directs et la brûlure à l'ennemi ciblé
+                const wasAlive = enemy.alive;
+                enemy.takeDamage(damage);
+                this.totalDamage += damage;
+                
+                // Appliquer la brûlure si l'ennemi est encore vivant
+                if (enemy.alive && enemy.applyBurn) {
+                    enemy.applyBurn(burnDamagePerTick, burnDuration, this);
+                }
+                
+                if (wasAlive && !enemy.alive) {
+                    this.enemyKills++;
+                }
+                
+                return null; // Pas de projectile
+            }
+            
+            // Nami attaque UN ennemi dans sa portée, le nuage crée une zone d'effet
+            if (this.type === 'nami' && this.isAnimated) {
+                // Calculer l'angle vers l'ennemi
+                const angleToEnemy = Phaser.Math.Angle.Between(
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy.sprite.x,
+                    enemy.sprite.y
+                );
+                
+                // Retourner le sprite vers l'ennemi
+                this.sprite.setFlipX(Math.cos(angleToEnemy) < 0);
+                
+                // Jouer l'animation d'attaque (frames 0-4 : coup de bâton)
+                this.sprite.setTexture('nami_attack_sheet');
+                this.sprite.setDisplaySize(50, 72); // 72x104 réduit proportionnellement
+                this.sprite.play('nami_attack');
+                
+                // Revenir à l'image idle après l'attaque
+                this.sprite.once('animationcomplete', () => {
+                    this.sprite.setTexture('nami');
+                    this.sprite.setDisplaySize(28, 60);
+                    this.sprite.play('nami_idle');
+                    this.sprite.setFlipX(false); // Reset flip
+                });
+                
+                // Calculer les dégâts avec critique
+                let damage = this.damage;
+                const isCrit = Math.random() < this.critChance;
+                if (isCrit) {
+                    damage = Math.floor(damage * 1.5);
+                }
+                
+                // Attaquer l'ennemi ciblé (celui dans la portée)
+                const wasAlive = enemy.alive;
+                enemy.takeDamage(damage);
+                this.totalDamage += damage;
+                if (wasAlive && !enemy.alive) {
+                    this.enemyKills++;
+                }
+                
+                // Créer le nuage de foudre au-dessus de l'ennemi ciblé
+                // Le nuage fait des dégâts en zone et peut stun les ennemis proches
+                this.createThunderCloud(enemy, damage);
+                
+                return null; // Pas de projectile
+            }
+            
             // Les autres tours (et Usopp et Chopper) lancent des projectiles
             const projectile = new Projectile(
                 this.scene, 
@@ -600,6 +797,133 @@ class Tower {
             return projectile;
         }
         return null;
+    }
+    
+    /**
+     * Crée un nuage de foudre au-dessus d'un ennemi (attaque de Nami)
+     * Le nuage fait des dégâts en zone et peut stun les ennemis proches
+     * @param {Enemy} targetEnemy - L'ennemi ciblé principal
+     * @param {number} damage - Les dégâts de base
+     */
+    createThunderCloud(targetEnemy, damage) {
+        // Position FIXE du nuage (au-dessus de l'ennemi au moment de l'invocation)
+        // Le nuage reste sur place et ne suit pas l'ennemi
+        const cloudX = targetEnemy.sprite.x;
+        const cloudY = targetEnemy.sprite.y - targetEnemy.spriteHeight - 40;
+        
+        // Position de l'impact au sol (fixe)
+        const impactX = cloudX;
+        const impactY = targetEnemy.sprite.y;
+        
+        // Créer le sprite du nuage - position fixe, centré sur l'éclair
+        const cloudSprite = this.scene.add.sprite(cloudX, cloudY, 'nami_cloud');
+        cloudSprite.setDisplaySize(100, 100); // Taille ajustée pour bien voir l'animation
+        cloudSprite.setDepth(100);
+        cloudSprite.setOrigin(0.5, 0.3); // Centré sur le nuage, pas sur l'éclair
+        
+        // Jouer l'animation du nuage (reste sur place)
+        cloudSprite.play('nami_cloud');
+        
+        // Rayon de la zone d'effet (autour du point d'impact)
+        const aoeRadius = 60;
+        
+        // Effet visuel de la zone d'effet (cercle électrique au sol)
+        const aoeCircle = this.scene.add.circle(
+            impactX,
+            impactY,
+            aoeRadius,
+            0x00ffff,
+            0.2
+        );
+        aoeCircle.setDepth(99);
+        aoeCircle.setStrokeStyle(2, 0x00ffff, 0.6);
+        
+        // Animation de pulsation du cercle
+        this.scene.tweens.add({
+            targets: aoeCircle,
+            alpha: 0,
+            scale: 1.3,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: () => aoeCircle.destroy()
+        });
+        
+        // Appliquer les dégâts et le stun après un délai (quand l'éclair frappe)
+        this.scene.time.delayedCall(250, () => {
+            // Trouver tous les ennemis dans la zone d'effet (position fixe)
+            this.scene.enemies.forEach(e => {
+                if (e.alive) {
+                    const dist = Phaser.Math.Distance.Between(
+                        impactX,
+                        impactY,
+                        e.sprite.x,
+                        e.sprite.y
+                    );
+                    
+                    if (dist <= aoeRadius) {
+                        // Dégâts réduits pour les ennemis secondaires (50%)
+                        const aoeDamage = (e === targetEnemy) ? 0 : Math.floor(damage * 0.5);
+                        
+                        if (aoeDamage > 0) {
+                            const wasAlive = e.alive;
+                            e.takeDamage(aoeDamage);
+                            this.totalDamage += aoeDamage;
+                            if (wasAlive && !e.alive) {
+                                this.enemyKills++;
+                            }
+                        }
+                        
+                        // 30% de chance de stun pour chaque ennemi dans la zone
+                        if (e.alive && e.applyStun && Math.random() < 0.30) {
+                            e.applyStun(2); // 2 secondes de stun
+                            
+                            // Effet visuel de stun réussi
+                            const stunText = this.scene.add.text(
+                                e.sprite.x,
+                                e.sprite.y - e.spriteHeight - 30,
+                                'STUN!',
+                                {
+                                    fontSize: '14px',
+                                    color: '#00ffff',
+                                    fontStyle: 'bold',
+                                    stroke: '#000000',
+                                    strokeThickness: 3
+                                }
+                            );
+                            stunText.setOrigin(0.5);
+                            stunText.setDepth(1000);
+                            
+                            this.scene.tweens.add({
+                                targets: stunText,
+                                y: stunText.y - 25,
+                                alpha: 0,
+                                duration: 1000,
+                                ease: 'Power2',
+                                onComplete: () => stunText.destroy()
+                            });
+                        }
+                    }
+                }
+            });
+            
+            // Effet d'éclair au sol (position fixe)
+            const lightning = this.scene.add.graphics();
+            lightning.setDepth(98);
+            lightning.fillStyle(0xffff00, 0.8);
+            lightning.fillCircle(impactX, impactY, 15);
+            
+            this.scene.tweens.add({
+                targets: lightning,
+                alpha: 0,
+                duration: 200,
+                onComplete: () => lightning.destroy()
+            });
+        });
+        
+        // Détruire le nuage après l'animation
+        cloudSprite.once('animationcomplete', () => {
+            cloudSprite.destroy();
+        });
     }
     
     destroy() {

@@ -6,8 +6,20 @@ class Projectile {
         this.speed = 200;
         this.active = true;
         this.tower = tower; // Référence à la tour pour les stats
+        this.towerType = tower ? tower.type : null;
 
-        this.sprite = scene.add.circle(x, y, 5, color);
+        // Utiliser un sprite animé pour Luffy (poing qui vole)
+        if (this.towerType === 'luffy' && scene.textures.exists('luffy_projectile')) {
+            this.sprite = scene.add.sprite(x, y, 'luffy_projectile');
+            this.sprite.setDisplaySize(20, 60); // Ratio 24:71, réduit
+            this.sprite.play('luffy_projectile');
+            
+            // Orienter le poing vers la cible
+            const angle = Phaser.Math.Angle.Between(x, y, target.sprite.x, target.sprite.y);
+            this.sprite.setRotation(angle + Math.PI / 2); // +90° car le sprite pointe vers le haut
+        } else {
+            this.sprite = scene.add.circle(x, y, 5, color);
+        }
         this.sprite.setDepth(5);
     }
 
@@ -38,9 +50,10 @@ class Projectile {
             return false;
         }
 
-        // Déplacement vers la cible
-        const vx = (dx / dist) * this.speed * (delta / 1000);
-        const vy = (dy / dist) * this.speed * (delta / 1000);
+        // Déplacement vers la cible (avec multiplicateur de vitesse)
+        const gameSpeed = this.scene.waveControl ? this.scene.waveControl.gameSpeed : 1;
+        const vx = (dx / dist) * this.speed * (delta / 1000) * gameSpeed;
+        const vy = (dy / dist) * this.speed * (delta / 1000) * gameSpeed;
 
         this.sprite.x += vx;
         this.sprite.y += vy;

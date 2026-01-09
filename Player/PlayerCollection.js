@@ -172,6 +172,18 @@ class PlayerCollection {
     }
     
     /**
+     * Dépense des étoiles
+     */
+    spendStars(amount) {
+        if (this.stars >= amount) {
+            this.stars -= amount;
+            this.save();
+            return true;
+        }
+        return false;
+    }
+    
+    /**
      * Met à jour les stats
      */
     updateStats(statName, value) {

@@ -12,25 +12,33 @@ class ShopModal extends BaseModal {
     createContent() {
         const centerY = this.y;
         
-        // Image du berry (grand cercle coloré)
-        const berryCircle = this.scene.add.circle(
-            this.x, centerY - 50,
-            80,
-            0xff6b9d, 1
-        );
-        berryCircle.setDepth(2002);
-        berryCircle.setStrokeStyle(5, 0xffd700, 1);
-        this.addElement(berryCircle);
-        
-        // Icône du berry
-        const berryIcon = this.scene.add.text(
-            this.x, centerY - 50,
-            '🍓',
-            { fontSize: '64px' }
-        );
-        berryIcon.setOrigin(0.5);
-        berryIcon.setDepth(2003);
-        this.addElement(berryIcon);
+        // Image du berry
+        if (this.scene.textures.exists('berry')) {
+            const berryImage = this.scene.add.image(this.x, centerY - 50, 'berry');
+            // Garder les proportions originales (320x240 = ratio 4:3)
+            berryImage.setDisplaySize(160, 120);
+            berryImage.setDepth(2003);
+            this.addElement(berryImage);
+        } else {
+            // Fallback si l'image n'est pas chargée
+            const berryCircle = this.scene.add.circle(
+                this.x, centerY - 50,
+                60,
+                0xffd700, 1
+            );
+            berryCircle.setDepth(2002);
+            berryCircle.setStrokeStyle(5, 0xffffff, 1);
+            this.addElement(berryCircle);
+            
+            const berryIcon = this.scene.add.text(
+                this.x, centerY - 50,
+                '💰',
+                { fontSize: '48px' }
+            );
+            berryIcon.setOrigin(0.5);
+            berryIcon.setDepth(2003);
+            this.addElement(berryIcon);
+        }
         
         // Description
         const desc = this.scene.add.text(
@@ -246,7 +254,7 @@ class ShopModal extends BaseModal {
         // Message d'équipement
         const equipMessage = this.scene.add.text(
             this.x, this.y + 100,
-            isEquipped ? '✓ Ajouté à votre équipement !' : '⚠️ Équipement plein ! Allez dans le Pokédex pour l\'équiper',
+            isEquipped ? '✓ Ajouté à votre équipement !' : '⚠️ Équipement plein ! Allez dans la Collection pour l\'équiper',
             {
                 fontSize: '16px',
                 fontFamily: 'Arial',

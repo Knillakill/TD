@@ -318,31 +318,10 @@ class SettingsModal extends BaseModal {
         resetBtn.on('pointerover', () => resetBtn.setFillStyle(0xff8787, 0.9));
         resetBtn.on('pointerout', () => resetBtn.setFillStyle(0xff6b6b, 0.9));
         resetBtn.on('pointerdown', () => {
-            if (confirm('Êtes-vous sûr de vouloir réinitialiser toute votre progression ?')) {
-                console.log('[SettingsModal] Début de la réinitialisation...');
-                
-                // Réinitialiser le joueur
-                this.scene.player.hp = 10;
-                this.scene.player.gold = 100;
-                this.scene.player.stars = 0;
-                this.scene.player.completedWaves = {};
-                
-                // Réinitialiser la collection (supprime 'onepiece_td_collection')
-                this.scene.player.collection.reset();
-                
-                // Supprimer la sauvegarde (supprime 'onepiece_td_save')
-                this.scene.saveManager.deleteSave();
-                
-                // Supprimer tous les localStorage liés au jeu (sécurité)
-                localStorage.removeItem('onepiece_td_collection');
-                localStorage.removeItem('onepiece_td_save');
-                
-                console.log('[SettingsModal] Progression complètement réinitialisée');
-                
-                // Attendre un peu pour que les logs s'affichent
-                setTimeout(() => {
-                    window.location.reload();
-                }, 100);
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser toute votre progression ? Cela supprimera TOUT : vagues, or, tours obtenues, niveaux, etc.')) {
+                // Rediriger vers l'URL avec le paramètre reset=1
+                // Le GameScene détectera ce paramètre et supprimera tout AVANT de charger
+                window.location.href = window.location.pathname + '?reset=1';
             }
         });
     }
