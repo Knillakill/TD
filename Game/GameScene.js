@@ -53,11 +53,16 @@ class GameScene extends Phaser.Scene {
             frameHeight: 68
         });
         
-        // Charger la spritesheet de Luffy attaque (12 frames uniformes)
-        // 768x73 pixels - 12 frames de 64x73 (uniforme, centré)
-        this.load.spritesheet('luffy_attack_sheet', 'assets/luffyspritecb_uniform.png', {
-            frameWidth: 64,
+        // Charger la spritesheet de Luffy attaque (12 frames)
+        // 1212x73 pixels - 12 frames de 101x73 (uniforme, centré)
+        this.load.spritesheet('luffy_attack_sheet', 'assets/luffyspritecb.png?v=2', {
+            frameWidth: 101,
             frameHeight: 73
+        });
+        
+        // Log de débogage pour vérifier le chargement
+        this.load.once('filecomplete-spritesheet-luffy_attack_sheet', () => {
+            console.log('✅ Spritesheet luffy_attack_sheet chargé avec succès (1212x73, 12 frames de 101x73)');
         });
         
         // Charger la spritesheet des projectiles de Luffy (poings)
@@ -81,18 +86,36 @@ class GameScene extends Phaser.Scene {
             frameHeight: 84
         });
         
-        // Charger la spritesheet d'Usopp idle
+        // Charger la spritesheet d'Ussop idle
         // 236x65 pixels - 4 frames de 59x65
-        this.load.spritesheet('usopp', 'assets/usoppsprite.png', {
+        this.load.spritesheet('ussop', 'assets/ussopsprite.png', {
             frameWidth: 59,
             frameHeight: 65
         });
         
-        // Charger la spritesheet d'Usopp attaque (position de tir)
-        // 176x58 pixels - 4 frames de 44x58
-        this.load.spritesheet('usopp_attack_sheet', 'assets/usoppspritecb.png', {
-            frameWidth: 44,
-            frameHeight: 58
+        // Charger la spritesheet d'Ussop attaque (position de tir)
+        // 176x58 pixels - 12 frames de 15x58 (arrondi: 176/12≈14.67)
+        this.load.spritesheet('ussop_attack_sheet', 'assets/ussopspritecb.png', {
+            frameWidth:  114,
+            frameHeight: 70
+        });
+        
+        // Log de débogage
+        this.load.once('filecomplete-spritesheet-ussop_attack_sheet', () => {
+            console.log('✅ Spritesheet ussop_attack_sheet chargé avec succès (176x58, 12 frames)');
+        });
+        
+        // Charger le sprite de projectile empoisonné d'Ussop
+        // 312x43 pixels - À CONFIRMER le nombre de frames (estimation: 12 frames de 26x43)
+        this.load.spritesheet('ussop_projectile', 'assets/ussopspriteproject.png', {
+            frameWidth: 40,
+            frameHeight: 40
+        
+        });
+        
+        // Log de débogage
+        this.load.once('filecomplete-spritesheet-ussop_projectile', () => {
+            console.log('✅ Spritesheet ussop_projectile chargé avec succès');
         });
         
         // Charger la spritesheet de Chopper idle (4 frames équidistants)
@@ -110,10 +133,22 @@ class GameScene extends Phaser.Scene {
         });
         
         // Charger la spritesheet de Franky idle
-        // 327x102 pixels - 4 frames de 81x102
-        this.load.spritesheet('franky', 'assets/frankysprite.png', {
-            frameWidth: 81,
+        // 472x102 pixels - 4 frames de 118x102
+        this.load.spritesheet('franky', 'assets/frankysprite.png?v=1', {
+            frameWidth: 118,
             frameHeight: 102
+        });
+        
+        // Charger la spritesheet de Franky attaque
+        // 1456x120 pixels - 7 frames de 208x120
+        this.load.spritesheet('franky_attack_sheet', 'assets/frankyspritecb.png?v=1', {
+            frameWidth: 208,
+            frameHeight: 120
+        });
+        
+        // Log de débogage pour vérifier le chargement
+        this.load.once('filecomplete-spritesheet-franky_attack_sheet', () => {
+            console.log('✅ Spritesheet franky_attack_sheet chargé avec succès (1456x120, 7 frames de 208x120)');
         });
         
         // Charger la spritesheet de Sanji idle
@@ -137,21 +172,81 @@ class GameScene extends Phaser.Scene {
             frameHeight: 86
         });
         
-        // Charger la spritesheet de Nami attaque (espacement 10px à droite)
-        // 912x104 pixels - 12 frames de 76x104 (66px contenu + 10px espacement)
-        this.load.spritesheet('nami_attack_sheet', 'assets/namispritecb_spaced.png', {
-            frameWidth: 76,
-            frameHeight: 104
+        // Charger la spritesheet de Nami attaque (4 frames)
+        // Image actuelle: 488x99 pixels - 4 frames de 122x99 pixels chacune
+        // Version 2 avec fond transparent
+        this.load.spritesheet('nami_attack_sheet', 'assets/namispritecb.png?v=3', {
+            frameWidth: 122,
+            frameHeight: 99
         });
         
-        // Charger la spritesheet du nuage de Nami (espacement 10px à droite)
-        // 1054x176 pixels - 5 frames de ~210x176 (200px contenu + 10px espacement)
-        this.load.spritesheet('nami_cloud', 'assets/namispriteproject_spaced.png', {
-            frameWidth: 210,
+        // Log de débogage pour vérifier le chargement
+        this.load.once('filecomplete-spritesheet-nami_attack_sheet', () => {
+            console.log('✅ Spritesheet nami_attack_sheet chargé avec succès (488x99, 4 frames de 122x99)');
+        });
+        
+        // Charger la spritesheet du nuage de Nami (nouveau sprite)
+        // 1000x176 pixels - 4 frames de 250x176 pixels chacune
+        this.load.spritesheet('nami_cloud', 'assets/namispriteproject.png?v=2', {
+            frameWidth: 250,
             frameHeight: 176
         });
         
-        // À ajouter : robin, brook
+        // Log de débogage
+        this.load.once('filecomplete-spritesheet-nami_cloud', () => {
+            console.log('✅ Spritesheet nami_cloud chargé avec succès (1000x176, 4 frames de 250x176)');
+        });
+        
+        // Charger la spritesheet de Robin idle
+        // 264x74 pixels - 4 frames de 66x74
+        this.load.spritesheet('robin', 'assets/robinsprite.png?v=1', {
+            frameWidth: 66,
+            frameHeight: 74
+        });
+        
+        // Charger la spritesheet de Robin attaque
+        // 840x92 pixels - 10 frames de 84x92
+        this.load.spritesheet('robin_attack_sheet', 'assets/robinspritecb.png?v=1', {
+            frameWidth: 84,
+            frameHeight: 92
+        });
+        
+        // Log de débogage
+        this.load.once('filecomplete-spritesheet-robin_attack_sheet', () => {
+            console.log('✅ Spritesheet robin_attack_sheet chargé avec succès');
+        });
+        
+        // Charger l'effet de mains de Robin (ralentissement en zone)
+        // 982x51 pixels - 11 frames de 89x51 (89.27 arrondi)
+        this.load.spritesheet('robin_hands', 'assets/robinspriteproject.png?v=1', {
+            frameWidth: 89,
+            frameHeight: 51
+        });
+        
+        // Log de débogage
+        this.load.once('filecomplete-spritesheet-robin_hands', () => {
+            console.log('✅ Spritesheet robin_hands chargé avec succès');
+        });
+        
+        // Charger la spritesheet de Brook idle
+        // 376x107 pixels - 4 frames de 94x107
+        this.load.spritesheet('brook', 'assets/brooksprite.png?v=1', {
+            frameWidth: 94,
+            frameHeight: 107
+        });
+        
+        // Charger la spritesheet de Brook attaque
+        // 2090x101 pixels - À CONFIRMER le nombre de frames
+        // Estimation: 11 frames de 190x101
+        this.load.spritesheet('brook_attack_sheet', 'assets/brookspritecb.png?v=1', {
+            frameWidth: 190,
+            frameHeight: 101
+        });
+        
+        // Log de débogage
+        this.load.once('filecomplete-spritesheet-brook_attack_sheet', () => {
+            console.log('✅ Spritesheet brook_attack_sheet chargé avec succès');
+        });
         
         // Charger l'icône berry (monnaie)
         this.load.image('berry', 'assets/berry.webp');
@@ -420,7 +515,7 @@ class GameScene extends Phaser.Scene {
             0x51cf66,
             0.9
         );
-        restartBtn.setDepth(3001);
+        restartBtn.setDepth(3002);
         restartBtn.setScrollFactor(0);
         restartBtn.setStrokeStyle(3, 0xffffff, 0.8);
         restartBtn.setInteractive({ useHandCursor: true });
@@ -437,7 +532,7 @@ class GameScene extends Phaser.Scene {
             }
         );
         restartText.setOrigin(0.5);
-        restartText.setDepth(3002);
+        restartText.setDepth(3001); // En dessous du bouton
         restartText.setScrollFactor(0);
         
         restartBtn.on('pointerover', () => {
@@ -465,7 +560,7 @@ class GameScene extends Phaser.Scene {
                 0x3b82f6,
                 0.9
             );
-            checkpointBtn.setDepth(3001);
+            checkpointBtn.setDepth(3002);
             checkpointBtn.setScrollFactor(0);
             checkpointBtn.setStrokeStyle(3, 0xffffff, 0.8);
             checkpointBtn.setInteractive({ useHandCursor: true });
@@ -482,7 +577,7 @@ class GameScene extends Phaser.Scene {
                 }
             );
             checkpointText.setOrigin(0.5);
-            checkpointText.setDepth(3002);
+            checkpointText.setDepth(3001); // En dessous du bouton
             checkpointText.setScrollFactor(0);
             
             checkpointBtn.on('pointerover', () => {
@@ -545,13 +640,16 @@ class GameScene extends Phaser.Scene {
         });
         
         // Animation d'attaque de Luffy (spritesheet séparée - coups de poings)
-        // luffyspritecb_uniform.png : 768x73, 12 frames uniformes de 64x73
+        // luffyspritecb.png : 1212x73, 12 frames uniformes de 101x73
         this.anims.create({
             key: 'luffy_attack',
             frames: this.anims.generateFrameNumbers('luffy_attack_sheet', { start: 0, end: 11 }),
-            frameRate: 14,
+            frameRate: 12,
             repeat: 0
         });
+        
+        // Log de débogage pour vérifier la création de l'animation
+        console.log('✅ Animation luffy_attack créée avec 12 frames');
         
         // Animation du projectile de Luffy (poing qui vole)
         // luffyspriteproject_uniform.png : 120x71, 5 frames de 24x71
@@ -580,22 +678,33 @@ class GameScene extends Phaser.Scene {
             repeat: 0
         });
         
-        // Animation idle d'Usopp
+        // Animation idle d'Ussop
         // 4 frames de 59x65
         this.anims.create({
-            key: 'usopp_idle',
-            frames: this.anims.generateFrameNumbers('usopp', { start: 0, end: 3 }),
+            key: 'ussop_idle',
+            frames: this.anims.generateFrameNumbers('ussop', { start: 0, end: 3 }),
             frameRate: 6,
             repeat: -1
         });
         
-        // Animation d'attaque d'Usopp (position de tir)
-        // 4 frames de 44x58
+        // Animation d'attaque d'Ussop (position de tir)
+        // 12 frames de 15x58
         this.anims.create({
-            key: 'usopp_attack',
-            frames: this.anims.generateFrameNumbers('usopp_attack_sheet', { start: 0, end: 3 }),
+            key: 'ussop_attack',
+            frames: this.anims.generateFrameNumbers('ussop_attack_sheet', { start: 0, end: 11 }),
             frameRate: 12,
             repeat: 0
+        });
+        
+        console.log('✅ Animation ussop_attack créée avec 12 frames');
+        
+        // Animation du projectile empoisonné d'Ussop
+        // 312x43 - 12 frames de 26x43 (estimation)
+        this.anims.create({
+            key: 'ussop_projectile',
+            frames: this.anims.generateFrameNumbers('ussop_projectile', { start: 0, end: 3 }),
+            frameRate: 7,
+            repeat: -1
         });
         
         // Animation idle de Chopper
@@ -617,13 +726,74 @@ class GameScene extends Phaser.Scene {
         });
         
         // Animation idle de Franky
-        // 327x102 - 4 frames de 81x102
+        // 472x102 - 4 frames de 118x102
         this.anims.create({
             key: 'franky_idle',
             frames: this.anims.generateFrameNumbers('franky', { start: 0, end: 3 }),
             frameRate: 6,
             repeat: -1
         });
+        
+        // Animation d'attaque de Franky
+        // 1456x120 - 7 frames de 208x120
+        this.anims.create({
+            key: 'franky_attack',
+            frames: this.anims.generateFrameNumbers('franky_attack_sheet', { start: 0, end: 6 }),
+            frameRate: 10,
+            repeat: 0
+        });
+        
+        // Log de débogage pour vérifier la création de l'animation
+        console.log('✅ Animation franky_attack créée avec 7 frames');
+        
+        // Animation idle de Robin
+        // 264x74 - 4 frames de 66x74
+        this.anims.create({
+            key: 'robin_idle',
+            frames: this.anims.generateFrameNumbers('robin', { start: 0, end: 3 }),
+            frameRate: 6,
+            repeat: -1
+        });
+        
+        // Animation d'attaque de Robin
+        // 840x92 - 10 frames de 84x92
+        this.anims.create({
+            key: 'robin_attack',
+            frames: this.anims.generateFrameNumbers('robin_attack_sheet', { start: 0, end: 9 }),
+            frameRate: 12,
+            repeat: 0
+        });
+        
+        // Animation de l'effet des mains de Robin (ralentissement)
+        // 982x51 - 11 frames de 89x51
+        this.anims.create({
+            key: 'robin_hands',
+            frames: this.anims.generateFrameNumbers('robin_hands', { start: 0, end: 10 }),
+            frameRate: 12,
+            repeat: 0
+        });
+        
+        console.log('✅ Animations de Robin créées');
+        
+        // Animation idle de Brook
+        // 376x107 - 4 frames de 94x107
+        this.anims.create({
+            key: 'brook_idle',
+            frames: this.anims.generateFrameNumbers('brook', { start: 0, end: 3 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Animation d'attaque de Brook
+        // 2090x101 - 11 frames de 190x101 (estimation)
+        this.anims.create({
+            key: 'brook_attack',
+            frames: this.anims.generateFrameNumbers('brook_attack_sheet', { start: 0, end: 10 }),
+            frameRate: 14,
+            repeat: 0
+        });
+        
+        console.log('✅ Animations de Brook créées');
         
         // Animation idle de Sanji
         // 111x77 - 4 frames de 27x77
@@ -657,22 +827,32 @@ class GameScene extends Phaser.Scene {
         });
         
         // Animation d'attaque de Nami - coup de bâton climatique
-        // 12 frames de 70x104 (avec espacement)
-        this.anims.create({
-            key: 'nami_attack',
-            frames: this.anims.generateFrameNumbers('nami_attack_sheet', { start: 0, end: 11 }),
-            frameRate: 16,
-            repeat: 0
-        });
+        // 4 frames de 122x99 pixels, bien espacées et fond transparent
+        if (this.textures.exists('nami_attack_sheet')) {
+            this.anims.create({
+                key: 'nami_attack',
+                frames: this.anims.generateFrameNumbers('nami_attack_sheet', { start: 0, end: 3 }),
+                frameRate: 4,
+                repeat: 0
+            });
+            console.log('✅ Animation nami_attack créée avec 4 frames (122x99 chacune)');
+        } else {
+            console.error('❌ Spritesheet nami_attack_sheet non trouvé pour créer l\'animation');
+        }
         
         // Animation du nuage de foudre de Nami - éclair qui frappe
-        // 5 frames de 208x176 (avec espacement)
-        this.anims.create({
-            key: 'nami_cloud',
-            frames: this.anims.generateFrameNumbers('nami_cloud', { start: 0, end: 4 }),
-            frameRate: 10,
-            repeat: 0
-        });
+        // 4 frames de 250x176 pixels (nouveau sprite)
+        if (this.textures.exists('nami_cloud')) {
+            this.anims.create({
+                key: 'nami_cloud',
+                frames: this.anims.generateFrameNumbers('nami_cloud', { start: 0, end: 3 }),
+                frameRate: 8,
+                repeat: 0
+            });
+            console.log('✅ Animation nami_cloud créée avec 4 frames (250x176 chacune)');
+        } else {
+            console.error('❌ Spritesheet nami_cloud non trouvé pour créer l\'animation');
+        }
         
         // Animation du pirate à l'épée (pirate_basic)
         // 253x50 - 6 frames de 42x50

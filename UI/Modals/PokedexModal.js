@@ -87,10 +87,10 @@ class PokedexModal extends BaseModal {
                     if (this.scene.anims.exists('zoro_idle')) {
                         sprite.play('zoro_idle');
                     }
-                } else if (towerId === 'usopp') {
+                } else if (towerId === 'ussop') {
                     sprite.setDisplaySize(28, 55); // Même taille que Zoro/Luffy
-                    if (this.scene.anims.exists('usopp_idle')) {
-                        sprite.play('usopp_idle');
+                    if (this.scene.anims.exists('ussop_idle')) {
+                        sprite.play('ussop_idle');
                     }
                 } else if (towerId === 'chopper') {
                     sprite.setDisplaySize(28, 39);
@@ -175,22 +175,32 @@ class PokedexModal extends BaseModal {
                         equipBtn.setFillStyle(0x51cf66, 0.9);
                     });
                     
-                    equipBtn.on('pointerdown', () => {
-                        const success = this.player.collection.unequipTower(towerId);
-                        if (success) {
-                            // Sauvegarder
-                            if (this.scene.saveManager) {
-                                this.scene.saveManager.autoSave();
+                equipBtn.on('pointerdown', () => {
+                    const success = this.player.collection.unequipTower(towerId);
+                    if (success) {
+                        // Retirer TOUTES les tours de ce type de la map
+                        if (this.scene.placementSystem) {
+                            const removedCount = this.scene.placementSystem.removeAllTowersOfType(towerId);
+                            if (removedCount > 0) {
+                                const config = TOWER_CONFIG[towerId];
+                                const towerName = config ? config.name : towerId;
+                                this.scene.ui.showMessage(`${removedCount} ${towerName} retiré${removedCount > 1 ? 's' : ''} de la map !`, 2000);
                             }
-                            // Rafraîchir le menu des tours
-                            if (this.scene.towerMenu) {
-                                this.scene.towerMenu.refreshMenu();
-                            }
-                            // Rafraîchir la collection
-                            this.topMenu.closeModal();
-                            this.topMenu.openTab('pokedex');
                         }
-                    });
+                        
+                        // Sauvegarder
+                        if (this.scene.saveManager) {
+                            this.scene.saveManager.autoSave();
+                        }
+                        // Rafraîchir le menu des tours
+                        if (this.scene.towerMenu) {
+                            this.scene.towerMenu.refreshMenu();
+                        }
+                        // Rafraîchir la collection
+                        this.topMenu.closeModal();
+                        this.topMenu.openTab('pokedex');
+                    }
+                });
                 }
             } else {
                 const equipBtn = this.scene.add.rectangle(

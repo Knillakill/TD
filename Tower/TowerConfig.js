@@ -7,7 +7,7 @@ const TOWER_CONFIG = {
         description: 'Attaque en cône, équilibré',
         cost: 0,
         // Stats de base niveau 1
-        baseDamage: 5,
+        baseDamage: 100,
         baseFireRate: 2.5,      // secondes
         baseCritChance: 3,
         baseRange: 100,
@@ -195,9 +195,9 @@ const TOWER_CONFIG = {
         maxLevel: 50,
         passive: ''
     },
-    usopp: {
-        id: 'usopp',
-        name: 'Usopp',
+    ussop: {
+        id: 'ussop',
+        name: 'ussop',
         description: 'Tireur d\'élite, longue portée',
         cost: 90,
         baseDamage: 3,
@@ -250,4 +250,4 @@ function getUpgradeCost(towerId, currentLevel) {
 }
 
 // Ordre d'affichage dans le menu
-const TOWER_ORDER = ['luffy', 'zoro', 'nami', 'sanji', 'robin', 'franky', 'chopper', 'brook', 'usopp'];
+const TOWER_ORDER = ['luffy', 'zoro', 'nami', 'sanji', 'robin', 'franky', 'chopper', 'brook', 'ussop'];

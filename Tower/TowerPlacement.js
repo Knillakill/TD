@@ -429,6 +429,24 @@ class TowerPlacement {
     }
     
     /**
+     * Retire TOUTES les tours d'un type donné de la map
+     * Utilisé quand on déséquipe une tour de la collection
+     */
+    removeAllTowersOfType(towerId) {
+        let removedCount = 0;
+        
+        // Parcourir tous les emplacements et retirer les tours de ce type
+        for (const spot of this.placementSpots) {
+            if (spot.occupied && spot.tower && spot.tower.towerId === towerId) {
+                this.removeTower(spot);
+                removedCount++;
+            }
+        }
+        
+        return removedCount;
+    }
+    
+    /**
      * Place une tour à un emplacement spécifique (utilisé pour la restauration de sauvegarde)
      */
     placeTowerAtSpot(spot, towerId) {

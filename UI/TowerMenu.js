@@ -123,6 +123,7 @@ class TowerMenu {
             } else if (index < equippedTowers.length) {
                 // Créer une carte de tour
                 const towerId = equippedTowers[index];
+                console.log(towerId)
                 this.createTowerCard(towerId, x, y, cardWidth, cardHeight);
             } else {
                 // Créer un emplacement vide (débloqué mais pas de tour équipée)
@@ -786,6 +787,7 @@ class TowerMenu {
     
     createTowerCard(towerId, x, y, width, height) {
         const towerData = TOWER_CONFIG[towerId];
+        console.log(towerData)
         const rarity = this.rarityColors[towerData.rarity] || this.rarityColors.common;
         
         // Fond de la carte avec couleur de rareté (plus sombre)
@@ -889,11 +891,11 @@ class TowerMenu {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'zoro');
             icon.setDisplaySize(22, 48); // Réduit
             icon.play('zoro_idle');
-        } else if (towerId === 'usopp' && this.scene.textures.exists('usopp')) {
-            icon = this.scene.add.sprite(x + width / 2, iconY, 'usopp');
+        } else if (towerId === 'ussop' && this.scene.textures.exists('ussop')) {
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'ussop');
             icon.setDisplaySize(22, 45); // Taille réduite pour la carte
             icon.setOrigin(0.5, 0.5);
-            icon.play('usopp_idle');
+            icon.play('ussop_idle');
         } else if (towerId === 'chopper' && this.scene.textures.exists('chopper')) {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'chopper');
             icon.setDisplaySize(22, 30);
@@ -988,10 +990,7 @@ class TowerMenu {
         deployText.setOrigin(0.5);
         deployText.setDepth(102);
         deployText.setScrollFactor(0);
-        
-        // Prix (affiché sur le bouton déployer si pas gratuit)
-        const costDisplay = towerData.cost === 0 ? 'GRATUIT' : `💰${towerData.cost}`;
-        
+                
         // Événements
         infosBtn.on('pointerdown', () => {
             this.showTowerInfo(towerId);
@@ -1484,11 +1483,11 @@ class TowerMenu {
             this.dragSprite.setDisplaySize(28, 60); // Ratio 39:85, réduit
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('zoro_idle');
-        } else if (towerId === 'usopp' && this.scene.textures.exists('usopp')) {
-            this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'usopp');
+        } else if (towerId === 'ussop' && this.scene.textures.exists('ussop')) {
+            this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'ussop');
             this.dragSprite.setDisplaySize(28, 55); // Même taille que sur la map
             this.dragSprite.setAlpha(0.8);
-            this.dragSprite.play('usopp_idle');
+            this.dragSprite.play('ussop_idle');
         } else if (towerId === 'chopper' && this.scene.textures.exists('chopper')) {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'chopper');
             this.dragSprite.setDisplaySize(28, 39); // 4 frames de 28x39 (équidistant)

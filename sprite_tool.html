@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎨 Outil de Traitement de Sprites - One Piece TD</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            padding: 20px; 
+            background: #1a1a1a; 
+            color: white; 
+        }
+        h1 {
+            text-align: center;
+            color: #00ff00;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 10px;
+        }
+        .tab {
+            padding: 15px 40px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .tab:hover {
+            background: #444;
+        }
+        .tab.active {
+            background: #00ff00;
+            color: #000;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        canvas { 
+            border: 2px solid #00ff00; 
+            margin: 10px 0; 
+            display: block;
+            max-width: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #00ff00;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #000;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        .info {
+            background: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        input[type="file"] {
+            padding: 10px;
+            margin: 10px 0;
+            background: white;
+            color: black;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            width: 300px;
+        }
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            margin: 5px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+        .checkerboard {
+            background-image: 
+                linear-gradient(45deg, #808080 25%, transparent 25%),
+                linear-gradient(-45deg, #808080 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #808080 75%),
+                linear-gradient(-45deg, transparent 75%, #808080 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            padding: 10px;
+            display: inline-block;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .frame-preview {
+            border: 2px solid #555;
+            padding: 5px;
+            background: #222;
+            text-align: center;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Outil de Traitement de Sprites</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('remove')">🗑️ Supprimer le Fond</div>
+        <div class="tab" onclick="switchTab('cut')">✂️ Découper & Espacer</div>
+    </div>
+    
+    <!-- ========== ONGLET 1: SUPPRIMER LE FOND ========== -->
+    <div class="tab-content active" id="tab-remove">
+        <div class="info">
+            <h3>📋 Instructions :</h3>
+            <ol>
+                <li>Chargez votre sprite avec un fond coloré</li>
+                <li>Ajustez la tolérance si nécessaire</li>
+                <li>Téléchargez l'image sans fond</li>
+            </ol>
+        </div>
+        
+        <input type="file" id="fileInput1" accept="image/png,image/jpg,image/jpeg">
+        
+        <div id="status1" class="info" style="background: #555;">⏳ En attente du chargement...</div>
+        
+        <div class="info" id="controls1" style="display: none;">
+            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <strong>🎨 Couleur de fond à supprimer :</strong><br>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <button onclick="enablePipette()" id="pipetteBtn" style="padding: 8px 15px; background: #3b82f6; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            💧 Utiliser la pipette
+                        </button>
+                        <button onclick="useAutoDetect()" style="padding: 8px 15px; background: #10b981; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            🤖 Détection auto
+                        </button>
+                        <div id="selectedColor" style="width: 50px; height: 50px; border: 2px solid white; border-radius: 5px; background: #888;"></div>
+                        <span id="colorText" style="font-family: monospace;">Non défini</span>
+                    </div>
+                    <div id="pipetteHelp" style="display: none; color: #00ff00; margin-top: 5px; font-size: 14px;">
+                        ✨ Cliquez sur l'image ci-dessous pour choisir la couleur de fond
+                    </div>
+                </div>
+            </div>
+            
+            <label><strong>Tolérance :</strong> <input type="range" id="tolerance" min="5" max="150" value="30" style="width: 300px;"> <span id="toleranceValue" style="font-weight: bold; color: #00ff00;">30</span></label>
+            <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                💡 Augmentez si le fond n'est pas complètement supprimé. Diminuez si le sprite est affecté.
+            </div>
+            <br>
+            <button onclick="reprocess1()" style="padding: 10px 20px; font-size: 16px; background: #8b5cf6; color: white; border: none; border-radius: 5px; cursor: pointer;">🔄 Retraiter</button>
+        </div>
+        
+        <h3>Image Source : <span style="font-size: 14px; color: #888;">(Cliquez pour utiliser la pipette)</span></h3>
+        <canvas id="sourceCanvas1" style="cursor: crosshair;"></canvas>
+        
+        <h3>Image Résultat (fond transparent) :</h3>
+        <div class="checkerboard">
+            <canvas id="resultCanvas1"></canvas>
+        </div>
+        
+        <button onclick="download1()" id="downloadBtn1" disabled>📥 Télécharger</button>
+        
+        <div class="info" id="info1" style="display: none;"></div>
+    </div>
+    
+    <!-- ========== ONGLET 2: DÉCOUPER & ESPACER ========== -->
+    <div class="tab-content" id="tab-cut">
+        <div class="info">
+            <h3>📋 Instructions :</h3>
+            <ol>
+                <li>Chargez votre sprite avec plusieurs frames</li>
+                <li>Ajustez les positions de début/fin pour chaque frame</li>
+                <li>Définissez l'espacement désiré</li>
+                <li>Téléchargez la spritesheet espacée</li>
+            </ol>
+        </div>
+        
+        <div class="info" style="background: #2a4a2a; border-left-color: #00ff00;">
+            <label><strong>Nombre de frames :</strong> 
+                <select id="frameCount" style="padding: 5px; margin: 5px; font-size: 14px; background: #333; color: white; border: 1px solid #00ff00; border-radius: 4px;">
+                    <option value="2">2 frames</option>
+                    <option value="3">3 frames</option>
+                    <option value="4" selected>4 frames</option>
+                    <option value="5">5 frames</option>
+                    <option value="6">6 frames</option>
+                    <option value="7">7 frames</option>
+                    <option value="8">8 frames</option>
+                    <option value="9">9 frames</option>
+                    <option value="10">10 frames</option>
+                    <option value="11">11 frames</option>
+                    <option value="12">12 frames</option>
+                    <option value="15">15 frames</option>
+                    <option value="20">20 frames</option>
+                </select>
+            </label>
+        </div>
+        
+        <input type="file" id="fileInput2" accept="image/png,image/jpg,image/jpeg">
+        
+        <div id="status2" class="info" style="background: #555;">⏳ En attente du chargement...</div>
+        
+        <h3>Image Source :</h3>
+        <canvas id="sourceCanvas2" style="width: 800px; height: auto;"></canvas>
+        
+        <div class="info" id="controls2" style="display: none;">
+            <h4>Ajustement des frames :</h4>
+            <div id="frameInputs" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding: 10px; background: #222; border-radius: 5px;">
+                <!-- Les inputs seront générés dynamiquement -->
+            </div>
+            <br>
+            <label>Espacement (px) : <input type="range" id="spacing" min="5" max="50" value="25"> <span id="spacingValue">25</span></label>
+            <br><br>
+            <button onclick="process2()">🔄 Générer la Spritesheet</button>
+        </div>
+        
+        <h3>Aperçu des Frames :</h3>
+        <div id="framePreviews" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; max-height: 500px; overflow-y: auto;">
+            <!-- Les aperçus seront générés dynamiquement -->
+        </div>
+        
+        <h3>Spritesheet Finale :</h3>
+        <div class="checkerboard">
+            <canvas id="resultCanvas2" style="width: 800px; height: auto;"></canvas>
+        </div>
+        
+        <button onclick="download2()" id="downloadBtn2" disabled>📥 Télécharger</button>
+        
+        <div class="info" id="info2" style="display: none;"></div>
+    </div>
+    
+    <script>
+        // ========== GESTION DES ONGLETS ==========
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+        
+        // ========== ONGLET 1: SUPPRESSION DE FOND ==========
+        const canvas1 = document.getElementById('sourceCanvas1');
+        const result1 = document.getElementById('resultCanvas1');
+        const ctx1 = canvas1.getContext('2d', { willReadFrequently: true });
+        const rctx1 = result1.getContext('2d');
+        let img1 = null;
+        let fileName1 = '';
+        let pipetteMode = false;
+        let manualBgColor = null; // Couleur choisie manuellement
+        
+        document.getElementById('tolerance').addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.getElementById('toleranceValue').textContent = val;
+            // Couleur du texte en fonction de la valeur
+            const colorVal = Math.min(255, parseInt(val) * 2);
+            document.getElementById('toleranceValue').style.color = `rgb(${255 - colorVal}, ${colorVal}, 0)`;
+        });
+        
+        // Activer le mode pipette
+        function enablePipette() {
+            pipetteMode = true;
+            canvas1.style.cursor = 'crosshair';
+            document.getElementById('pipetteBtn').style.background = '#ef4444';
+            document.getElementById('pipetteBtn').textContent = '💧 Pipette active';
+            document.getElementById('pipetteHelp').style.display = 'block';
+        }
+        
+        // Utiliser la détection automatique
+        function useAutoDetect() {
+            pipetteMode = false;
+            manualBgColor = null;
+            canvas1.style.cursor = 'crosshair';
+            document.getElementById('pipetteBtn').style.background = '#3b82f6';
+            document.getElementById('pipetteBtn').textContent = '💧 Utiliser la pipette';
+            document.getElementById('pipetteHelp').style.display = 'none';
+            document.getElementById('selectedColor').style.background = '#888';
+            document.getElementById('colorText').textContent = 'Détection auto';
+            if (img1) process1();
+        }
+        
+        // Clic sur le canvas pour choisir une couleur
+        canvas1.addEventListener('click', (e) => {
+            if (!pipetteMode || !img1) return;
+            
+            const rect = canvas1.getBoundingClientRect();
+            const scaleX = img1.width / rect.width;
+            const scaleY = img1.height / rect.height;
+            const x = Math.floor((e.clientX - rect.left) * scaleX);
+            const y = Math.floor((e.clientY - rect.top) * scaleY);
+            
+            const imageData = ctx1.getImageData(x, y, 1, 1);
+            const pixel = imageData.data;
+            
+            manualBgColor = {
+                r: pixel[0],
+                g: pixel[1],
+                b: pixel[2]
+            };
+            
+            // Afficher la couleur sélectionnée
+            const colorStr = `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+            document.getElementById('selectedColor').style.background = colorStr;
+            document.getElementById('colorText').textContent = `RGB(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+            
+            // Désactiver le mode pipette
+            pipetteMode = false;
+            canvas1.style.cursor = 'crosshair';
+            document.getElementById('pipetteBtn').style.background = '#10b981';
+            document.getElementById('pipetteBtn').textContent = '✅ Couleur choisie';
+            document.getElementById('pipetteHelp').style.display = 'none';
+            
+            // Retraiter automatiquement
+            process1();
+        });
+        
+        document.getElementById('fileInput1').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            fileName1 = file.name.replace(/\.[^/.]+$/, "");
+            document.getElementById('status1').textContent = '⏳ Chargement...';
+            
+            // Réinitialiser l'état
+            manualBgColor = null;
+            pipetteMode = false;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const image = new Image();
+                image.onload = () => {
+                    img1 = image;
+                    document.getElementById('controls1').style.display = 'block';
+                    document.getElementById('colorText').textContent = 'Détection auto';
+                    document.getElementById('selectedColor').style.background = '#888';
+                    process1();
+                };
+                image.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        function reprocess1() {
+            if (img1) process1();
+        }
+        
+        function detectBackgroundColor(pixels, width, height) {
+            // Échantillonner TOUS les bords (pas juste une ligne)
+            const colorMap = new Map(); // Compter les occurrences de chaque couleur
+            const samples = [];
+            
+            // Top et Bottom (tous les pixels)
+            for (let x = 0; x < width; x++) {
+                // Top
+                const topIdx = x * 4;
+                samples.push({ r: pixels[topIdx], g: pixels[topIdx + 1], b: pixels[topIdx + 2] });
+                
+                // Bottom
+                const bottomIdx = ((height - 1) * width + x) * 4;
+                samples.push({ r: pixels[bottomIdx], g: pixels[bottomIdx + 1], b: pixels[bottomIdx + 2] });
+            }
+            
+            // Left et Right (tous les pixels)
+            for (let y = 0; y < height; y++) {
+                // Left
+                const leftIdx = (y * width) * 4;
+                samples.push({ r: pixels[leftIdx], g: pixels[leftIdx + 1], b: pixels[leftIdx + 2] });
+                
+                // Right
+                const rightIdx = (y * width + width - 1) * 4;
+                samples.push({ r: pixels[rightIdx], g: pixels[rightIdx + 1], b: pixels[rightIdx + 2] });
+            }
+            
+            // Compter les couleurs (avec regroupement par similarité de 5)
+            samples.forEach(s => {
+                // Arrondir pour regrouper les couleurs similaires
+                const key = `${Math.floor(s.r / 5) * 5},${Math.floor(s.g / 5) * 5},${Math.floor(s.b / 5) * 5}`;
+                colorMap.set(key, (colorMap.get(key) || 0) + 1);
+            });
+            
+            // Trouver la couleur la plus fréquente
+            let maxCount = 0;
+            let mostFrequentKey = null;
+            for (const [key, count] of colorMap.entries()) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    mostFrequentKey = key;
+                }
+            }
+            
+            // Convertir la clé en RGB
+            const [r, g, b] = mostFrequentKey.split(',').map(Number);
+            return { r, g, b, confidence: (maxCount / samples.length * 100).toFixed(1) };
+        }
+        
+        function process1() {
+            if (!img1) return;
+            
+            canvas1.width = img1.width;
+            canvas1.height = img1.height;
+            ctx1.drawImage(img1, 0, 0);
+            
+            result1.width = img1.width;
+            result1.height = img1.height;
+            
+            const sourceData = ctx1.getImageData(0, 0, img1.width, img1.height);
+            const resultData = rctx1.createImageData(img1.width, img1.height);
+            const pixels = sourceData.data;
+            const result = resultData.data;
+            
+            const tolerance = parseInt(document.getElementById('tolerance').value);
+            
+            // Utiliser la couleur manuelle OU la détection automatique
+            let bgColor;
+            let detectionMethod = '';
+            
+            if (manualBgColor) {
+                bgColor = { ...manualBgColor, confidence: 100 };
+                detectionMethod = '💧 Pipette';
+            } else {
+                bgColor = detectBackgroundColor(pixels, img1.width, img1.height);
+                detectionMethod = '🤖 Auto';
+            }
+            
+            let removed = 0;
+            for (let i = 0; i < pixels.length; i += 4) {
+                const r = pixels[i];
+                const g = pixels[i + 1];
+                const b = pixels[i + 2];
+                const a = pixels[i + 3];
+                
+                // Distance euclidienne
+                const dist = Math.sqrt(
+                    Math.pow(r - bgColor.r, 2) +
+                    Math.pow(g - bgColor.g, 2) +
+                    Math.pow(b - bgColor.b, 2)
+                );
+                
+                // Supprimer si la distance est inférieure à la tolérance
+                if (dist <= tolerance) {
+                    result[i] = result[i + 1] = result[i + 2] = result[i + 3] = 0;
+                    removed++;
+                } else {
+                    result[i] = r;
+                    result[i + 1] = g;
+                    result[i + 2] = b;
+                    result[i + 3] = a;
+                }
+            }
+            
+            rctx1.putImageData(resultData, 0, 0);
+            
+            const percent = ((removed / (pixels.length / 4)) * 100).toFixed(2);
+            document.getElementById('status1').textContent = `✅ ${removed.toLocaleString()} pixels supprimés (${percent}%)`;
+            document.getElementById('status1').style.background = '#00aa00';
+            document.getElementById('downloadBtn1').disabled = false;
+            
+            document.getElementById('info1').style.display = 'block';
+            document.getElementById('info1').innerHTML = `
+                <strong>Résultat :</strong><br>
+                📐 Dimensions: ${img1.width} × ${img1.height}px<br>
+                🎨 Fond supprimé: <span style="display: inline-block; width: 30px; height: 15px; background: rgb(${Math.round(bgColor.r)}, ${Math.round(bgColor.g)}, ${Math.round(bgColor.b)}); border: 1px solid white; vertical-align: middle;"></span> RGB(${Math.round(bgColor.r)}, ${Math.round(bgColor.g)}, ${Math.round(bgColor.b)})<br>
+                🔧 Méthode: ${detectionMethod} ${bgColor.confidence ? `(Confiance: ${bgColor.confidence}%)` : ''}<br>
+                🎯 Tolérance utilisée: ${tolerance}<br>
+                🗑️ Pixels supprimés: ${percent}% (${removed.toLocaleString()} pixels)
+            `;
+        }
+        
+        function download1() {
+            if (!img1) return;
+            const link = document.createElement('a');
+            link.download = fileName1 + '_transparent.png';
+            link.href = result1.toDataURL('image/png');
+            link.click();
+        }
+        
+        // ========== ONGLET 2: DÉCOUPAGE & ESPACEMENT ==========
+        const canvas2 = document.getElementById('sourceCanvas2');
+        const result2 = document.getElementById('resultCanvas2');
+        const ctx2 = canvas2.getContext('2d', { willReadFrequently: true });
+        const rctx2 = result2.getContext('2d');
+        let imgData2 = null;
+        let imgW2 = 0, imgH2 = 0;
+        let fileName2 = '';
+        
+        document.getElementById('spacing').addEventListener('input', (e) => {
+            document.getElementById('spacingValue').textContent = e.target.value;
+        });
+        
+        // Générer dynamiquement les inputs quand le nombre de frames change
+        document.getElementById('frameCount').addEventListener('change', () => {
+            if (imgData2) {
+                generateFrameInputs();
+                process2();
+            }
+        });
+        
+        function generateFrameInputs() {
+            const numFrames = parseInt(document.getElementById('frameCount').value);
+            const frameInputsDiv = document.getElementById('frameInputs');
+            const framePreviewsDiv = document.getElementById('framePreviews');
+            
+            frameInputsDiv.innerHTML = '';
+            framePreviewsDiv.innerHTML = '';
+            
+            const fw = Math.floor(imgW2 / numFrames);
+            
+            for (let i = 0; i < numFrames; i++) {
+                // Calculer les valeurs de début et fin
+                const startValue = i * fw;
+                const endValue = (i === numFrames - 1) ? imgW2 : (i + 1) * fw; // Dernière frame va jusqu'à la fin
+                
+                // Créer l'input pour cette frame
+                const inputDiv = document.createElement('div');
+                inputDiv.innerHTML = `
+                    <strong>Frame ${i + 1}:</strong><br>
+                    Début: <input type="number" id="f${i + 1}start" value="${startValue}" style="width: 80px; margin: 2px;"><br>
+                    Fin: <input type="number" id="f${i + 1}end" value="${endValue}" style="width: 80px; margin: 2px;">
+                `;
+                frameInputsDiv.appendChild(inputDiv);
+                
+                // Ajouter le listener pour mettre à jour l'aperçu
+                setTimeout(() => {
+                    document.getElementById(`f${i + 1}start`).addEventListener('input', process2);
+                    document.getElementById(`f${i + 1}end`).addEventListener('input', process2);
+                }, 0);
+                
+                // Créer l'aperçu pour cette frame
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'frame-preview';
+                previewDiv.innerHTML = `<strong>Frame ${i + 1}</strong><br><canvas id="frame${i + 1}" style="width: 120px; height: auto;"></canvas>`;
+                framePreviewsDiv.appendChild(previewDiv);
+            }
+        }
+        
+        document.getElementById('fileInput2').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            fileName2 = file.name.replace(/\.[^/.]+$/, "");
+            document.getElementById('status2').textContent = '⏳ Chargement...';
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const image = new Image();
+                image.onload = () => {
+                    canvas2.width = image.width;
+                    canvas2.height = image.height;
+                    imgW2 = image.width;
+                    imgH2 = image.height;
+                    ctx2.drawImage(image, 0, 0);
+                    imgData2 = ctx2.getImageData(0, 0, imgW2, imgH2);
+                    
+                    document.getElementById('status2').textContent = '✅ Image chargée: ' + imgW2 + ' × ' + imgH2 + 'px';
+                    document.getElementById('status2').style.background = '#00aa00';
+                    document.getElementById('controls2').style.display = 'block';
+                    
+                    generateFrameInputs();
+                    process2();
+                };
+                image.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        function process2() {
+            if (!imgData2) return;
+            
+            const numFrames = parseInt(document.getElementById('frameCount').value);
+            const pixels = imgData2.data;
+            const frames = [];
+            
+            // Collecter les frames dynamiquement
+            for (let i = 0; i < numFrames; i++) {
+                const startInput = document.getElementById(`f${i + 1}start`);
+                const endInput = document.getElementById(`f${i + 1}end`);
+                if (startInput && endInput) {
+                    frames.push({
+                        start: parseInt(startInput.value),
+                        end: parseInt(endInput.value)
+                    });
+                }
+            }
+            
+            // Afficher chaque frame
+            frames.forEach((frame, idx) => {
+                const fc = document.getElementById('frame' + (idx + 1));
+                if (!fc) return;
+                
+                const fctx = fc.getContext('2d');
+                const fw = frame.end - frame.start;
+                
+                fc.width = fw;
+                fc.height = imgH2;
+                
+                for (let x = frame.start; x < frame.end; x++) {
+                    for (let y = 0; y < imgH2; y++) {
+                        const i = (y * imgW2 + x) * 4;
+                        fctx.fillStyle = `rgba(${pixels[i]},${pixels[i + 1]},${pixels[i + 2]},${pixels[i + 3] / 255})`;
+                        fctx.fillRect(x - frame.start, y, 1, 1);
+                    }
+                }
+            });
+            
+            // Créer la spritesheet espacée
+            const maxFW = Math.max(...frames.map(f => f.end - f.start));
+            const spacing = parseInt(document.getElementById('spacing').value);
+            const finalFW = maxFW + 5;
+            const newW = (finalFW + spacing) * numFrames;
+            
+            result2.width = newW;
+            result2.height = imgH2;
+            rctx2.clearRect(0, 0, newW, imgH2);
+            
+            frames.forEach((frame, idx) => {
+                const fw = frame.end - frame.start;
+                const destX = idx * (finalFW + spacing) + Math.floor((finalFW - fw) / 2);
+                
+                for (let x = frame.start; x < frame.end; x++) {
+                    for (let y = 0; y < imgH2; y++) {
+                        const i = (y * imgW2 + x) * 4;
+                        const dx = destX + (x - frame.start);
+                        rctx2.fillStyle = `rgba(${pixels[i]},${pixels[i + 1]},${pixels[i + 2]},${pixels[i + 3] / 255})`;
+                        rctx2.fillRect(dx, y, 1, 1);
+                    }
+                }
+            });
+            
+            document.getElementById('downloadBtn2').disabled = false;
+            document.getElementById('info2').style.display = 'block';
+            document.getElementById('info2').innerHTML = `
+                <strong>Spritesheet générée :</strong> ${newW} × ${imgH2}px<br>
+                <strong>Nombre de frames :</strong> ${numFrames}<br>
+                <strong>Frame width (avec espacement) :</strong> ${finalFW + spacing}px<br>
+                <strong>Configuration Phaser :</strong><br>
+                <code style="background:#222;padding:5px;display:block;">
+                frameWidth: ${finalFW + spacing}, frameHeight: ${imgH2}
+                </code>
+            `;
+        }
+        
+        function download2() {
+            if (!imgData2) return;
+            const link = document.createElement('a');
+            link.download = fileName2 + '_spaced.png';
+            link.href = result2.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
+

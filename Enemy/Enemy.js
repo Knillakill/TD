@@ -152,6 +152,13 @@ class Enemy {
         this.burnTimer = null;
         this.burnEffect = null;
         
+        // Système de poison (DOT)
+        this.isPoisoned = false;
+        this.poisonDamage = 0;
+        this.poisonDuration = 0;
+        this.poisonTimer = null;
+        this.poisonEffect = null;
+        
         // Système de stun
         this.isStunned = false;
         this.stunTimeRemaining = 0;
@@ -161,20 +168,8 @@ class Enemy {
     }
     
     createVisualEffects() {
-        // Ajouter des effets visuels selon le type
-        if (this.type === 'pirate_shield' && this.maxShield > 0) {
-            // Cercle de bouclier bleu autour du tank
-            this.shieldVisual = this.scene.add.circle(
-                this.sprite.x, 
-                this.sprite.y, 
-                this.spriteHeight * 0.7, 
-                0x3b82f6,
-                0.15
-            );
-            this.shieldVisual.setStrokeStyle(2, 0x60a5fa, 0.5);
-            this.shieldVisual.setDepth(this.sprite.depth - 1);
-        }
-        // Pas d'effet visuel pour pirate_fast (il a déjà un tint orange)
+        // Pas d'effets visuels supplémentaires (cercle bleu supprimé)
+        // Les tanks sont identifiables par leur barre de bouclier bleue
     }
     
     update(delta) {
@@ -223,16 +218,7 @@ class Enemy {
         this.nameText.x = this.sprite.x;
         this.nameText.y = this.sprite.y - this.spriteHeight - (this.maxShield > 0 ? 23 : 18); // Plus haut si shield
         
-        // Mettre à jour les effets visuels
-        if (this.shieldVisual) {
-            this.shieldVisual.x = this.sprite.x;
-            this.shieldVisual.y = this.sprite.y;
-            this.shieldVisual.setDepth(this.sprite.depth - 1);
-            // Cacher le cercle si le shield est épuisé
-            if (this.shield <= 0) {
-                this.shieldVisual.setVisible(false);
-            }
-        }
+        // Effets visuels supprimés (pas de cercle bleu)
         
         if (this.speedTrail) {
             // Traînée légèrement en retard
@@ -251,6 +237,13 @@ class Enemy {
             this.burnEffect.x = this.sprite.x;
             this.burnEffect.y = this.sprite.y;
             this.burnEffect.setDepth(this.sprite.depth - 0.5);
+        }
+        
+        // Mettre à jour l'effet de poison
+        if (this.poisonEffect) {
+            this.poisonEffect.x = this.sprite.x;
+            this.poisonEffect.y = this.sprite.y;
+            this.poisonEffect.setDepth(this.sprite.depth - 0.5);
         }
         
         // Mettre à jour l'effet de stun
@@ -283,13 +276,13 @@ class Enemy {
         
         // Effet visuel de dégâts (différent pour sprites et cercles)
         if (this.type === 'pirate_basic' || this.type === 'pirate_fast' || this.type === 'pirate_shield') {
-            // Pour les sprites : utiliser tint (sauf si brûlé)
-            if (!this.isBurning) {
+            // Pour les sprites : utiliser tint (sauf si brûlé ou empoisonné)
+            if (!this.isBurning && !this.isPoisoned) {
                 // Tint bleu si shield, rouge sinon
                 const tintColor = (this.shield > 0) ? 0x00aaff : 0xff0000;
                 this.sprite.setTint(tintColor);
                 this.scene.time.delayedCall(100, () => {
-                    if (this.sprite && !this.isBurning) {
+                    if (this.sprite && !this.isBurning && !this.isPoisoned) {
                         this.sprite.clearTint();
                     }
                 });
@@ -310,6 +303,7 @@ class Enemy {
         if (this.hp <= 0) {
             this.alive = false;
             this.stopBurn();
+            this.stopPoison();
             this.playDeathAnimation();
         }
     }
@@ -364,7 +358,6 @@ class Enemy {
         this.burnTimeRemaining = duration;
         
         // Créer l'effet visuel de feu
-        this.createBurnEffect();
         
         // Appliquer le tint orange/feu sur le sprite
         if (this.sprite && this.sprite.setTint) {
@@ -411,33 +404,7 @@ class Enemy {
         });
     }
     
-    createBurnEffect() {
-        // Créer des particules de feu autour de l'ennemi
-        if (this.burnEffect) {
-            this.burnEffect.destroy();
-        }
-        
-        // Cercle de feu animé
-        this.burnEffect = this.scene.add.circle(
-            this.sprite.x,
-            this.sprite.y,
-            this.spriteHeight * 0.6,
-            0xff4500,
-            0.3
-        );
-        this.burnEffect.setDepth(this.sprite.depth - 0.5);
-        this.burnEffect.setStrokeStyle(2, 0xff6600, 0.6);
-        
-        // Animation de pulsation du feu
-        this.scene.tweens.add({
-            targets: this.burnEffect,
-            alpha: { from: 0.3, to: 0.5 },
-            scale: { from: 1, to: 1.2 },
-            duration: 300,
-            yoyo: true,
-            repeat: -1
-        });
-    }
+    
     
     showBurnDamageTick() {
         // Petit effet visuel quand le DOT fait des dégâts
@@ -485,7 +452,125 @@ class Enemy {
         }
         
         // Enlever le tint si le sprite existe encore
-        if (this.sprite && this.sprite.clearTint && !this.isStunned) {
+        if (this.sprite && this.sprite.clearTint && !this.isStunned && !this.isPoisoned) {
+            this.sprite.clearTint();
+        }
+    }
+    
+    /**
+     * Applique un effet de poison (DOT) sur l'ennemi
+     * @param {number} damagePerTick - Dégâts par tick (chaque seconde)
+     * @param {number} duration - Durée totale en secondes
+     * @param {Tower} sourceTower - Tour source pour les stats
+     */
+    applyPoison(damagePerTick, duration, sourceTower = null) {
+        // Rafraîchir le poison si déjà en cours (reset la durée)
+        this.poisonDamage = damagePerTick;
+        this.poisonDuration = duration;
+        this.poisonSourceTower = sourceTower;
+        
+        // Si déjà empoisonné, juste reset la durée
+        if (this.isPoisoned) {
+            this.poisonTimeRemaining = duration;
+            return;
+        }
+        
+        this.isPoisoned = true;
+        this.poisonTimeRemaining = duration;
+                
+        // Appliquer le tint vert poison sur le sprite
+        if (this.sprite && this.sprite.setTint) {
+            this.sprite.setTint(0x00ff00);
+        }
+        
+        // Timer pour les dégâts de poison (chaque seconde)
+        this.poisonTimer = this.scene.time.addEvent({
+            delay: 1000,
+            callback: () => {
+                if (!this.alive || !this.isPoisoned) {
+                    this.stopPoison();
+                    return;
+                }
+                
+                // Appliquer les dégâts de poison
+                this.hp -= this.poisonDamage;
+                
+                // Mettre à jour les stats de la tour source
+                if (this.poisonSourceTower) {
+                    this.poisonSourceTower.totalDamage += this.poisonDamage;
+                }
+                
+                // Effet visuel de tick de poison
+                this.showPoisonDamageTick();
+                
+                this.updateHpBar();
+                
+                // Réduire le temps restant
+                this.poisonTimeRemaining -= 1;
+                
+                if (this.hp <= 0) {
+                    this.alive = false;
+                    if (this.poisonSourceTower) {
+                        this.poisonSourceTower.enemyKills++;
+                    }
+                    this.stopPoison();
+                    this.playDeathAnimation();
+                } else if (this.poisonTimeRemaining <= 0) {
+                    this.stopPoison();
+                }
+            },
+            loop: true
+        });
+    }
+    
+  
+    
+    showPoisonDamageTick() {
+        // Petit effet visuel quand le DOT fait des dégâts
+        const damageText = this.scene.add.text(
+            this.sprite.x + Phaser.Math.Between(-10, 10),
+            this.sprite.y - this.spriteHeight - 20,
+            `-${this.poisonDamage} 🧪`,
+            {
+                fontSize: '12px',
+                color: '#00ff00',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
+            }
+        );
+        damageText.setOrigin(0.5);
+        damageText.setDepth(1000);
+        
+        this.scene.tweens.add({
+            targets: damageText,
+            y: damageText.y - 20,
+            alpha: 0,
+            duration: 800,
+            ease: 'Power2',
+            onComplete: () => {
+                damageText.destroy();
+            }
+        });
+    }
+    
+    stopPoison() {
+        this.isPoisoned = false;
+        
+        // Arrêter le timer
+        if (this.poisonTimer) {
+            this.poisonTimer.destroy();
+            this.poisonTimer = null;
+        }
+        
+        // Supprimer l'effet visuel
+        if (this.poisonEffect) {
+            this.poisonEffect.destroy();
+            this.poisonEffect = null;
+        }
+        
+        // Enlever le tint si le sprite existe encore
+        if (this.sprite && this.sprite.clearTint && !this.isStunned && !this.isBurning) {
             this.sprite.clearTint();
         }
     }
@@ -597,7 +682,7 @@ class Enemy {
         if (this.shieldBar) this.shieldBar.setVisible(false);
         if (this.shieldBarBg) this.shieldBarBg.setVisible(false);
         if (this.nameText) this.nameText.setVisible(false);
-        if (this.shieldVisual) this.shieldVisual.setVisible(false);
+        // shieldVisual supprimé
         if (this.speedTrail) this.speedTrail.setVisible(false);
         
         // Animation de mort pour pirate_basic (épée)
@@ -666,7 +751,7 @@ class Enemy {
         if (this.shieldBar) this.shieldBar.destroy();
         if (this.shieldBarBg) this.shieldBarBg.destroy();
         if (this.nameText) this.nameText.destroy();
-        if (this.shieldVisual) this.shieldVisual.destroy();
+        // shieldVisual supprimé
         if (this.speedTrail) this.speedTrail.destroy();
     }
 
