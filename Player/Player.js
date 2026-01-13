@@ -46,9 +46,14 @@ class Player {
         if (!this.completedWaves[waveNumber]) {
             this.completedWaves[waveNumber] = true;
             this.collection.addStars(1);
-            console.log(`★ Étoile gagnée ! Total: ${this.collection.getStars()}`);
+            
+            const completedCount = Object.keys(this.completedWaves).length;
+            console.log(`★ Vague ${waveNumber} complétée ! Étoiles map: ${completedCount}, Étoiles globales: ${this.collection.getStars()}`);
+            console.log(`[Player] completedWaves:`, Object.keys(this.completedWaves).map(Number).sort((a,b) => a-b));
+            
             return true;  // Nouvelle étoile gagnée
         }
+        console.log(`[Player] Vague ${waveNumber} déjà complétée, pas d'étoile`);
         return false;  // Vague déjà complétée
     }
     

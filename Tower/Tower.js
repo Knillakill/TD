@@ -11,6 +11,7 @@ class Tower {
             this.level = playerLevel;
             const stats = getTowerStats(type, playerLevel);
             this.range = stats.range;
+            this.minRange = stats.minRange || 0; // Portée minimum
             this.damage = stats.damage;
             // fireRate est en secondes, convertir en millisecondes
             this.fireRate = stats.fireRate * 1000;
@@ -39,76 +40,87 @@ class Tower {
         // Mémoriser la dernière direction pour conserver l'orientation après l'attaque
         this.lastFlipX = true; // Par défaut, tous regardent à gauche
         
-        // Sprite de la tour (animé pour Luffy/Zoro, image pour les autres, sinon rectangle)
+        // === TAILLES HARMONISÉES - RENDU VISUEL UNIFORME ===
+        // Objectif: tous les personnages font visuellement ~45px de haut
+        // Les tailles sont ajustées selon l'espace vide dans chaque sprite
+        
+        // Sprite de la tour (animé pour les personnages, sinon rectangle)
         if (this.type === 'luffy' && scene.textures.exists('luffy')) {
-            // Créer un sprite animé pour Luffy (44x68 original, ratio 1:1.545)
+            // Luffy - frame 44x68, personnage occupe ~90% de la frame
             this.sprite = scene.add.sprite(x, y, 'luffy');
-            this.sprite.setDisplaySize(28, 43); // Largeur fixe 28, ratio respecté
-            this.sprite.setFlipX(true); // Tourné vers la gauche par défaut
+            this.sprite.setDisplaySize(30, 51);
+            this.sprite.setFlipX(true);
             this.sprite.play('luffy_idle');
             this.isAnimated = true;
         } else if (this.type === 'zoro' && scene.textures.exists('zoro')) {
-            // Créer un sprite animé pour Zoro (39x85 original, ratio 1:2.179)
+            // Zoro - frame 39x85, personnage fin et grand, occupe ~85%
             this.sprite = scene.add.sprite(x, y, 'zoro');
-            this.sprite.setDisplaySize(28, 61); // Largeur fixe 28, ratio respecté
-            this.sprite.setFlipX(true); // Tourné vers la gauche par défaut
-            this.sprite.play('zoro_idle');
+            this.sprite.setDisplaySize(68, 51);
+            this.sprite.setFlipX(true);
+            this.sprite.play('zoro');
             this.isAnimated = true;
         } else if (this.type === 'ussop' && scene.textures.exists('ussop')) {
-            // Créer un sprite animé pour ussop
+            // Usopp - frame 59x65, beaucoup d'espace vide, personnage ~70%
             this.sprite = scene.add.sprite(x, y, 'ussop');
-            this.sprite.setDisplaySize(28, 50); // Taille ajustée pour équilibrer
-            this.sprite.setFlipX(true); // Tourné vers la gauche par défaut
+            this.sprite.setDisplaySize(62, 53);
+            this.sprite.setFlipX(true);
             this.sprite.play('ussop_idle');
             this.isAnimated = true;
         } else if (this.type === 'chopper' && scene.textures.exists('chopper')) {
-            // Créer un sprite animé pour Chopper (28x39 original, ratio 1:1.393)
+            // Chopper - frame 28x39, petit personnage, occupe ~95%
             this.sprite = scene.add.sprite(x, y, 'chopper');
-            this.sprite.setDisplaySize(28, 39); // Dimensions originales parfaites
-            this.sprite.setOrigin(0.5, 1.0); // Pieds en bas
-            this.sprite.setFlipX(true); // Tourné vers la gauche par défaut
+            this.sprite.setDisplaySize(34, 44);
+            this.sprite.setOrigin(0.5, 1.0);
+            this.sprite.setFlipX(true);
             this.sprite.play('chopper_idle');
             this.isAnimated = true;
         } else if (this.type === 'franky' && scene.textures.exists('franky')) {
-            // Créer un sprite animé pour Franky (118x102 original, ratio 1:0.864)
+            // Franky - frame 118x102, large et costaud, occupe ~80%
             this.sprite = scene.add.sprite(x, y, 'franky');
-            this.sprite.setDisplaySize(58, 50); // Ratio 118:102 maintenu avec hauteur 50
-            this.sprite.setFlipX(true); // Tourné vers la gauche par défaut
+            this.sprite.setDisplaySize(75, 51);
+            this.sprite.setFlipX(true);
             this.sprite.play('franky_idle');
             this.isAnimated = true;
         } else if (this.type === 'robin' && scene.textures.exists('robin')) {
-            // Créer un sprite animé pour Robin (66x74 original, ratio 1:1.12)
+            // Robin - frame 66x74, occupe ~85%
             this.sprite = scene.add.sprite(x, y, 'robin');
-            this.sprite.setDisplaySize(44, 50); // Ratio 66:74 avec hauteur 50
-            this.sprite.setFlipX(true); // Tourné vers la gauche par défaut
+            this.sprite.setDisplaySize(55, 55);
+            this.sprite.setFlipX(true);
             this.sprite.play('robin_idle');
             this.isAnimated = true;
         } else if (this.type === 'brook' && scene.textures.exists('brook')) {
-            // Créer un sprite animé pour Brook (94x107 original, ratio 1:1.14)
+            // Brook - frame 94x107, grand squelette, occupe ~80%
             this.sprite = scene.add.sprite(x, y, 'brook');
-            this.sprite.setDisplaySize(44, 50); // Ratio 94:107 avec hauteur 50
-            this.sprite.setFlipX(true); // Tourné vers la gauche par défaut
-            this.sprite.play('brook_idle');
+            this.sprite.setDisplaySize(60, 58);
+            this.sprite.setFlipX(true);
+            this.sprite.play('brook');
+            this.isAnimated = true;
+        } else if (this.type === 'jimbe' && scene.textures.exists('jimbe')) {
+            // Jimbe - frame 101x85, homme-poisson costaud
+            this.sprite = scene.add.sprite(x, y, 'jimbe');
+            this.sprite.setDisplaySize(70, 55);
+            this.sprite.setFlipX(true);
+            this.sprite.play('jimbe_idle');
             this.isAnimated = true;
         } else if (this.type === 'sanji' && scene.textures.exists('sanji')) {
-            // Créer un sprite animé pour Sanji
+            // Sanji - frame 27x77, très fin, occupe ~90%
             this.sprite = scene.add.sprite(x, y, 'sanji');
-            this.sprite.setDisplaySize(28, 58); // Taille ajustée pour équilibrer
-            this.sprite.setFlipX(true); // Tourné vers la gauche par défaut
+            this.sprite.setDisplaySize(50, 51);
+            this.sprite.setFlipX(true);
             this.sprite.play('sanji_idle');
             this.isAnimated = true;
         } else if (this.type === 'nami' && scene.textures.exists('nami')) {
-            // Créer un sprite pour Nami
+            // Nami - frame 70x86, espace autour, occupe ~75%
             this.sprite = scene.add.sprite(x, y, 'nami');
-            this.sprite.setDisplaySize(28, 58); // Taille ajustée pour équilibrer
-            this.sprite.setFlipX(true); // Retourner horizontalement à 180°
+            this.sprite.setDisplaySize(65, 54);
+            this.sprite.setFlipX(true);
             this.sprite.play('nami_idle');
             this.isAnimated = true;
         } else if (scene.textures.exists(this.type)) {
             this.sprite = scene.add.image(x, y, this.type);
-            this.sprite.setDisplaySize(35, 35); // Réduit
+            this.sprite.setDisplaySize(32, 32);
         } else {
-            this.sprite = scene.add.rectangle(x, y, 30, 30, this.color); // Réduit
+            this.sprite = scene.add.rectangle(x, y, 28, 28, this.color);
         }
         this.sprite.setDepth(10);
         this.sprite.setInteractive({ useHandCursor: true });
@@ -124,6 +136,25 @@ class Tower {
         this.rangeCircle.setStrokeStyle(2, this.color, 0);
         this.rangeCircle.setDepth(0);
         this.rangeCircle.setVisible(false); // Invisible par défaut
+        // IMPORTANT: Ne pas rendre ce cercle interactif - il est uniquement visuel
+        // Ne pas appeler setInteractive() du tout pour éviter les erreurs hitAreaCallback
+        
+        // Cercle de portée minimum pour Jimbe (invisible par défaut)
+        this.minRangeCircle = null;
+        if (this.minRange > 0) {
+            this.minRangeCircle = scene.add.circle(
+                x,
+                y,
+                this.minRange,
+                this.color, // Même couleur que la tour
+                0 // Transparent
+            );
+            this.minRangeCircle.setStrokeStyle(2, this.color, 0);
+            this.minRangeCircle.setDepth(0);
+            this.minRangeCircle.setVisible(false); // Invisible par défaut
+            // IMPORTANT: Ne pas rendre ce cercle interactif - il est uniquement visuel
+            // Ne pas appeler setInteractive() du tout pour éviter les erreurs hitAreaCallback
+        }
         
         // Les événements de survol et drag sont gérés par TowerPlacement.js
         
@@ -190,7 +221,10 @@ class Tower {
         const gameSpeed = this.scene.waveControl ? this.scene.waveControl.gameSpeed : 1;
         const adjustedFireRate = this.fireRate / gameSpeed;
         
-        if (dist <= this.range && time > this.lastShot && !this.isBeingDragged) {
+        // Vérifier la portée (maximum et minimum pour Jimbe)
+        const inRange = dist <= this.range && dist >= (this.minRange || 0);
+        
+        if (inRange && time > this.lastShot && !this.isBeingDragged) {
             this.lastShot = time + adjustedFireRate;
             
             // Luffy tape en cône vers l'ennemi ciblé
@@ -208,12 +242,18 @@ class Tower {
                 // Si l'ennemi est à droite (cos >= 0), flip false (regarde à droite)
                 this.lastFlipX = Math.cos(angleToEnemy) < 0;
                 this.sprite.setFlipX(this.lastFlipX);
-                
+
                 // Changer la texture pour l'animation d'attaque
-                // 1212x73 - 12 frames de 101x73
+                // 1212x73 - 12 frames de 101x73 (bras étendus)
                 this.sprite.setTexture('luffy_attack_sheet');
-                this.sprite.setDisplaySize(69, 50); // Ratio 101:73 (1.38:1) - Hauteur fixe 50
                 this.sprite.play('luffy_attack');
+                
+                this.sprite.once('animationcomplete', () => {
+                    // Revenir à la texture idle en conservant la direction
+                    this.sprite.setTexture('luffy');
+                    this.sprite.setFlipX(this.lastFlipX);
+                    this.sprite.play('luffy_idle');
+                });
                 
                 // Effet visuel du cône ULTRA QUALI
                 const coneAngle = Math.PI / 3; // 60 degrés (30° de chaque côté)
@@ -291,7 +331,7 @@ class Tower {
                     }
                     fist.setDepth(7);
                     
-                    // Animation du poing qui vole vers l'extérieur
+                    //Animation du poing qui vole vers l'extérieur
                     const endX = this.sprite.x + Math.cos(fistAngle) * this.range * 0.95;
                     const endY = this.sprite.y + Math.sin(fistAngle) * this.range * 0.95;
                     
@@ -366,13 +406,7 @@ class Tower {
                     }
                 });
                 
-                this.sprite.once('animationcomplete', () => {
-                    // Revenir à la texture idle en conservant la direction
-                    this.sprite.setTexture('luffy');
-                    this.sprite.setDisplaySize(28, 43); // Proportions respectées
-                    this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
-                    this.sprite.play('luffy_idle');
-                });
+                
                 
                 // Calculer les dégâts (avec critique possible)
                 let damage = this.damage;
@@ -430,9 +464,8 @@ class Tower {
                 this.lastFlipX = Math.cos(angleToEnemy) < 0;
                 this.sprite.setFlipX(this.lastFlipX);
                 
-                // Changer la texture pour l'animation d'attaque
+                // Changer la texture pour l'animation d'attaque - frame 71x84
                 this.sprite.setTexture('zoro_attack_sheet');
-                this.sprite.setDisplaySize(42, 50); // TAILLE COMBAT harmonisée (ratio 71:84)
                 this.sprite.play('zoro_attack');
                 
                 // EFFET ULTRA QUALI : Attaque des 3 sabres
@@ -595,9 +628,8 @@ class Tower {
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle en conservant la direction
                     this.sprite.setTexture('zoro');
-                    this.sprite.setDisplaySize(28, 61); // Proportions respectées
-                    this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
-                    this.sprite.play('zoro_idle');
+                    this.sprite.setFlipX(this.lastFlipX);
+                    this.sprite.play('zoro');
                 });
                 
                 // Calculer les dégâts (avec critique possible)
@@ -643,21 +675,35 @@ class Tower {
                 this.lastFlipX = Math.cos(angleToEnemy) < 0;
                 this.sprite.setFlipX(this.lastFlipX);
                 
-                // Jouer l'animation de tir
+                // Jouer l'animation de tir - frame 114x70
                 this.sprite.setTexture('ussop_attack_sheet');
                 this.sprite.play('ussop_attack');
                 
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle en conservant la direction
                     this.sprite.setTexture('ussop');
-                    this.sprite.setDisplaySize(35, 50); // Taille équilibrée
-                    this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
+                    this.sprite.setFlipX(this.lastFlipX);
                     this.sprite.play('ussop_idle');
                 });
                 
-                // Créer un projectile spécial empoisonné avec sprite animé
-                const poisonProjectile = this.createussopPoisonProjectile(enemy);
-                return poisonProjectile;
+                // Calculer les dégâts avec critique
+                let damage = this.damage;
+                const isCrit = Math.random() * 100 < this.critChance;
+                if (isCrit) {
+                    damage = Math.floor(damage * 1.5);
+                }
+                
+                // Créer un projectile normal (le poison sera appliqué dans Projectile.js si nécessaire)
+                const projectile = new Projectile(
+                    this.scene,
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy,
+                    damage,
+                    this.color,
+                    this
+                );
+                return projectile;
             }
             
             // Attaque projectile pour Chopper
@@ -674,20 +720,96 @@ class Tower {
                 this.lastFlipX = Math.cos(angleToEnemy) < 0;
                 this.sprite.setFlipX(this.lastFlipX);
                 
-                // Jouer l'animation d'attaque
+                // Jouer l'animation d'attaque - frame 28x36
                 this.sprite.setTexture('chopper_attack_sheet');
-                this.sprite.setDisplaySize(28, 50); // TAILLE COMBAT harmonisée
                 this.sprite.setOrigin(0.5, 1.0); // Pieds en bas
                 this.sprite.play('chopper_attack');
                 
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle en conservant la direction
                     this.sprite.setTexture('chopper');
-                    this.sprite.setDisplaySize(28, 39); // Proportions respectées
                     this.sprite.setOrigin(0.5, 1.0);
-                    this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
+                    this.sprite.setFlipX(this.lastFlipX);
                     this.sprite.play('chopper_idle');
                 });
+                
+                // Calculer les dégâts
+                let damage = this.damage;
+                
+                // 1 chance sur 100 de faire regagner un cœur au joueur
+                if (Math.random() < 0.01 && this.scene.player) {
+                    const maxHp = 10; // HP maximum du joueur
+                    if (this.scene.player.hp < maxHp) {
+                        this.scene.player.hp = Math.min(maxHp, this.scene.player.hp + 1);
+                        
+                        // Mettre à jour l'affichage des HP du joueur
+                        if (this.scene.enemyInfoPanel) {
+                            this.scene.enemyInfoPanel.updatePlayerStats(this.scene.player);
+                        }
+                        
+                        // Afficher un message
+                        if (this.scene.ui) {
+                            this.scene.ui.showMessage('❤️ Chopper vous a soigné ! +1 HP', 2000);
+                        }
+                    }
+                }
+                
+                // Créer un projectile normal
+                const projectile = new Projectile(
+                    this.scene,
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy,
+                    damage,
+                    this.color,
+                    this
+                );
+                return projectile;
+            }
+            
+            // Jimbe tire un projectile de très loin (sniper aquatique avec portée minimum)
+            if (this.type === 'jimbe' && this.isAnimated) {
+                // Calculer l'angle vers l'ennemi
+                const angleToEnemy = Phaser.Math.Angle.Between(
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy.sprite.x,
+                    enemy.sprite.y
+                );
+                
+                // Retourner le sprite vers l'ennemi
+                this.lastFlipX = Math.cos(angleToEnemy) < 0;
+                this.sprite.setFlipX(this.lastFlipX);
+                
+                // Jouer l'animation d'attaque
+                this.sprite.setTexture('jimbe_attack_sheet');
+                this.sprite.play('jimbe_attack');
+                
+                this.sprite.once('animationcomplete', () => {
+                    // Revenir à la texture idle en conservant la direction
+                    this.sprite.setTexture('jimbe');
+                    this.sprite.setFlipX(this.lastFlipX);
+                    this.sprite.play('jimbe_idle');
+                });
+                
+                // Calculer les dégâts avec critique
+                let damage = this.damage;
+                const isCrit = Math.random() * 100 < this.critChance;
+                if (isCrit) {
+                    damage = Math.floor(damage * 1.5);
+                }
+                
+                // Créer un projectile (sniper longue portée)
+                const projectile = new Projectile(
+                    this.scene,
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy,
+                    damage,
+                    this.color,
+                    this
+                );
+                return projectile;
             }
             
             // Sanji attaque avec ses coups de pied enflammés (DOT de feu)
@@ -703,9 +825,8 @@ class Tower {
                 // Retourner le sprite vers l'ennemi
                 this.sprite.setFlipX(Math.cos(angleToEnemy) < 0);
                 
-                // Jouer l'animation d'attaque
+                // Jouer l'animation d'attaque - frame 103x106 (kick étendu)
                 this.sprite.setTexture('sanji_attack_sheet');
-                this.sprite.setDisplaySize(49, 50); // TAILLE COMBAT harmonisée (ratio 103:106)
                 this.sprite.play('sanji_attack');
                 
                 // Effet visuel de feu 🔥
@@ -760,34 +881,45 @@ class Tower {
                 // Revenir à l'animation idle après l'attaque
                 this.sprite.once('animationcomplete', () => {
                     this.sprite.setTexture('sanji');
-                    this.sprite.setDisplaySize(28, 58); // Taille équilibrée
-                    this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
+                    this.sprite.setFlipX(this.lastFlipX);
                     this.sprite.play('sanji_idle');
                 });
                 
                 // Calculer les dégâts avec critique
                 let damage = this.damage;
-                if (Math.random() < this.critChance) {
+                const isCrit = Math.random() * 100 < this.critChance;
+                if (isCrit) {
                     damage = Math.floor(damage * 1.5);
                 }
                 
-                // Dégâts de brûlure : 10% des dégâts par seconde pendant 10 secondes
-                const burnDamagePerTick = Math.max(1, Math.floor(damage * 0.1));
+                // Durée de brûlure (les dégâts sont calculés à 1% des PV max dans applyBurn)
                 const burnDuration = 10; // 10 secondes
                 
-                // Appliquer les dégâts directs et la brûlure à l'ennemi ciblé
-                const wasAlive = enemy.alive;
-                enemy.takeDamage(damage);
-                this.totalDamage += damage;
-                
-                // Appliquer la brûlure si l'ennemi est encore vivant
-                if (enemy.alive && enemy.applyBurn) {
-                    enemy.applyBurn(burnDamagePerTick, burnDuration, this);
-                }
-                
-                if (wasAlive && !enemy.alive) {
-                    this.enemyKills++;
-                }
+                // Infliger les dégâts et la brûlure à TOUS les ennemis dans la portée
+                this.scene.enemies.forEach(e => {
+                    if (e.alive) {
+                        const d = Phaser.Math.Distance.Between(
+                            this.sprite.x,
+                            this.sprite.y,
+                            e.sprite.x,
+                            e.sprite.y
+                        );
+                        if (d <= this.range) {
+                            const wasAlive = e.alive;
+                            e.takeDamage(damage);
+                            this.totalDamage += damage;
+                            
+                            // Appliquer la brûlure si l'ennemi est encore vivant
+                            if (e.alive && e.applyBurn) {
+                                e.applyBurn(0, burnDuration, this); // damagePerTick ignoré, calculé dans applyBurn
+                            }
+                            
+                            if (wasAlive && !e.alive) {
+                                this.enemyKills++;
+                            }
+                        }
+                    }
+                });
                 
                 return null; // Pas de projectile
             }
@@ -809,14 +941,12 @@ class Tower {
                 // Vérifier que le spritesheet et l'animation existent
                 if (this.scene.textures.exists('nami_attack_sheet') && this.scene.anims.exists('nami_attack')) {
                     this.sprite.setTexture('nami_attack_sheet');
-                    this.sprite.setDisplaySize(62, 50); // TAILLE COMBAT harmonisée (ratio 122:99)
                     this.sprite.play('nami_attack');
                     
                     // Revenir à l'image idle après l'attaque
                     this.sprite.once('animationcomplete', () => {
                         this.sprite.setTexture('nami');
-                        this.sprite.setDisplaySize(28, 58); // Taille équilibrée
-                        this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
+                        this.sprite.setFlipX(this.lastFlipX);
                         this.sprite.play('nami_idle');
                     });
                 } else {
@@ -826,7 +956,6 @@ class Tower {
                     
                     // Fallback: rester en idle
                     this.sprite.setTexture('nami');
-                    this.sprite.setDisplaySize(28, 58); // Taille équilibrée
                 }
                 
                 // Calculer les dégâts avec critique
@@ -864,18 +993,36 @@ class Tower {
                 // Retourner le sprite vers l'ennemi
                 this.sprite.setFlipX(Math.cos(angleToEnemy) < 0);
                 
-                // Jouer l'animation d'attaque
+                // Jouer l'animation d'attaque - frame 208x120 (laser)
                 this.sprite.setTexture('franky_attack_sheet');
-                this.sprite.setDisplaySize(87, 50); // Ratio 208:120 (1.73:1) - Hauteur fixe 50
                 this.sprite.play('franky_attack');
                 
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle en conservant la direction
                     this.sprite.setTexture('franky');
-                    this.sprite.setDisplaySize(58, 50); // Taille idle
-                    this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
+                    this.sprite.setFlipX(this.lastFlipX);
                     this.sprite.play('franky_idle');
                 });
+                
+                // Calculer les dégâts avec critique
+                let damage = this.damage;
+                const isCrit = Math.random() * 100 < this.critChance;
+                if (isCrit) {
+                    damage = Math.floor(damage * 1.5);
+                }
+                
+                // Créer un projectile perçant qui traverse tous les ennemis
+                const piercingProjectile = new PiercingProjectile(
+                    this.scene,
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy,
+                    damage,
+                    0x06b6d4, // Couleur cyan pour Franky
+                    this,
+                    this.range
+                );
+                return piercingProjectile;
             }
             
             // Robin utilise ses mains pour immobiliser les ennemis en zone
@@ -891,16 +1038,14 @@ class Tower {
                 // Retourner le sprite vers l'ennemi
                 this.sprite.setFlipX(Math.cos(angleToEnemy) < 0);
                 
-                // Jouer l'animation d'attaque
+                // Jouer l'animation d'attaque - frame 66x74 (similaire à idle)
                 this.sprite.setTexture('robin_attack_sheet');
-                this.sprite.setDisplaySize(46, 50); // Ratio 84:92 (0.91:1) - Hauteur fixe 50
                 this.sprite.play('robin_attack');
                 
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle en conservant la direction
                     this.sprite.setTexture('robin');
-                    this.sprite.setDisplaySize(44, 50); // Taille idle
-                    this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
+                    this.sprite.setFlipX(this.lastFlipX);
                     this.sprite.play('robin_idle');
                 });
                 
@@ -982,17 +1127,15 @@ class Tower {
                 // Retourner le sprite vers l'ennemi
                 this.sprite.setFlipX(Math.cos(angleToEnemy) < 0);
                 
-                // Jouer l'animation d'attaque
+                // Jouer l'animation d'attaque - frame plus large pour l'épée
                 this.sprite.setTexture('brook_attack_sheet');
-                this.sprite.setDisplaySize(94, 50); // Ratio 190:101 (1.88:1) - Hauteur fixe 50
                 this.sprite.play('brook_attack');
                 
                 this.sprite.once('animationcomplete', () => {
                     // Revenir à la texture idle en conservant la direction
                     this.sprite.setTexture('brook');
-                    this.sprite.setDisplaySize(44, 50); // Taille idle
-                    this.sprite.setFlipX(this.lastFlipX); // Conserver la dernière direction
-                    this.sprite.play('brook_idle');
+                    this.sprite.setFlipX(this.lastFlipX);
+                    this.sprite.play('brook');
                 });
                 
                 // Effet visuel rapide (éclairs blancs)
@@ -1018,6 +1161,25 @@ class Tower {
                         onComplete: () => flashLine.destroy()
                     });
                 }
+                
+                // Calculer les dégâts avec critique
+                let damage = this.damage;
+                const isCrit = Math.random() * 100 < this.critChance;
+                if (isCrit) {
+                    damage = Math.floor(damage * 1.5);
+                }
+                
+                // Créer un projectile rapide
+                const projectile = new Projectile(
+                    this.scene,
+                    this.sprite.x,
+                    this.sprite.y,
+                    enemy,
+                    damage,
+                    this.color,
+                    this
+                );
+                return projectile;
             }
             
             // Les autres tours (et ussop, Chopper, Brook) lancent des projectiles
@@ -1202,7 +1364,7 @@ class Tower {
             targetEnemy.sprite.y,
             'robin_hands'
         );
-        handsSprite.setDisplaySize(70, 40);
+        handsSprite.setDisplaySize(60, 30);
         handsSprite.setDepth(100);
         handsSprite.setAlpha(0.9);
         
@@ -1257,8 +1419,10 @@ class Tower {
             enemy.speed = newSpeed;
             enemy.currentSlowAmount = slowAmount;
             
-            // Effet visuel : teinte violette sur l'ennemi
-            enemy.sprite.setTint(0xaa55ff);
+            // Effet visuel : teinte violette sur l'ennemi (seulement si c'est un sprite)
+            if (enemy.sprite && typeof enemy.sprite.setTint === 'function') {
+                enemy.sprite.setTint(0xaa55ff);
+            }
             
             // Supprimer le ralentissement après la durée
             if (enemy.slowTimer) {
@@ -1269,7 +1433,9 @@ class Tower {
                 if (enemy && enemy.alive) {
                     enemy.speed = enemy.originalSpeed;
                     enemy.currentSlowAmount = 0;
-                    enemy.sprite.clearTint();
+                    if (enemy.sprite && typeof enemy.sprite.clearTint === 'function') {
+                        enemy.sprite.clearTint();
+                    }
                 }
             });
         }
@@ -1283,10 +1449,12 @@ class Tower {
     createussopPoisonProjectile(targetEnemy) {
         // Créer un sprite animé pour le projectile au lieu d'un cercle
         let projectileSprite;
-        
+
         if (this.scene.textures.exists('ussop_projectile') && this.scene.anims.exists('ussop_projectile')) {
             projectileSprite = this.scene.add.sprite(this.sprite.x, this.sprite.y, 'ussop_projectile');
             projectileSprite.play('ussop_projectile');
+            projectileSprite.setDisplaySize(20, 20); // Ratio 190:101 (1.88:1) - Hauteur fixe 50
+
         } else {
             // Fallback: cercle vert
             projectileSprite = this.scene.add.circle(this.sprite.x, this.sprite.y, 5, 0x00ff00, 1);

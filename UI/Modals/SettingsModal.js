@@ -1,126 +1,104 @@
 /**
- * Modal des réglages du jeu
+ * Modal des réglages - Style moderne One Piece
  */
 class SettingsModal extends BaseModal {
     constructor(scene, topMenu) {
-        super(scene, topMenu, '⚙️ RÉGLAGES', 700, 650);
+        super(scene, topMenu, '⚙️ RÉGLAGES', 700, 620);
         this.createContent();
     }
     
     createContent() {
-        const startY = this.contentY + 40;
+        const startY = this.contentY;
         
-        // Section Slots d'équipement
-        const slotsTitle = this.scene.add.text(
-            this.x, startY,
-            '👥 SLOTS D\'ÉQUIPEMENT',
-            {
-                fontSize: '22px',
-                fontFamily: 'Arial',
-                color: '#ffd700',
-                fontStyle: 'bold'
-            }
-        );
-        slotsTitle.setOrigin(0.5);
-        slotsTitle.setDepth(2002);
-        this.addElement(slotsTitle);
+        // === Section Slots d'équipement ===
+        let currentY = this.createSection(startY, 'SLOTS D\'ÉQUIPEMENT', '👥');
         
-        // Informations sur les slots
         const unlockedSlots = this.scene.player.collection.getUnlockedSlots();
         const maxSlots = this.scene.player.collection.maxEquipped;
         const stars = this.scene.player.collection.getStars();
         const slotCost = this.scene.player.collection.slotCost;
         
-        const infoText = this.scene.add.text(
-            this.x, startY + 50,
-            `Slots débloqués: ${unlockedSlots} / ${maxSlots}\nÉtoiles disponibles: ⭐ ${stars}`,
+        // Info slots
+        const slotInfoCard = this.createCard(this.x, currentY + 35, this.width - 80, 50, false);
+        
+        const slotsInfo = this.scene.add.text(
+            this.x, currentY + 35,
+            `${unlockedSlots} / ${maxSlots} slots débloqués  •  ⭐ ${stars} étoiles disponibles`,
             {
-                fontSize: '18px',
-                fontFamily: 'Arial',
-                color: '#e0e0e0',
-                align: 'center'
+                fontSize: '16px',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
+                color: '#b0b0b0'
             }
         );
-        infoText.setOrigin(0.5);
-        infoText.setDepth(2002);
-        this.addElement(infoText);
+        slotsInfo.setOrigin(0.5);
+        slotsInfo.setDepth(2003);
+        this.addElement(slotsInfo);
         
         // Affichage visuel des slots
-        const slotStartX = this.x - 200;
-        const slotStartY = startY + 130;
-        const slotSize = 35;
-        const slotGap = 10;
+        currentY += 75;
+        const slotSize = 38;
+        const slotGap = 8;
+        const totalWidth = maxSlots * slotSize + (maxSlots - 1) * slotGap;
+        const slotStartX = this.x - totalWidth / 2 + slotSize / 2;
         
         for (let i = 0; i < maxSlots; i++) {
-            const row = Math.floor(i / 5);
-            const col = i % 5;
-            const x = slotStartX + col * (slotSize + slotGap);
-            const y = slotStartY + row * (slotSize + slotGap);
-            
+            const x = slotStartX + i * (slotSize + slotGap);
             const isUnlocked = i < unlockedSlots;
-            const isPremium = i >= 6; // Slots 7-10 sont premium
+            const isPremium = i >= 6;
             
-            const slotBox = this.scene.add.rectangle(
-                x, y,
+            // Fond du slot
+            const slotBg = this.scene.add.rectangle(
+                x, currentY,
                 slotSize, slotSize,
-                isUnlocked ? 0x51cf66 : 0x333333, 0.9
+                isUnlocked ? this.colors.success : this.colors.secondary,
+                isUnlocked ? 0.9 : 0.6
             );
-            slotBox.setDepth(2002);
-            slotBox.setStrokeStyle(2, isUnlocked ? 0xffffff : (isPremium ? 0xffd700 : 0x666666), 0.8);
-            this.addElement(slotBox);
+            slotBg.setDepth(2002);
+            slotBg.setStrokeStyle(2, isUnlocked ? 0x27ae60 : (isPremium ? this.colors.accent : this.colors.border), 0.8);
+            this.addElement(slotBg);
             
-            // Icône de cadenas pour les slots verrouillés
-            if (!isUnlocked && isPremium) {
-                const lockIcon = this.scene.add.text(
-                    x, y,
-                    '🔒',
-                    {
-                        fontSize: '16px'
-                    }
-                );
+            if (!isUnlocked) {
+                const lockIcon = this.scene.add.text(x, currentY, isPremium ? '🔒' : '•', {
+                    fontSize: isPremium ? '16px' : '20px'
+                });
                 lockIcon.setOrigin(0.5);
                 lockIcon.setDepth(2003);
                 this.addElement(lockIcon);
-            }
-            
-            // Numéro du slot
-            const slotNum = this.scene.add.text(
-                x, y,
-                (i + 1).toString(),
-                {
-                    fontSize: '14px',
-                    fontFamily: 'Arial',
-                    color: isUnlocked ? '#ffffff' : '#666666',
+            } else {
+                const checkIcon = this.scene.add.text(x, currentY, '✓', {
+                    fontSize: '18px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: '#ffffff',
                     fontStyle: 'bold'
+                });
+                checkIcon.setOrigin(0.5);
+                checkIcon.setDepth(2003);
+                this.addElement(checkIcon);
                 }
-            );
-            slotNum.setOrigin(0.5);
-            slotNum.setDepth(isUnlocked ? 2003 : 2002);
-            this.addElement(slotNum);
         }
         
-        // Bouton pour débloquer un slot
+        // Bouton débloquer slot
+        currentY += 50;
         if (unlockedSlots < maxSlots) {
             const canUnlock = this.scene.player.collection.canUnlockSlot();
             
             const unlockBtn = this.scene.add.rectangle(
-                this.x, startY + 250,
-                300, 50,
-                canUnlock ? 0xffd700 : 0x555555, 0.9
+                this.x, currentY,
+                280, 45,
+                canUnlock ? this.colors.accent : 0x444444, 0.9
             );
             unlockBtn.setDepth(2002);
-            unlockBtn.setStrokeStyle(2, 0xffffff, 0.8);
+            unlockBtn.setStrokeStyle(2, canUnlock ? 0xffd700 : 0x555555, 0.6);
             this.addElement(unlockBtn);
             
             const unlockText = this.scene.add.text(
-                this.x, startY + 250,
-                canUnlock ? `⭐ Débloquer Slot ${unlockedSlots + 1} (-${slotCost} étoiles)` : `🔒 Pas assez d'étoiles (${stars}/${slotCost})`,
+                this.x, currentY,
+                canUnlock ? `🔓 Débloquer Slot ${unlockedSlots + 1} (${slotCost} ⭐)` : `🔒 ${slotCost} ⭐ requis`,
                 {
-                    fontSize: '16px',
-                    fontFamily: 'Arial',
-                    color: '#ffffff',
-                    fontStyle: 'bold',
-                    align: 'center'
+                    fontSize: '15px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: canUnlock ? '#1a1a2e' : '#888888',
+                    fontStyle: 'bold'
                 }
             );
             unlockText.setOrigin(0.5);
@@ -129,37 +107,25 @@ class SettingsModal extends BaseModal {
             
             if (canUnlock) {
                 unlockBtn.setInteractive({ useHandCursor: true });
-                
-                unlockBtn.on('pointerover', () => {
-                    unlockBtn.setFillStyle(0xffed4e, 0.9);
-                });
-                
-                unlockBtn.on('pointerout', () => {
-                    unlockBtn.setFillStyle(0xffd700, 0.9);
-                });
-                
+                unlockBtn.on('pointerover', () => unlockBtn.setFillStyle(0xffd700, 1));
+                unlockBtn.on('pointerout', () => unlockBtn.setFillStyle(this.colors.accent, 0.9));
                 unlockBtn.on('pointerdown', () => {
                     const result = this.scene.player.collection.unlockSlot();
                     if (result.success) {
-                        // Sauvegarder
-                        if (this.scene.saveManager) {
-                            this.scene.saveManager.autoSave();
-                        }
-                        // Rafraîchir la modal
+                        if (this.scene.saveManager) this.scene.saveManager.autoSave();
                         this.topMenu.closeModal();
                         this.topMenu.openTab('settings');
                     }
                 });
             }
         } else {
-            // Tous les slots sont débloqués
             const completeText = this.scene.add.text(
-                this.x, startY + 250,
-                '✅ Tous les slots sont débloqués !',
+                this.x, currentY,
+                '✅ Tous les slots débloqués !',
                 {
-                    fontSize: '18px',
-                    fontFamily: 'Arial',
-                    color: '#51cf66',
+                    fontSize: '16px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: '#2ecc71',
                     fontStyle: 'bold'
                 }
             );
@@ -168,22 +134,11 @@ class SettingsModal extends BaseModal {
             this.addElement(completeText);
         }
         
-        // Section Sauvegarde
-        const saveTitle = this.scene.add.text(
-            this.x, startY + 320,
-            '💾 SAUVEGARDE',
-            {
-                fontSize: '22px',
-                fontFamily: 'Arial',
-                color: '#4dabf7',
-                fontStyle: 'bold'
-            }
-        );
-        saveTitle.setOrigin(0.5);
-        saveTitle.setDepth(2002);
-        this.addElement(saveTitle);
+        // === Section Sauvegarde ===
+        currentY = this.createSection(currentY + 45, 'SAUVEGARDE', '💾');
+        currentY += 25;
         
-        // Créer un input file caché pour l'import
+        // Créer l'input file caché
         if (!document.getElementById('save-file-input')) {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -197,35 +152,38 @@ class SettingsModal extends BaseModal {
                 if (file) {
                     this.scene.saveManager.importSave(file)
                         .then(() => {
-                            alert('Sauvegarde importée avec succès ! Le jeu va se recharger.');
+                            alert('Sauvegarde importée ! Le jeu va se recharger.');
                             window.location.reload();
                         })
                         .catch((error) => {
-                            alert('Erreur lors de l\'import : ' + error.message);
+                            alert('Erreur: ' + error.message);
                         });
                 }
-                // Réinitialiser l'input
                 fileInput.value = '';
             });
         }
         
+        // Boutons export/import côte à côte
+        const btnWidth = 180;
+        const btnGap = 20;
+        
         // Bouton Exporter
         const exportBtn = this.scene.add.rectangle(
-            this.x - 160, startY + 380,
-            220, 40,
-            0x4dabf7, 0.9
+            this.x - btnWidth / 2 - btnGap / 2, currentY,
+            btnWidth, 45,
+            0x3498db, 0.9
         );
         exportBtn.setDepth(2002);
-        exportBtn.setStrokeStyle(2, 0xffffff, 0.6);
+        exportBtn.setStrokeStyle(2, 0x5dade2, 0.6);
         exportBtn.setInteractive({ useHandCursor: true });
         this.addElement(exportBtn);
         
         const exportText = this.scene.add.text(
-            this.x - 160, startY + 380,
+            this.x - btnWidth / 2 - btnGap / 2, currentY,
             '📥 Exporter',
             {
                 fontSize: '16px',
-                fontFamily: 'Arial',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
                 color: '#ffffff',
                 fontStyle: 'bold'
             }
@@ -234,33 +192,31 @@ class SettingsModal extends BaseModal {
         exportText.setDepth(2003);
         this.addElement(exportText);
         
-        exportBtn.on('pointerover', () => exportBtn.setFillStyle(0x74c0fc, 0.9));
-        exportBtn.on('pointerout', () => exportBtn.setFillStyle(0x4dabf7, 0.9));
+        exportBtn.on('pointerover', () => exportBtn.setFillStyle(0x5dade2, 1));
+        exportBtn.on('pointerout', () => exportBtn.setFillStyle(0x3498db, 0.9));
         exportBtn.on('pointerdown', () => {
             if (this.scene.saveManager.exportSave()) {
-                alert('Sauvegarde exportée avec succès !');
-            } else {
-                alert('Erreur lors de l\'export de la sauvegarde.');
+                this.scene.ui.showMessage('Sauvegarde exportée !', 2000);
             }
         });
         
         // Bouton Importer
         const importBtn = this.scene.add.rectangle(
-            this.x + 60, startY + 380,
-            220, 40,
-            0x51cf66, 0.9
+            this.x + btnWidth / 2 + btnGap / 2, currentY,
+            btnWidth, 45,
+            this.colors.success, 0.9
         );
         importBtn.setDepth(2002);
-        importBtn.setStrokeStyle(2, 0xffffff, 0.6);
+        importBtn.setStrokeStyle(2, 0x27ae60, 0.6);
         importBtn.setInteractive({ useHandCursor: true });
         this.addElement(importBtn);
         
         const importText = this.scene.add.text(
-            this.x + 60, startY + 380,
+            this.x + btnWidth / 2 + btnGap / 2, currentY,
             '📤 Importer',
             {
                 fontSize: '16px',
-                fontFamily: 'Arial',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
                 color: '#ffffff',
                 fontStyle: 'bold'
             }
@@ -269,20 +225,21 @@ class SettingsModal extends BaseModal {
         importText.setDepth(2003);
         this.addElement(importText);
         
-        importBtn.on('pointerover', () => importBtn.setFillStyle(0x8ce99a, 0.9));
-        importBtn.on('pointerout', () => importBtn.setFillStyle(0x51cf66, 0.9));
+        importBtn.on('pointerover', () => importBtn.setFillStyle(0x27ae60, 1));
+        importBtn.on('pointerout', () => importBtn.setFillStyle(this.colors.success, 0.9));
         importBtn.on('pointerdown', () => {
             document.getElementById('save-file-input').click();
         });
         
         // Info auto-save
+        currentY += 40;
         const autoSaveInfo = this.scene.add.text(
-            this.x, startY + 440,
-            '💡 La sauvegarde est automatique toutes les 30s',
+            this.x, currentY,
+            '💡 Sauvegarde automatique toutes les 30 secondes',
             {
-                fontSize: '14px',
-                fontFamily: 'Arial',
-                color: '#a0a0a0',
+                fontSize: '13px',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
+                color: '#6c7a89',
                 fontStyle: 'italic'
             }
         );
@@ -290,23 +247,27 @@ class SettingsModal extends BaseModal {
         autoSaveInfo.setDepth(2002);
         this.addElement(autoSaveInfo);
         
-        // Bouton réinitialiser progression
+        // === Section Danger ===
+        currentY = this.createSection(currentY + 30, 'ZONE DANGER', '⚠️');
+        currentY += 35;
+        
+        // Bouton Reset
         const resetBtn = this.scene.add.rectangle(
-            this.x, startY + 510,
-            300, 45,
-            0xff6b6b, 0.9
+            this.x, currentY,
+            280, 45,
+            this.colors.danger, 0.9
         );
         resetBtn.setDepth(2002);
-        resetBtn.setStrokeStyle(2, 0xffffff, 0.5);
+        resetBtn.setStrokeStyle(2, 0xc0392b, 0.6);
         resetBtn.setInteractive({ useHandCursor: true });
         this.addElement(resetBtn);
         
         const resetText = this.scene.add.text(
-            this.x, startY + 510,
-            '⚠️ Réinitialiser la progression',
+            this.x, currentY,
+            '🗑️ Réinitialiser tout',
             {
                 fontSize: '16px',
-                fontFamily: 'Arial',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
                 color: '#ffffff',
                 fontStyle: 'bold'
             }
@@ -315,15 +276,12 @@ class SettingsModal extends BaseModal {
         resetText.setDepth(2003);
         this.addElement(resetText);
         
-        resetBtn.on('pointerover', () => resetBtn.setFillStyle(0xff8787, 0.9));
-        resetBtn.on('pointerout', () => resetBtn.setFillStyle(0xff6b6b, 0.9));
+        resetBtn.on('pointerover', () => resetBtn.setFillStyle(0xc0392b, 1));
+        resetBtn.on('pointerout', () => resetBtn.setFillStyle(this.colors.danger, 0.9));
         resetBtn.on('pointerdown', () => {
-            if (confirm('Êtes-vous sûr de vouloir réinitialiser toute votre progression ? Cela supprimera TOUT : vagues, or, tours obtenues, niveaux, etc.')) {
-                // Rediriger vers l'URL avec le paramètre reset=1
-                // Le GameScene détectera ce paramètre et supprimera tout AVANT de charger
+            if (confirm('⚠️ Êtes-vous sûr de vouloir TOUT réinitialiser ?\n\nCela supprimera définitivement:\n- Votre progression\n- Vos tours débloquées\n- Vos étoiles\n- Toutes vos statistiques')) {
                 window.location.href = window.location.pathname + '?reset=1';
             }
         });
     }
 }
-

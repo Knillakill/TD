@@ -4,8 +4,11 @@ class GameScene extends Phaser.Scene {
     }
     
     preload() {
+
+        this.load.audio('audio', 'assets/sounds/Musics/19.ogg');
+        
         // Charger l'image de la map Arlong Park
-        this.load.image('arlong_park', 'assets/map1.png');
+        this.load.image('arlong_park', 'assets/map2.png');
         
         // Charger le spritesheet du pirate à l'épée (SwdPirate - pirate_basic)
         // 253x50 pixels - 6 frames de 42x50
@@ -14,6 +17,10 @@ class GameScene extends Phaser.Scene {
             frameHeight: 50
         });
         
+        this.load.spritesheet('swd_pirate_walk2', 'assets/Swdpirate2.png', {
+            frameWidth: 335,
+            frameHeight: 350
+        });
         // Charger le spritesheet de mort du pirate à l'épée
         // 100x60 pixels - 2 frames de 50x60
         this.load.spritesheet('swd_pirate_death', 'assets/SwdPiratesdeath.png', {
@@ -41,6 +48,22 @@ class GameScene extends Phaser.Scene {
             frameWidth: 35,
             frameHeight: 53
         });
+        this.load.spritesheet('chew_walk', 'assets/chew.png', {
+            frameWidth: 84,
+            frameHeight: 80
+        });
+        
+        // Charger le sprite fishman (homme-poisson armé)
+        this.load.spritesheet('fishman', 'assets/fishman.png', {
+            frameWidth: 73,
+            frameHeight: 69
+        });
+        
+        // Charger le sprite fishman2 (homme-poisson costaud)
+        this.load.spritesheet('fishman2', 'assets/fishman2.png',{
+            frameWidth: 81,
+            frameHeight: 65
+        });
         
         // Charger le mug de Luffy (fond de carte)
         this.load.image('luffymug', 'assets/luffymug.png');
@@ -48,14 +71,14 @@ class GameScene extends Phaser.Scene {
         // Charger la spritesheet de Luffy idle
         // Charger la spritesheet de Luffy idle (9 frames équidistants)
         // 396x68 pixels - 9 frames de 44x68 (équidistant, centré)
-        this.load.spritesheet('luffy', 'assets/luffysprite_normalized.png', {
-            frameWidth: 44,
-            frameHeight: 68
+        this.load.spritesheet('luffy', 'assets/luffy.png', {
+            frameWidth: 38,
+            frameHeight: 75
         });
         
         // Charger la spritesheet de Luffy attaque (12 frames)
         // 1212x73 pixels - 12 frames de 101x73 (uniforme, centré)
-        this.load.spritesheet('luffy_attack_sheet', 'assets/luffyspritecb.png?v=2', {
+        this.load.spritesheet('luffy_attack_sheet', 'assets/luffycbt.png', {
             frameWidth: 101,
             frameHeight: 73
         });
@@ -74,29 +97,29 @@ class GameScene extends Phaser.Scene {
         
         // Charger la spritesheet de Zoro idle
         // 156x85 pixels - 4 frames de 39x85
-        this.load.spritesheet('zoro', 'assets/zorrosprite.png', {
-            frameWidth: 39,
-            frameHeight: 85
+        this.load.spritesheet('zoro', 'assets/zorro.png', {
+            frameWidth: 70,
+            frameHeight: 75
         });
         
         // Charger la spritesheet de Zoro attaque
         // 923x84 pixels - 13 frames uniformes de 71x84
-        this.load.spritesheet('zoro_attack_sheet', 'assets/zorrospritecb_uniform.png', {
-            frameWidth: 71,
-            frameHeight: 84
+        this.load.spritesheet('zoro_attack_sheet', 'assets/zorrocbt.png', {
+            frameWidth: 106,
+            frameHeight: 75
         });
         
         // Charger la spritesheet d'Ussop idle
         // 236x65 pixels - 4 frames de 59x65
-        this.load.spritesheet('ussop', 'assets/ussopsprite.png', {
-            frameWidth: 59,
-            frameHeight: 65
+        this.load.spritesheet('ussop', 'assets/ussop.png', {
+            frameWidth: 90,
+            frameHeight: 75
         });
         
         // Charger la spritesheet d'Ussop attaque (position de tir)
         // 176x58 pixels - 12 frames de 15x58 (arrondi: 176/12≈14.67)
-        this.load.spritesheet('ussop_attack_sheet', 'assets/ussopspritecb.png', {
-            frameWidth:  114,
+        this.load.spritesheet('ussop_attack_sheet', 'assets/ussopcbt.png', {
+            frameWidth:  119,
             frameHeight: 70
         });
         
@@ -120,30 +143,30 @@ class GameScene extends Phaser.Scene {
         
         // Charger la spritesheet de Chopper idle (4 frames équidistants)
         // 4 frames de 28x39 (équidistant, centré)
-        this.load.spritesheet('chopper', 'assets/choppersprite_normalized.png', {
-            frameWidth: 28,
-            frameHeight: 39
+        this.load.spritesheet('chopper', 'assets/chopper.png', {
+            frameWidth: 30,
+            frameHeight: 55
         });
         
         // Charger la spritesheet de Chopper attaque
         // 7 frames de 28x36 (équidistant)
-        this.load.spritesheet('chopper_attack_sheet', 'assets/chopperspritecb_normalized.png', {
-            frameWidth: 28,
-            frameHeight: 36
+        this.load.spritesheet('chopper_attack_sheet', 'assets/choppercbt.png', {
+            frameWidth: 111,
+            frameHeight: 67
         });
         
         // Charger la spritesheet de Franky idle
         // 472x102 pixels - 4 frames de 118x102
-        this.load.spritesheet('franky', 'assets/frankysprite.png?v=1', {
-            frameWidth: 118,
-            frameHeight: 102
+        this.load.spritesheet('franky', 'assets/franky.png', {
+            frameWidth: 92,
+            frameHeight: 75
         });
         
         // Charger la spritesheet de Franky attaque
         // 1456x120 pixels - 7 frames de 208x120
-        this.load.spritesheet('franky_attack_sheet', 'assets/frankyspritecb.png?v=1', {
-            frameWidth: 208,
-            frameHeight: 120
+        this.load.spritesheet('franky_attack_sheet', 'assets/frankycbt.png', {
+            frameWidth: 86,
+            frameHeight: 90
         });
         
         // Log de débogage pour vérifier le chargement
@@ -153,31 +176,31 @@ class GameScene extends Phaser.Scene {
         
         // Charger la spritesheet de Sanji idle
         // 111x77 pixels - 4 frames de 27x77
-        this.load.spritesheet('sanji', 'assets/sanjisprite_normalized.png', {
-            frameWidth: 27,
-            frameHeight: 77
+        this.load.spritesheet('sanji', 'assets/sanji.png', {
+            frameWidth: 57,
+            frameHeight: 75
         });
         
         // Charger la spritesheet de Sanji attaque
         // 1545x106 pixels - 15 frames de 103x106
-        this.load.spritesheet('sanji_attack_sheet', 'assets/sanjispritecb_uniform.png', {
-            frameWidth: 103,
-            frameHeight: 106
+        this.load.spritesheet('sanji_attack_sheet', 'assets/sanjicbt.png', {
+            frameWidth: 100,
+            frameHeight: 94
         });
         
         // Charger la spritesheet de Nami idle (espacement 10px à droite)
         // 150x86 pixels - 3 frames de 50x86 (40px contenu + 10px espacement)
-        this.load.spritesheet('nami', 'assets/namisprite_spaced.png', {
-            frameWidth: 50,
-            frameHeight: 86
+        this.load.spritesheet('nami', 'assets/nami.png', {
+            frameWidth: 72,
+            frameHeight: 75
         });
         
         // Charger la spritesheet de Nami attaque (4 frames)
         // Image actuelle: 488x99 pixels - 4 frames de 122x99 pixels chacune
         // Version 2 avec fond transparent
-        this.load.spritesheet('nami_attack_sheet', 'assets/namispritecb.png?v=3', {
-            frameWidth: 122,
-            frameHeight: 99
+        this.load.spritesheet('nami_attack_sheet', 'assets/namicbt.png', {
+            frameWidth: 118,
+            frameHeight: 87
         });
         
         // Log de débogage pour vérifier le chargement
@@ -199,16 +222,16 @@ class GameScene extends Phaser.Scene {
         
         // Charger la spritesheet de Robin idle
         // 264x74 pixels - 4 frames de 66x74
-        this.load.spritesheet('robin', 'assets/robinsprite.png?v=1', {
-            frameWidth: 66,
-            frameHeight: 74
+        this.load.spritesheet('robin', 'assets/robin.png', {
+            frameWidth: 65,
+            frameHeight: 75
         });
         
         // Charger la spritesheet de Robin attaque
         // 840x92 pixels - 10 frames de 84x92
-        this.load.spritesheet('robin_attack_sheet', 'assets/robinspritecb.png?v=1', {
-            frameWidth: 84,
-            frameHeight: 92
+        this.load.spritesheet('robin_attack_sheet', 'assets/robincbt.png', {
+            frameWidth: 75,
+            frameHeight: 75
         });
         
         // Log de débogage
@@ -230,17 +253,17 @@ class GameScene extends Phaser.Scene {
         
         // Charger la spritesheet de Brook idle
         // 376x107 pixels - 4 frames de 94x107
-        this.load.spritesheet('brook', 'assets/brooksprite.png?v=1', {
-            frameWidth: 94,
-            frameHeight: 107
+        this.load.spritesheet('brook', 'assets/brook.png', {
+            frameWidth: 74,
+            frameHeight: 92
         });
         
         // Charger la spritesheet de Brook attaque
         // 2090x101 pixels - À CONFIRMER le nombre de frames
         // Estimation: 11 frames de 190x101
-        this.load.spritesheet('brook_attack_sheet', 'assets/brookspritecb.png?v=1', {
-            frameWidth: 190,
-            frameHeight: 101
+        this.load.spritesheet('brook_attack_sheet', 'assets/brookcbt.png', {
+            frameWidth: 110,
+            frameHeight: 122
         });
         
         // Log de débogage
@@ -248,12 +271,43 @@ class GameScene extends Phaser.Scene {
             console.log('✅ Spritesheet brook_attack_sheet chargé avec succès');
         });
         
+        // Charger la spritesheet de Jimbe idle
+        // 404x85 pixels - 4 frames de 101x85
+        this.load.spritesheet('jimbe', 'assets/jimbe.png', {
+            frameWidth: 101,
+            frameHeight: 85
+        });
+        
+        // Charger la spritesheet de Jimbe attaque
+        // 954x113 pixels - 9 frames de 106x113
+        this.load.spritesheet('jimbe_attack_sheet', 'assets/jimbecbt.png', {
+            frameWidth: 106,
+            frameHeight: 113
+        });
+        
+        // Charger la spritesheet du projectile de Jimbe
+        // 730x103 pixels - 7 frames de 104x103
+        this.load.spritesheet('jimbe_projectile', 'assets/jimbeprojectil.png', {
+            frameWidth: 104,
+            frameHeight: 103
+        });
+        
+        // Log de débogage
+        this.load.once('filecomplete-spritesheet-jimbe_attack_sheet', () => {
+            console.log('✅ Spritesheet jimbe_attack_sheet chargé avec succès');
+        });
+        this.load.once('filecomplete-spritesheet-jimbe_projectile', () => {
+            console.log('✅ Spritesheet jimbe_projectile chargé avec succès');
+        });
+        
         // Charger l'icône berry (monnaie)
         this.load.image('berry', 'assets/berry.webp');
     }
 
     create() {
-        // Ajouter l'image de fond au centre (x=300 pour laisser l'espace à gauche)
+        this.audio = this.sound.add('audio', { loop: true });
+        this.audio.play({ volume: 0.5 });
+        // Ajouter l'image de fond (x=300 = après l'interface gauche de 280px + 20px de marge)
         const map = this.add.image(300, 0, 'arlong_park');
         map.setOrigin(0, 0);
         map.setDisplaySize(1100, 800);
@@ -276,6 +330,7 @@ class GameScene extends Phaser.Scene {
         this.enemies = [];
         this.projectiles = [];
         this.towers = [];
+        this.isGameOver = false; // Flag pour arrêter le jeu après game over
         
         // Initialiser la vague de départ
         this.waveNumber = 0; // Par défaut, commence à 0
@@ -350,6 +405,9 @@ class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
+        // Ne pas mettre à jour si le jeu est terminé
+        if (this.isGameOver) return;
+        
         // Mettre à jour le gestionnaire de vagues
         const newEnemy = this.waveManager.update(time);
         if (newEnemy) {
@@ -386,6 +444,10 @@ class GameScene extends Phaser.Scene {
             if (!enemy.alive) {
                 // Donner la récompense spécifique à l'ennemi
                 this.player.gold += enemy.getReward();
+                // Détruire l'ennemi avant de le retirer du tableau
+                if (enemy.destroy) {
+                    enemy.destroy();
+                }
                 this.enemies.splice(i, 1);
                 this.waveManager.enemyKilled();
                 continue;
@@ -393,7 +455,8 @@ class GameScene extends Phaser.Scene {
             
             enemy.update(delta);
 
-            if(enemy.pathIndex >= PATH.length - 1) {
+            // Utiliser enemy.path.length car chaque ennemi peut avoir un chemin différent
+            if(enemy.pathIndex >= enemy.path.length - 1) {
                 enemy.reachEnd(this.player);
                 this.enemies.splice(i, 1);
                 this.waveManager.enemyReachedEnd();
@@ -428,11 +491,13 @@ class GameScene extends Phaser.Scene {
     }
     
     findClosestEnemy(tower) {
-        // Trouver l'ennemi le plus avancé sur le chemin (premier ennemi)
-        let firstEnemy = null;
-        let maxProgress = -1;
+        // Trouver l'ennemi le plus avancé sur le chemin (celui avec le moins de distance restante)
+        let mostAdvancedEnemy = null;
+        let minRemainingDistance = Infinity;
         
         this.enemies.forEach(enemy => {
+            if (!enemy.alive) return;
+            
             // Calculer la distance à la tour
             const dist = Phaser.Math.Distance.Between(
                 tower.sprite.x,
@@ -441,20 +506,64 @@ class GameScene extends Phaser.Scene {
                 enemy.sprite.y
             );
             
-            // Si l'ennemi est dans la portée
-            if (dist <= tower.range) {
-                // L'ennemi avec le pathIndex le plus élevé est le plus avancé
-                if (enemy.pathIndex > maxProgress) {
-                    maxProgress = enemy.pathIndex;
-                    firstEnemy = enemy;
+            // Si l'ennemi est dans la portée (maximum et minimum pour Jimbe)
+            const minRange = tower.minRange || 0;
+            if (dist <= tower.range && dist >= minRange) {
+                // Calculer la distance restante totale pour cet ennemi
+                const remainingDistance = this.calculateRemainingDistance(enemy);
+                
+                // L'ennemi avec la plus petite distance restante est le plus avancé
+                if (remainingDistance < minRemainingDistance) {
+                    minRemainingDistance = remainingDistance;
+                    mostAdvancedEnemy = enemy;
                 }
             }
         });
         
-        return firstEnemy;
+        return mostAdvancedEnemy;
+    }
+    
+    /**
+     * Calcule la distance restante totale pour un ennemi jusqu'à la fin du chemin
+     * @param {Enemy} enemy - L'ennemi pour lequel calculer la distance
+     * @returns {number} - Distance restante en pixels
+     */
+    calculateRemainingDistance(enemy) {
+        if (!enemy || !enemy.path || enemy.pathIndex >= enemy.path.length - 1) {
+            return 0;
+        }
+        
+        let totalDistance = 0;
+        
+        // Distance de la position actuelle jusqu'au prochain point du chemin
+        const nextPoint = enemy.path[enemy.pathIndex + 1];
+        totalDistance += Phaser.Math.Distance.Between(
+            enemy.sprite.x,
+            enemy.sprite.y,
+            nextPoint.x,
+            nextPoint.y
+        );
+        
+        // Ajouter la distance de tous les segments restants
+        for (let i = enemy.pathIndex + 1; i < enemy.path.length - 1; i++) {
+            const currentPoint = enemy.path[i];
+            const nextSegmentPoint = enemy.path[i + 1];
+            totalDistance += Phaser.Math.Distance.Between(
+                currentPoint.x,
+                currentPoint.y,
+                nextSegmentPoint.x,
+                nextSegmentPoint.y
+            );
+        }
+        
+        return totalDistance;
     }
     
     gameOver() {
+        // Éviter de déclencher plusieurs fois le game over
+        if (this.isGameOver) return;
+        this.isGameOver = true;
+        
         // Sauvegarder avec le flag game over
         if (this.saveManager) {
             this.saveManager.autoSave();
@@ -466,10 +575,14 @@ class GameScene extends Phaser.Scene {
         // Afficher le message de game over
         this.ui.showMessage('GAME OVER!', 5000);
         
+        // Arrêter le jeu (mais pas la scène pour garder les interactions)
+        this.gameRunning = false;
+        
         // Créer un overlay de game over avec option de redémarrer
         this.createGameOverScreen(checkpoint);
         
-        this.scene.pause();
+        // NE PAS mettre en pause la scène sinon les boutons ne fonctionnent pas
+        // this.scene.pause();
     }
     
     createGameOverScreen(checkpoint) {
@@ -544,9 +657,11 @@ class GameScene extends Phaser.Scene {
         });
         
         restartBtn.on('pointerdown', () => {
-            // Sauvegarder avec vague 0 pour recommencer à la vague 1
+            console.log('[GameScene] Bouton Recommencer cliqué - Réinitialisation à la vague 1');
+            // Sauvegarder pour recommencer à la vague 1
             if (this.saveManager) {
-                this.saveManager.saveAtWave(0);
+                this.saveManager.saveAtWave(1); // targetWave = 1, donc savedWave = 0
+                console.log('[GameScene] Sauvegarde effectuée, rechargement...');
             }
             window.location.reload();
         });
@@ -634,7 +749,7 @@ class GameScene extends Phaser.Scene {
         // 369x83 - 9 frames de 41x83
         this.anims.create({
             key: 'luffy_idle',
-            frames: this.anims.generateFrameNumbers('luffy', { start: 0, end: 8 }),
+            frames: this.anims.generateFrameNumbers('luffy', { start: 0, end: 2 }),
             frameRate: 8,
             repeat: -1
         });
@@ -643,8 +758,8 @@ class GameScene extends Phaser.Scene {
         // luffyspritecb.png : 1212x73, 12 frames uniformes de 101x73
         this.anims.create({
             key: 'luffy_attack',
-            frames: this.anims.generateFrameNumbers('luffy_attack_sheet', { start: 0, end: 11 }),
-            frameRate: 12,
+            frames: this.anims.generateFrameNumbers('luffy_attack_sheet', { start: 0, end: 5 }),
+            frameRate: 8,
             repeat: 0
         });
         
@@ -663,9 +778,9 @@ class GameScene extends Phaser.Scene {
         // Animation idle de Zoro
         // 156x85 - 4 frames de 39x85
         this.anims.create({
-            key: 'zoro_idle',
+            key: 'zoro',
             frames: this.anims.generateFrameNumbers('zoro', { start: 0, end: 3 }),
-            frameRate: 6,
+            frameRate: 8,
             repeat: -1
         });
         
@@ -673,8 +788,8 @@ class GameScene extends Phaser.Scene {
         // 923x84 - 13 frames uniformes de 71x84
         this.anims.create({
             key: 'zoro_attack',
-            frames: this.anims.generateFrameNumbers('zoro_attack_sheet', { start: 0, end: 12 }),
-            frameRate: 14,
+            frames: this.anims.generateFrameNumbers('zoro_attack_sheet', { start: 0, end:10 }),
+            frameRate: 8,
             repeat: 0
         });
         
@@ -691,8 +806,8 @@ class GameScene extends Phaser.Scene {
         // 12 frames de 15x58
         this.anims.create({
             key: 'ussop_attack',
-            frames: this.anims.generateFrameNumbers('ussop_attack_sheet', { start: 0, end: 11 }),
-            frameRate: 12,
+            frames: this.anims.generateFrameNumbers('ussop_attack_sheet', { start: 0, end: 6 }),
+            frameRate: 8,
             repeat: 0
         });
         
@@ -720,8 +835,8 @@ class GameScene extends Phaser.Scene {
         // 7 frames de 28x36 (équidistant)
         this.anims.create({
             key: 'chopper_attack',
-            frames: this.anims.generateFrameNumbers('chopper_attack_sheet', { start: 0, end: 6 }),
-            frameRate: 14,
+            frames: this.anims.generateFrameNumbers('chopper_attack_sheet', { start: 0, end: 10 }),
+            frameRate: 8,
             repeat: 0
         });
         
@@ -729,8 +844,8 @@ class GameScene extends Phaser.Scene {
         // 472x102 - 4 frames de 118x102
         this.anims.create({
             key: 'franky_idle',
-            frames: this.anims.generateFrameNumbers('franky', { start: 0, end: 3 }),
-            frameRate: 6,
+            frames: this.anims.generateFrameNumbers('franky', { start: 0, end: 1 }),
+            frameRate: 2,
             repeat: -1
         });
         
@@ -738,7 +853,7 @@ class GameScene extends Phaser.Scene {
         // 1456x120 - 7 frames de 208x120
         this.anims.create({
             key: 'franky_attack',
-            frames: this.anims.generateFrameNumbers('franky_attack_sheet', { start: 0, end: 6 }),
+            frames: this.anims.generateFrameNumbers('franky_attack_sheet', { start: 0, end: 8 }),
             frameRate: 10,
             repeat: 0
         });
@@ -759,8 +874,8 @@ class GameScene extends Phaser.Scene {
         // 840x92 - 10 frames de 84x92
         this.anims.create({
             key: 'robin_attack',
-            frames: this.anims.generateFrameNumbers('robin_attack_sheet', { start: 0, end: 9 }),
-            frameRate: 12,
+            frames: this.anims.generateFrameNumbers('robin_attack_sheet', { start: 0, end: 7 }),
+            frameRate: 8,
             repeat: 0
         });
         
@@ -778,9 +893,9 @@ class GameScene extends Phaser.Scene {
         // Animation idle de Brook
         // 376x107 - 4 frames de 94x107
         this.anims.create({
-            key: 'brook_idle',
-            frames: this.anims.generateFrameNumbers('brook', { start: 0, end: 3 }),
-            frameRate: 8,
+            key: 'brook',
+            frames: this.anims.generateFrameNumbers('brook', { start: 0, end: 2 }),
+            frameRate: 6,
             repeat: -1
         });
         
@@ -800,7 +915,7 @@ class GameScene extends Phaser.Scene {
         this.anims.create({
             key: 'sanji_idle',
             frames: this.anims.generateFrameNumbers('sanji', { start: 0, end: 3 }),
-            frameRate: 6,
+            frameRate: 8,
             repeat: -1
         });
         
@@ -817,12 +932,8 @@ class GameScene extends Phaser.Scene {
         // 3 frames de 44x86 (avec espacement)
         this.anims.create({
             key: 'nami_idle',
-            frames: [
-                { key: 'nami', frame: 0 },
-                { key: 'nami', frame: 1 },
-                { key: 'nami', frame: 0 }
-            ],
-            frameRate: 3, // Très lent pour un effet subtil
+            frames: this.anims.generateFrameNumbers('nami', { start: 0, end: 2 }),
+            frameRate: 8, // Très lent pour un effet subtil
             repeat: -1
         });
         
@@ -831,8 +942,8 @@ class GameScene extends Phaser.Scene {
         if (this.textures.exists('nami_attack_sheet')) {
             this.anims.create({
                 key: 'nami_attack',
-                frames: this.anims.generateFrameNumbers('nami_attack_sheet', { start: 0, end: 3 }),
-                frameRate: 4,
+                frames: this.anims.generateFrameNumbers('nami_attack_sheet', { start: 0, end: 6 }),
+                frameRate: 8,
                 repeat: 0
             });
             console.log('✅ Animation nami_attack créée avec 4 frames (122x99 chacune)');
@@ -863,6 +974,14 @@ class GameScene extends Phaser.Scene {
             repeat: -1
         });
         
+        // Animation du pirate à l'épée (pirate_basic2)
+        // 253x50 - 6 frames de 42x50
+        this.anims.create({
+            key: 'swd_pirate_walk2',
+            frames: this.anims.generateFrameNumbers('swd_pirate_walk2', { start: 0, end: 5 }),
+            frameRate: 12,
+            repeat: -1
+        });
         // Animation de mort du pirate à l'épée
         // 100x60 - 2 frames de 50x60
         // frameRate: 2 = 2 frames par seconde = 1 seconde pour toute l'animation
@@ -900,6 +1019,58 @@ class GameScene extends Phaser.Scene {
             frameRate: 6, // Plus lent car c'est un tank
             repeat: -1
         });
+        this.anims.create({
+            key: 'chew_walk',
+            frames: this.anims.generateFrameNumbers('chew_walk', { start: 0, end: 6 }),
+            frameRate: 6, // Plus lent car c'est un tank
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'fishman',
+            frames: this.anims.generateFrameNumbers('fishman', { start: 0, end: 3 }),
+            frameRate: 6, // Plus lent car c'est un tank
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'fishman2',
+            frames: this.anims.generateFrameNumbers('fishman2', { start: 0, end: 1 }),
+    
+            frameRate: 6, // Plus lent car c'est un tank
+            repeat: -1
+        });
+        
+        // Animation idle de Jimbe
+        // 404x85 - 4 frames de 101x85
+        this.anims.create({
+            key: 'jimbe_idle',
+            frames: this.anims.generateFrameNumbers('jimbe', { start: 0, end: 3 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Animation d'attaque de Jimbe
+        // 954x113 - 9 frames de 106x113
+        if (this.textures.exists('jimbe_attack_sheet')) {
+            this.anims.create({
+                key: 'jimbe_attack',
+                frames: this.anims.generateFrameNumbers('jimbe_attack_sheet', { start: 0, end: 8 }),
+                frameRate: 12,
+                repeat: 0
+            });
+            console.log('✅ Animation jimbe_attack créée avec 9 frames');
+        }
+        
+        // Animation du projectile de Jimbe
+        // 730x103 - 7 frames de 104x103
+        if (this.textures.exists('jimbe_projectile')) {
+            this.anims.create({
+                key: 'jimbe_projectile',
+                frames: this.anims.generateFrameNumbers('jimbe_projectile', { start: 0, end: 6 }),
+                frameRate: 10,
+                repeat: -1
+            });
+            console.log('✅ Animation jimbe_projectile créée avec 7 frames');
+        }
     }
 }
 

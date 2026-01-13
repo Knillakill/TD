@@ -17,6 +17,12 @@ class PlayerCollection {
         // Monnaie premium (étoiles)
         this.stars = 0;
         
+        // Compteur d'achats de berries (pour le prix exponentiel)
+        this.berryPurchaseCount = 0;
+        
+        // Maps débloquées
+        this.unlockedMaps = ['arlong_park']; // Première map toujours débloquée
+        
         // Stats du joueur
         this.stats = {
             playTime: 0, // En secondes
@@ -37,10 +43,20 @@ class PlayerCollection {
     
     /**
      * Débloque une tour
+     * Si un slot est disponible, la tour est automatiquement équipée
      */
     unlockTower(towerId) {
         if (!this.unlockedTowers.has(towerId)) {
             this.unlockedTowers.add(towerId);
+            
+            // Équiper automatiquement si un slot est disponible
+            if (this.hasEquipmentSpace()) {
+                this.equippedTowers.add(towerId);
+                console.log(`[PlayerCollection] ${towerId} débloqué et équipé automatiquement`);
+            } else {
+                console.log(`[PlayerCollection] ${towerId} débloqué (pas de slot disponible pour équiper)`);
+            }
+            
             this.save();
             return true;
         }
@@ -209,6 +225,8 @@ class PlayerCollection {
             equippedTowers: Array.from(this.equippedTowers),
             unlockedSlots: this.unlockedSlots,
             stars: this.stars,
+            berryPurchaseCount: this.berryPurchaseCount,
+            unlockedMaps: this.unlockedMaps,
             stats: this.stats,
             towerStats: this.towerStats
         };
@@ -227,6 +245,8 @@ class PlayerCollection {
                 this.equippedTowers = new Set(parsed.equippedTowers || ['luffy']);
                 this.unlockedSlots = parsed.unlockedSlots || 6;
                 this.stars = parsed.stars || 0;
+                this.berryPurchaseCount = parsed.berryPurchaseCount || 0;
+                this.unlockedMaps = parsed.unlockedMaps || ['arlong_park'];
                 this.stats = { ...this.stats, ...parsed.stats };
                 this.towerStats = parsed.towerStats || {};
             }
@@ -243,6 +263,8 @@ class PlayerCollection {
         this.equippedTowers = new Set(['luffy']);
         this.unlockedSlots = 6;
         this.stars = 0;
+        this.berryPurchaseCount = 0;
+        this.unlockedMaps = ['arlong_park'];
         this.stats = {
             playTime: 0,
             towersPlaced: 0,

@@ -1,10 +1,19 @@
 class Enemy {
-    constructor(scene, path, enemyType = 'pirate_basic') {
+    constructor(scene, path, enemyType = 'pirate_basic', waveNumber = 1) {
         this.scene = scene;
         this.type = enemyType;
+        this.waveNumber = waveNumber;
         
-        // Récupérer la configuration de l'ennemi
-        const config = ENEMY_CONFIG[enemyType] || ENEMY_CONFIG.pirate_basic;
+        // Récupérer la configuration de l'ennemi avec scaling de vague
+        const baseConfig = ENEMY_CONFIG[enemyType] || ENEMY_CONFIG.pirate_basic;
+        
+        // Appliquer le scaling de vague si la fonction existe
+        let config;
+        if (typeof getEnemyStats === 'function') {
+            config = getEnemyStats(enemyType, waveNumber) || baseConfig;
+        } else {
+            config = baseConfig;
+        }
         
         this.maxHp = config.hp;
         this.hp = config.hp;
@@ -13,6 +22,10 @@ class Enemy {
         this.size = config.size;
         this.reward = config.reward;
         this.name = config.name;
+        this.armor = config.armor || 0;
+        this.regen = config.regen || 0;
+        this.isBoss = config.isBoss || false;
+        this.isMiniBoss = config.isMiniBoss || false;
         
         // Système de bouclier (pour les tanks)
         this.maxShield = config.shield || 0;
@@ -21,38 +34,160 @@ class Enemy {
         this.pathIndex = 0;
         this.path = path;
         this.alive = true;
+        this.isDying = false; // Flag pour éviter les appels multiples à playDeathAnimation
+        this.destroyed = false; // Flag pour éviter les appels multiples à destroy
+
+        // === TAILLES HARMONISÉES POUR LES ENNEMIS ===
+        // Ennemis normaux : hauteur ~36px
+        // Tanks/Élites : hauteur ~40px  
+        // Mini-boss : hauteur ~48px
+        // Boss : hauteur ~56px
+        const ENEMY_HEIGHT_NORMAL = 42;
+        const ENEMY_HEIGHT_ELITE = 48;
+        const ENEMY_HEIGHT_MINIBOSS = 56;
+        const ENEMY_HEIGHT_BOSS = 64;
 
         // Sprite principal (sprites différents selon le type)
         let spriteHeight;
+        
+        // Déterminer la hauteur selon le type d'ennemi
+        let targetHeight = ENEMY_HEIGHT_NORMAL;
+        if (this.isBoss) {
+            targetHeight = ENEMY_HEIGHT_BOSS;
+        } else if (this.isMiniBoss) {
+            targetHeight = ENEMY_HEIGHT_MINIBOSS;
+        } else if (config.tier >= 4) {
+            targetHeight = ENEMY_HEIGHT_ELITE;
+        }
+        
         if (this.type === 'pirate_basic' && scene.textures.exists('swd_pirate_walk')) {
-            // Pirate à l'épée (SwdPirate)
+            // Pirate à l'épée (ratio ~0.84)
             this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'swd_pirate_walk');
-            this.sprite.setDisplaySize(42, 50); // Dimensions originales
-            this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
-            this.sprite.setFlipX(false); // Ne pas retourner le sprite (orientation d'origine)
+            this.sprite.setDisplaySize(35, ENEMY_HEIGHT_NORMAL);
+            this.sprite.setOrigin(0.5, 0.85);
+            this.sprite.setFlipX(false);
             this.sprite.play('swd_pirate_walk');
-            spriteHeight = 42; // 0.85 * 50 = 42.5 ≈ 42
+            spriteHeight = Math.round(ENEMY_HEIGHT_NORMAL * 0.85);
+            
+        } else if ((this.type === 'pirate_basic2' || this.type === 'pirate_recruit') && scene.textures.exists('swd_pirate_walk')) {
+            // Vétéran/Recrue - même sprite avec tint
+            this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'swd_pirate_walk');
+            this.sprite.setDisplaySize(35, ENEMY_HEIGHT_NORMAL);
+            this.sprite.setOrigin(0.5, 0.85);
+            this.sprite.setFlipX(false);
+            this.sprite.play('swd_pirate_walk');
+            // Tint pour différencier
+            if (this.type === 'pirate_basic2') {
+                this.sprite.setTint(0x654321);
+            } else {
+                this.sprite.setTint(0xA0522D);
+            }
+            spriteHeight = Math.round(ENEMY_HEIGHT_NORMAL * 0.85);
+            
         } else if (this.type === 'pirate_fast' && scene.textures.exists('gun_pirate_walk')) {
-            // Pirate au pistolet (GunPirate)
+            // Éclaireur rapide (ratio ~0.84)
             this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'gun_pirate_walk');
-            this.sprite.setDisplaySize(42, 50); // Proportions similaires
-            this.sprite.setOrigin(0.5, 0.82); // Ancrer aux pieds
-            this.sprite.setFlipX(true); // Retourner le sprite
+            this.sprite.setDisplaySize(34, ENEMY_HEIGHT_NORMAL);
+            this.sprite.setOrigin(0.5, 0.82);
+            this.sprite.setFlipX(true);
             this.sprite.play('gun_pirate_walk');
-            // Pas de tint - couleurs originales du sprite
-            spriteHeight = 41; // 0.82 * 50 = 41
-        } else if (this.type === 'pirate_shield' && scene.textures.exists('knife_pirate_walk')) {
-            // Pirate tank avec couteau (knife_pirate)
+            spriteHeight = Math.round(ENEMY_HEIGHT_NORMAL * 0.82);
+            
+        } else if ((this.type === 'pirate_shield' || this.type === 'pirate_assassin') && scene.textures.exists('knife_pirate_walk')) {
+            // Bouclier/Assassin avec couteau
             this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'knife_pirate_walk');
-            this.sprite.setDisplaySize(38, 58); // Un peu plus grand car c'est un tank
-            this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
-            this.sprite.setFlipX(true); // Retourner le sprite
+            this.sprite.setDisplaySize(38, ENEMY_HEIGHT_ELITE);
+            this.sprite.setOrigin(0.5, 0.85);
+            this.sprite.setFlipX(true);
             this.sprite.play('knife_pirate_walk');
-            spriteHeight = 49; // 0.85 * 58 = ~49
+            if (this.type === 'pirate_assassin') {
+                this.sprite.setTint(0x2F4F4F);
+            }
+            spriteHeight = Math.round(ENEMY_HEIGHT_ELITE * 0.85);
+            
+        } else if (this.type === 'chew' && scene.textures.exists('chew_walk')) {
+            // Mini-boss Chew
+            this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'chew_walk');
+            this.sprite.setDisplaySize(48, ENEMY_HEIGHT_MINIBOSS);
+            this.sprite.setOrigin(0.5, 0.85);
+            this.sprite.setFlipX(false);
+            this.sprite.play('chew_walk');
+            spriteHeight = Math.round(ENEMY_HEIGHT_MINIBOSS * 0.85);
+            
+        } else if (this.type === 'fishman_brawler' && scene.textures.exists('fishman2')) {
+            // Homme-poisson costaud - sprite animé dédié (plus grand)
+            this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'fishman2');
+            this.sprite.setDisplaySize(52, 54);
+            this.sprite.setOrigin(0.5, 0.85);
+            this.sprite.play('fishman2');
+            spriteHeight = Math.round(54 * 0.85);
+            
+        } else if (this.type.startsWith('fishman_') && scene.textures.exists('fishman')) {
+            // Hommes-poissons - sprite animé avec tint selon le type
+            this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'fishman');
+            
+            // Taille selon le tier (augmentée)
+            let fishmanHeight = 48; // Normal (était ENEMY_HEIGHT_NORMAL = 42)
+            let fishmanWidth = 46;
+            if (config.tier >= 8) {
+                fishmanHeight = 64; // Boss
+                fishmanWidth = 62;
+            } else if (config.tier >= 6) {
+                fishmanHeight = 58; // Champion
+                fishmanWidth = 56;
+            } else if (config.tier >= 4) {
+                fishmanHeight = 54; // Elite
+                fishmanWidth = 52;
+            }
+            
+            this.sprite.setDisplaySize(fishmanWidth, fishmanHeight);
+            this.sprite.setOrigin(0.5, 0.85);
+            this.sprite.play('fishman');
+            
+            // Tint selon le type de fishman
+            const fishmanTints = {
+                'fishman_grunt': null, // Pas de tint, couleur d'origine
+                'fishman_swimmer': 0x00CED1,
+                'fishman_spear': 0x2F4F4F,
+                'fishman_elite': 0x191970,
+                'fishman_berserker': 0xDC143C,
+                'fishman_officer': 0x4B0082,
+                'fishman_merman': 0x00BFFF,
+                'fishman_champion': 0x800080,
+                'fishman_shaman': 0x98FB98,
+                'fishman_general': 0x4A0080
+            };
+            
+            if (fishmanTints[this.type]) {
+                this.sprite.setTint(fishmanTints[this.type]);
+            }
+            
+            spriteHeight = Math.round(fishmanHeight * 0.85);
+            
         } else {
-            // Cercle pour les autres types
-            this.sprite = scene.add.circle(this.path[0].x, this.path[0].y, this.size, this.color);
-            spriteHeight = this.size;
+            // Cercle pour les autres types (pas encore de sprite)
+            // Taille du cercle basée sur le tier
+            let circleRadius = 10; // Normal (agrandi)
+            if (this.isBoss) {
+                circleRadius = 20;
+            } else if (this.isMiniBoss) {
+                circleRadius = 15;
+            } else if (config.tier >= 6) {
+                circleRadius = 14;
+            } else if (config.tier >= 4) {
+                circleRadius = 12;
+            }
+            
+            this.sprite = scene.add.circle(this.path[0].x, this.path[0].y, circleRadius, this.color);
+            
+            // Bordure dorée pour les boss/mini-boss
+            if (this.isBoss) {
+                this.sprite.setStrokeStyle(4, 0xffd700);
+            } else if (this.isMiniBoss) {
+                this.sprite.setStrokeStyle(3, 0xffa500);
+            }
+            
+            spriteHeight = circleRadius * 2;
         }
         // Depth dynamique basée sur la position Y pour un rendu en pseudo-3D
         // Plus l'ennemi est bas sur l'écran, plus il est "devant"
@@ -88,61 +223,59 @@ class Enemy {
         // Effet visuel selon le type
         this.createVisualEffects();
         
-        // Barre de vie (taille fixe, juste au-dessus du sprite)
-        this.barWidth = 35; // Largeur fixe pour tous les ennemis
-        this.barHeight = 3; // Hauteur réduite
+        // === BARRES DE VIE ET SHIELD AMÉLIORÉES ===
+        this.barWidth = 40; // Légèrement plus large
+        this.barHeight = 5; // Plus haute pour meilleure visibilité
+        const barY = this.sprite.y - spriteHeight - 8;
         
-        this.hpBarBg = scene.add.rectangle(
-            this.sprite.x, 
-            this.sprite.y - spriteHeight - 6, // Au-dessus de la tête avec un petit écart
-            this.barWidth, 
-            this.barHeight, 
-            0x1e293b, // Gris foncé au lieu du noir
-            0.9
-        );
+        // Conteneur graphique pour les barres avec coins arrondis
+        this.hpBarContainer = scene.add.graphics();
+        this.hpBarContainer.setDepth(this.sprite.depth + 1);
+        
+        // Fond de la barre de vie (avec ombre)
+        this.hpBarBg = scene.add.graphics();
         this.hpBarBg.setDepth(this.sprite.depth + 1);
-        this.hpBarBg.setStrokeStyle(1, 0x334155, 0.8); // Bordure subtile
+        this.drawRoundedBar(this.hpBarBg, this.sprite.x - this.barWidth/2, barY, this.barWidth, this.barHeight, 0x0a0a0a, 0.8);
+        // Bordure extérieure
+        this.hpBarBg.lineStyle(1, 0x333333, 1);
+        this.hpBarBg.strokeRoundedRect(this.sprite.x - this.barWidth/2 - 1, barY - 1, this.barWidth + 2, this.barHeight + 2, 2);
         
-        this.hpBar = scene.add.rectangle(
-            this.sprite.x, 
-            this.sprite.y - spriteHeight - 6, // Au-dessus de la tête 
-            this.barWidth, 
-            this.barHeight, 
-            0x22c55e // Vert doux (sera mis à jour selon les HP)
-        );
+        // Barre de vie principale (avec effet de dégradé simulé)
+        this.hpBar = scene.add.graphics();
         this.hpBar.setDepth(this.sprite.depth + 2);
         
-        // Mettre à jour la couleur initiale selon les HP actuels
-        const initialHpPercent = this.hp / this.maxHp;
-        if (initialHpPercent > 0.6) {
-            this.hpBar.fillColor = 0x22c55e;
-        } else if (initialHpPercent > 0.3) {
-            this.hpBar.fillColor = 0xf59e0b;
-        } else {
-            this.hpBar.fillColor = 0xef4444;
-        }
+        // Effet de brillance en haut de la barre
+        this.hpBarShine = scene.add.graphics();
+        this.hpBarShine.setDepth(this.sprite.depth + 3);
         
-        // Barre de bouclier bleue (pour les tanks)
+        // Stocker les positions pour la mise à jour
+        this.hpBarY = barY;
+        
+        // Dessiner la barre initiale
+        const initialHpPercent = this.hp / this.maxHp;
+        this.updateHpBarVisual(initialHpPercent);
+        
+        // Barre de bouclier (pour les tanks) - style cristal/énergie
         if (this.maxShield > 0) {
-            this.shieldBarBg = scene.add.rectangle(
-                this.sprite.x, 
-                this.sprite.y - spriteHeight - 11, // Au-dessus de la barre de vie
-                this.barWidth, 
-                this.barHeight, 
-                0x1e3a5f, // Bleu foncé
-                0.9
-            );
-            this.shieldBarBg.setDepth(this.sprite.depth + 1);
-            this.shieldBarBg.setStrokeStyle(1, 0x2563eb, 0.8); // Bordure bleue
+            const shieldY = barY - this.barHeight - 3;
+            this.shieldBarY = shieldY;
             
-            this.shieldBar = scene.add.rectangle(
-                this.sprite.x, 
-                this.sprite.y - spriteHeight - 11,
-                this.barWidth, 
-                this.barHeight, 
-                0x3b82f6 // Bleu vif
-            );
+            // Fond du shield avec effet lumineux
+            this.shieldBarBg = scene.add.graphics();
+            this.shieldBarBg.setDepth(this.sprite.depth + 1);
+            this.drawRoundedBar(this.shieldBarBg, this.sprite.x - this.barWidth/2, shieldY, this.barWidth, this.barHeight, 0x0a1628, 0.9);
+            this.shieldBarBg.lineStyle(1, 0x1e40af, 0.8);
+            this.shieldBarBg.strokeRoundedRect(this.sprite.x - this.barWidth/2 - 1, shieldY - 1, this.barWidth + 2, this.barHeight + 2, 2);
+            
+            // Barre de shield avec effet cristal
+            this.shieldBar = scene.add.graphics();
             this.shieldBar.setDepth(this.sprite.depth + 2);
+            
+            // Effet de brillance du shield
+            this.shieldBarShine = scene.add.graphics();
+            this.shieldBarShine.setDepth(this.sprite.depth + 3);
+            
+            this.updateShieldBarVisual(1);
         }
         
         // Système de brûlure (DOT)
@@ -168,8 +301,20 @@ class Enemy {
     }
     
     createVisualEffects() {
-        // Pas d'effets visuels supplémentaires (cercle bleu supprimé)
-        // Les tanks sont identifiables par leur barre de bouclier bleue
+        // Ajouter des effets visuels selon le type
+        if (this.type === 'pirate_shield' && this.maxShield > 0) {
+            // Cercle de bouclier bleu autour du tank
+            this.shieldVisual = this.scene.add.circle(
+                this.sprite.x, 
+                this.sprite.y, 
+                this.spriteHeight * 0.7, 
+                0x3b82f6,
+                0.15
+            );
+            this.shieldVisual.setStrokeStyle(2, 0x60a5fa, 0.5);
+            this.shieldVisual.setDepth(this.sprite.depth - 1);
+        }
+        // Pas d'effet visuel pour pirate_fast (il a déjà un tint orange)
     }
     
     update(delta) {
@@ -197,34 +342,69 @@ class Enemy {
         // Plus l'ennemi est bas sur l'écran (Y grand), plus il est "devant"
         this.sprite.setDepth(5 + this.sprite.y / 10);
         
-        // Mettre à jour les positions des éléments visuels
-        const yOffset = this.spriteHeight + 6; // Au-dessus de la tête
-        this.hpBar.x = this.sprite.x;
-        this.hpBar.y = this.sprite.y - yOffset;
-        this.hpBarBg.x = this.sprite.x;
-        this.hpBarBg.y = this.sprite.y - yOffset;
+        // Mettre à jour les positions des barres (graphiques)
+        const yOffset = this.spriteHeight + 8;
+        this.hpBarY = this.sprite.y - yOffset;
+        
+        // Repositionner les graphiques de la barre de vie
+        this.hpBarBg.clear();
+        this.drawRoundedBar(this.hpBarBg, this.sprite.x - this.barWidth/2, this.hpBarY, this.barWidth, this.barHeight, 0x0a0a0a, 0.8);
+        this.hpBarBg.lineStyle(1, 0x333333, 1);
+        this.hpBarBg.strokeRoundedRect(this.sprite.x - this.barWidth/2 - 1, this.hpBarY - 1, this.barWidth + 2, this.barHeight + 2, 2);
+        this.hpBarBg.setDepth(this.sprite.depth + 1);
+        
+        // Redessiner la barre de vie à la nouvelle position
+        const hpPercent = Math.max(0, this.hp / this.maxHp);
+        this.updateHpBarVisual(hpPercent);
+        this.hpBar.setDepth(this.sprite.depth + 2);
+        this.hpBarShine.setDepth(this.sprite.depth + 3);
         
         // Mettre à jour la barre de shield si elle existe
-        if (this.shieldBar) {
-            const shieldYOffset = this.spriteHeight + 11; // Au-dessus de la barre de vie
-            this.shieldBar.x = this.sprite.x;
-            this.shieldBar.y = this.sprite.y - shieldYOffset;
-            this.shieldBarBg.x = this.sprite.x;
-            this.shieldBarBg.y = this.sprite.y - shieldYOffset;
-            this.shieldBar.setDepth(this.sprite.depth + 2);
+        if (this.shieldBar && this.shield > 0) {
+            const shieldYOffset = this.spriteHeight + 8 + this.barHeight + 3;
+            this.shieldBarY = this.sprite.y - shieldYOffset;
+            
+            // Repositionner le fond du shield
+            this.shieldBarBg.clear();
+            this.drawRoundedBar(this.shieldBarBg, this.sprite.x - this.barWidth/2, this.shieldBarY, this.barWidth, this.barHeight, 0x0a1628, 0.9);
+            this.shieldBarBg.lineStyle(1, 0x1e40af, 0.8);
+            this.shieldBarBg.strokeRoundedRect(this.sprite.x - this.barWidth/2 - 1, this.shieldBarY - 1, this.barWidth + 2, this.barHeight + 2, 2);
             this.shieldBarBg.setDepth(this.sprite.depth + 1);
+            
+            // Redessiner la barre de shield
+            const shieldPercent = Math.max(0, this.shield / this.maxShield);
+            this.updateShieldBarVisual(shieldPercent);
+            this.shieldBar.setDepth(this.sprite.depth + 2);
+            if (this.shieldBarShine) this.shieldBarShine.setDepth(this.sprite.depth + 3);
         }
         
         this.nameText.x = this.sprite.x;
         this.nameText.y = this.sprite.y - this.spriteHeight - (this.maxShield > 0 ? 23 : 18); // Plus haut si shield
         
-        // Effets visuels supprimés (pas de cercle bleu)
+        // Mettre à jour les effets visuels
+        if (this.shieldVisual) {
+            this.shieldVisual.x = this.sprite.x;
+            this.shieldVisual.y = this.sprite.y;
+            this.shieldVisual.setDepth(this.sprite.depth - 1);
+            // Cacher le cercle si le shield est épuisé
+            if (this.shield <= 0) {
+                this.shieldVisual.setVisible(false);
+            }
+        }
         
         if (this.speedTrail) {
             // Traînée légèrement en retard
             this.speedTrail.x = this.sprite.x - vx * 0.5;
             this.speedTrail.y = this.sprite.y - vy * 0.5;
             this.speedTrail.setDepth(this.sprite.depth - 1);
+        }
+        
+        // Régénération de HP (si regen > 0)
+        if (this.regen > 0 && this.hp < this.maxHp) {
+            // Regen par seconde, donc on divise par 1000 et multiplie par delta
+            const regenAmount = this.regen * (delta / 1000) * gameSpeed;
+            this.hp = Math.min(this.maxHp, this.hp + regenAmount);
+            this.updateHpBar();
         }
         
         // Mettre à jour les depths des barres de vie et du nom
@@ -255,7 +435,14 @@ class Enemy {
     }
 
     takeDamage(damage) {
-        let remainingDamage = damage;
+        // Réduction par l'armure (formule: dégâts * 100 / (100 + armure))
+        // Armure 10 = 9% réduction, Armure 50 = 33% réduction, Armure 100 = 50% réduction
+        let effectiveDamage = damage;
+        if (this.armor > 0) {
+            effectiveDamage = Math.max(1, Math.round(damage * 100 / (100 + this.armor)));
+        }
+        
+        let remainingDamage = effectiveDamage;
         
         // Le bouclier absorbe les dégâts en premier
         if (this.shield > 0) {
@@ -275,24 +462,25 @@ class Enemy {
         }
         
         // Effet visuel de dégâts (différent pour sprites et cercles)
-        if (this.type === 'pirate_basic' || this.type === 'pirate_fast' || this.type === 'pirate_shield') {
-            // Pour les sprites : utiliser tint (sauf si brûlé ou empoisonné)
-            if (!this.isBurning && !this.isPoisoned) {
+        // Vérifier si le sprite a la méthode setTint (= c'est un sprite, pas un cercle)
+        if (this.sprite && typeof this.sprite.setTint === 'function') {
+            // Pour les sprites : utiliser tint (sauf si brûlé)
+            if (!this.isBurning) {
                 // Tint bleu si shield, rouge sinon
                 const tintColor = (this.shield > 0) ? 0x00aaff : 0xff0000;
                 this.sprite.setTint(tintColor);
                 this.scene.time.delayedCall(100, () => {
-                    if (this.sprite && !this.isBurning && !this.isPoisoned) {
+                    if (this.sprite && typeof this.sprite.clearTint === 'function' && !this.isBurning) {
                         this.sprite.clearTint();
                     }
                 });
             }
-        } else {
+        } else if (this.sprite && typeof this.sprite.setFillStyle === 'function') {
             // Pour les cercles : utiliser fillStyle
             const originalColor = this.color;
             this.sprite.setFillStyle(0xff0000);
             this.scene.time.delayedCall(100, () => {
-                if (this.sprite) {
+                if (this.sprite && typeof this.sprite.setFillStyle === 'function') {
                     this.sprite.setFillStyle(originalColor);
                 }
             });
@@ -300,39 +488,122 @@ class Enemy {
         
         this.updateHpBar();
         
-        if (this.hp <= 0) {
+        if (this.hp <= 0 && !this.isDying) {
             this.alive = false;
+            this.isDying = true; // Marquer comme en train de mourir
             this.stopBurn();
             this.stopPoison();
+            this.stopStun();
             this.playDeathAnimation();
         }
     }
     
     updateHpBar() {
-        // Mettre à jour la barre de vie (largeur fixe)
+        // Mettre à jour la barre de vie avec le nouveau visuel
         const hpPercent = Math.max(0, this.hp / this.maxHp);
-        this.hpBar.width = this.barWidth * hpPercent;
-        
-        // Changer la couleur selon les HP
-        if (hpPercent > 0.6) {
-            this.hpBar.fillColor = 0x22c55e;
-        } else if (hpPercent > 0.3) {
-            this.hpBar.fillColor = 0xf59e0b;
-        } else {
-            this.hpBar.fillColor = 0xef4444;
-        }
+        this.updateHpBarVisual(hpPercent);
     }
     
     updateShieldBar() {
         if (!this.shieldBar || this.maxShield <= 0) return;
         
         const shieldPercent = Math.max(0, this.shield / this.maxShield);
-        this.shieldBar.width = this.barWidth * shieldPercent;
+        this.updateShieldBarVisual(shieldPercent);
         
         // Cacher la barre si le shield est à 0
         if (this.shield <= 0) {
             this.shieldBar.setVisible(false);
             this.shieldBarBg.setVisible(false);
+            if (this.shieldBarShine) this.shieldBarShine.setVisible(false);
+        }
+    }
+    
+    // === MÉTHODES DE DESSIN DES BARRES AMÉLIORÉES ===
+    
+    /**
+     * Dessine un rectangle arrondi rempli
+     */
+    drawRoundedBar(graphics, x, y, width, height, color, alpha = 1) {
+        graphics.fillStyle(color, alpha);
+        graphics.fillRoundedRect(x, y, width, height, 2);
+    }
+    
+    /**
+     * Met à jour le visuel de la barre de vie avec dégradé et brillance
+     */
+    updateHpBarVisual(percent) {
+        const barX = this.sprite.x - this.barWidth / 2;
+        const barY = this.hpBarY;
+        const currentWidth = Math.max(1, this.barWidth * percent);
+        
+        // Choisir les couleurs selon le pourcentage
+        let mainColor, darkColor, shineColor;
+        if (percent > 0.6) {
+            mainColor = 0x22c55e;    // Vert
+            darkColor = 0x166534;    // Vert foncé
+            shineColor = 0x4ade80;   // Vert clair
+        } else if (percent > 0.3) {
+            mainColor = 0xf59e0b;    // Orange
+            darkColor = 0xb45309;    // Orange foncé
+            shineColor = 0xfbbf24;   // Jaune
+        } else {
+            mainColor = 0xef4444;    // Rouge
+            darkColor = 0xb91c1c;    // Rouge foncé
+            shineColor = 0xf87171;   // Rouge clair
+        }
+        
+        // Effacer et redessiner la barre
+        this.hpBar.clear();
+        
+        // Partie basse (plus sombre)
+        this.hpBar.fillStyle(darkColor, 1);
+        this.hpBar.fillRoundedRect(barX, barY + this.barHeight * 0.5, currentWidth, this.barHeight * 0.5, { tl: 0, tr: 0, bl: 2, br: 2 });
+        
+        // Partie haute (couleur principale)
+        this.hpBar.fillStyle(mainColor, 1);
+        this.hpBar.fillRoundedRect(barX, barY, currentWidth, this.barHeight * 0.6, { tl: 2, tr: 2, bl: 0, br: 0 });
+        
+        // Effet de brillance en haut
+        this.hpBarShine.clear();
+        if (currentWidth > 4) {
+            this.hpBarShine.fillStyle(shineColor, 0.5);
+            this.hpBarShine.fillRoundedRect(barX + 1, barY + 1, currentWidth - 2, 2, 1);
+        }
+    }
+    
+    /**
+     * Met à jour le visuel de la barre de shield avec effet cristal
+     */
+    updateShieldBarVisual(percent) {
+        if (!this.shieldBar) return;
+        
+        const barX = this.sprite.x - this.barWidth / 2;
+        const barY = this.shieldBarY;
+        const currentWidth = Math.max(1, this.barWidth * percent);
+        
+        // Couleurs du shield (bleu cristal)
+        const mainColor = 0x3b82f6;
+        const darkColor = 0x1e40af;
+        const shineColor = 0x93c5fd;
+        
+        // Effacer et redessiner
+        this.shieldBar.clear();
+        
+        // Partie basse
+        this.shieldBar.fillStyle(darkColor, 1);
+        this.shieldBar.fillRoundedRect(barX, barY + this.barHeight * 0.5, currentWidth, this.barHeight * 0.5, { tl: 0, tr: 0, bl: 2, br: 2 });
+        
+        // Partie haute
+        this.shieldBar.fillStyle(mainColor, 1);
+        this.shieldBar.fillRoundedRect(barX, barY, currentWidth, this.barHeight * 0.6, { tl: 2, tr: 2, bl: 0, br: 0 });
+        
+        // Brillance
+        if (this.shieldBarShine) {
+            this.shieldBarShine.clear();
+            if (currentWidth > 4) {
+                this.shieldBarShine.fillStyle(shineColor, 0.6);
+                this.shieldBarShine.fillRoundedRect(barX + 1, barY + 1, currentWidth - 2, 2, 1);
+            }
         }
     }
     
@@ -344,7 +615,8 @@ class Enemy {
      */
     applyBurn(damagePerTick, duration, sourceTower = null) {
         // Rafraîchir la brûlure si déjà en cours (reset la durée)
-        this.burnDamage = damagePerTick;
+        // Calculer les dégâts de brûlure : 1% des PV max par tick
+        this.burnDamage = Math.max(1, Math.floor(this.maxHp * 0.01));
         this.burnDuration = duration;
         this.burnSourceTower = sourceTower;
         
@@ -358,6 +630,7 @@ class Enemy {
         this.burnTimeRemaining = duration;
         
         // Créer l'effet visuel de feu
+        this.createBurnEffect();
         
         // Appliquer le tint orange/feu sur le sprite
         if (this.sprite && this.sprite.setTint) {
@@ -365,46 +638,77 @@ class Enemy {
         }
         
         // Timer pour les dégâts de brûlure (chaque seconde)
+        const enemy = this; // Capturer la référence explicitement
         this.burnTimer = this.scene.time.addEvent({
             delay: 1000,
-            callback: () => {
-                if (!this.alive || !this.isBurning) {
-                    this.stopBurn();
+            callback: function() {
+                if (!enemy.alive || !enemy.isBurning) {
+                    enemy.stopBurn();
                     return;
                 }
                 
-                // Appliquer les dégâts de brûlure
-                this.hp -= this.burnDamage;
+                // Appliquer les dégâts de brûlure (1% des PV max)
+                // Recalculer à chaque tick au cas où maxHp change (peu probable mais sécurisé)
+                const burnDamage = Math.max(1, Math.floor(enemy.maxHp * 0.01));
+                enemy.burnDamage = burnDamage; // Mettre à jour pour l'affichage visuel
+                enemy.hp -= burnDamage;
                 
                 // Mettre à jour les stats de la tour source
-                if (this.burnSourceTower) {
-                    this.burnSourceTower.totalDamage += this.burnDamage;
+                if (enemy.burnSourceTower) {
+                    enemy.burnSourceTower.totalDamage += burnDamage;
                 }
                 
                 // Effet visuel de tick de brûlure
-                this.showBurnDamageTick();
+                enemy.showBurnDamageTick();
                 
-                this.updateHpBar();
+                enemy.updateHpBar();
                 
                 // Réduire le temps restant
-                this.burnTimeRemaining -= 1;
+                enemy.burnTimeRemaining -= 1;
                 
-                if (this.hp <= 0) {
-                    this.alive = false;
-                    if (this.burnSourceTower) {
-                        this.burnSourceTower.enemyKills++;
+                if (enemy.hp <= 0) {
+                    enemy.alive = false;
+                    if (enemy.burnSourceTower) {
+                        enemy.burnSourceTower.enemyKills++;
                     }
-                    this.stopBurn();
-                    this.playDeathAnimation();
-                } else if (this.burnTimeRemaining <= 0) {
-                    this.stopBurn();
+                    enemy.stopBurn();
+                    enemy.playDeathAnimation();
+                } else if (enemy.burnTimeRemaining <= 0) {
+                    enemy.stopBurn();
                 }
             },
+            callbackScope: this,
             loop: true
         });
     }
     
-    
+    createBurnEffect() {
+        // Créer des particules de feu autour de l'ennemi
+        if (this.burnEffect) {
+            this.burnEffect.destroy();
+        }
+        
+        // Cercle de feu animé
+        this.burnEffect = this.scene.add.circle(
+            this.sprite.x,
+            this.sprite.y,
+            this.spriteHeight * 0.6,
+            0xff4500,
+            0.3
+        );
+        this.burnEffect.setDepth(this.sprite.depth - 0.5);
+        this.burnEffect.setStrokeStyle(2, 0xff6600, 0.6);
+        
+        // Animation de pulsation du feu
+        this.scene.tweens.add({
+            targets: this.burnEffect,
+            alpha: { from: 0.3, to: 0.5 },
+            scale: { from: 1, to: 1.2 },
+            duration: 300,
+            yoyo: true,
+            repeat: -1
+        });
+    }
     
     showBurnDamageTick() {
         // Petit effet visuel quand le DOT fait des dégâts
@@ -457,19 +761,20 @@ class Enemy {
         }
     }
     
+    // ==================== SYSTÈME DE POISON ====================
+    
     /**
-     * Applique un effet de poison (DOT) sur l'ennemi
-     * @param {number} damagePerTick - Dégâts par tick (chaque seconde)
-     * @param {number} duration - Durée totale en secondes
-     * @param {Tower} sourceTower - Tour source pour les stats
+     * Applique un effet de poison sur l'ennemi
+     * @param {number} damagePerTick - Dégâts par seconde
+     * @param {number} duration - Durée en secondes
+     * @param {Tower} sourceTower - Tour source (pour les stats)
      */
     applyPoison(damagePerTick, duration, sourceTower = null) {
-        // Rafraîchir le poison si déjà en cours (reset la durée)
         this.poisonDamage = damagePerTick;
         this.poisonDuration = duration;
         this.poisonSourceTower = sourceTower;
         
-        // Si déjà empoisonné, juste reset la durée
+        // Si déjà empoisonné, rafraîchir la durée
         if (this.isPoisoned) {
             this.poisonTimeRemaining = duration;
             return;
@@ -477,60 +782,95 @@ class Enemy {
         
         this.isPoisoned = true;
         this.poisonTimeRemaining = duration;
-                
-        // Appliquer le tint vert poison sur le sprite
-        if (this.sprite && this.sprite.setTint) {
+        
+        // Créer l'effet visuel
+        this.createPoisonEffect();
+        
+        // Appliquer un tint vert
+        if (this.sprite && typeof this.sprite.setTint === 'function') {
             this.sprite.setTint(0x00ff00);
         }
         
         // Timer pour les dégâts de poison (chaque seconde)
+        const enemy = this; // Capturer la référence explicitement
         this.poisonTimer = this.scene.time.addEvent({
             delay: 1000,
-            callback: () => {
-                if (!this.alive || !this.isPoisoned) {
-                    this.stopPoison();
+            callback: function() {
+                if (!enemy.alive || !enemy.isPoisoned) {
+                    enemy.stopPoison();
                     return;
                 }
                 
-                // Appliquer les dégâts de poison
-                this.hp -= this.poisonDamage;
+                // Appliquer les dégâts
+                enemy.hp -= enemy.poisonDamage;
                 
                 // Mettre à jour les stats de la tour source
-                if (this.poisonSourceTower) {
-                    this.poisonSourceTower.totalDamage += this.poisonDamage;
+                if (enemy.poisonSourceTower) {
+                    enemy.poisonSourceTower.totalDamage += enemy.poisonDamage;
                 }
                 
-                // Effet visuel de tick de poison
-                this.showPoisonDamageTick();
+                // Afficher le tick de dégât
+                enemy.showPoisonDamageTick();
                 
-                this.updateHpBar();
+                // Mettre à jour la barre de vie
+                enemy.updateHpBar();
                 
-                // Réduire le temps restant
-                this.poisonTimeRemaining -= 1;
+                // Décrémenter le temps restant
+                enemy.poisonTimeRemaining -= 1;
                 
-                if (this.hp <= 0) {
-                    this.alive = false;
-                    if (this.poisonSourceTower) {
-                        this.poisonSourceTower.enemyKills++;
+                // Vérifier si l'ennemi meurt
+                if (enemy.hp <= 0) {
+                    enemy.alive = false;
+                    if (enemy.poisonSourceTower) {
+                        enemy.poisonSourceTower.enemyKills++;
                     }
-                    this.stopPoison();
-                    this.playDeathAnimation();
-                } else if (this.poisonTimeRemaining <= 0) {
-                    this.stopPoison();
+                    enemy.stopPoison();
+                    enemy.playDeathAnimation();
+                } else if (enemy.poisonTimeRemaining <= 0) {
+                    enemy.stopPoison();
                 }
             },
+            callbackScope: this,
             loop: true
         });
     }
     
-  
+    createPoisonEffect() {
+        // Supprimer l'ancien effet s'il existe
+        if (this.poisonEffect) {
+            this.poisonEffect.destroy();
+        }
+        
+        // Créer un cercle vert pulsant autour de l'ennemi
+        this.poisonEffect = this.scene.add.circle(
+            this.sprite.x,
+            this.sprite.y,
+            this.sprite.displayWidth / 2 + 8,
+            0x00ff00,
+            0.2
+        );
+        this.poisonEffect.setDepth(this.sprite.depth - 0.5);
+        this.poisonEffect.setStrokeStyle(2, 0x00ff00, 0.6);
+        
+        // Animation pulsante
+        this.scene.tweens.add({
+            targets: this.poisonEffect,
+            alpha: 0.4,
+            scale: 1.1,
+            duration: 500,
+            yoyo: true,
+            repeat: -1
+        });
+    }
     
     showPoisonDamageTick() {
-        // Petit effet visuel quand le DOT fait des dégâts
+        if (!this.sprite || !this.sprite.active) return;
+        
+        // Afficher un petit texte de dégât vert
         const damageText = this.scene.add.text(
             this.sprite.x + Phaser.Math.Between(-10, 10),
-            this.sprite.y - this.spriteHeight - 20,
-            `-${this.poisonDamage} 🧪`,
+            this.sprite.y - 20,
+            `-${this.poisonDamage} ☠️`,
             {
                 fontSize: '12px',
                 color: '#00ff00',
@@ -540,11 +880,12 @@ class Enemy {
             }
         );
         damageText.setOrigin(0.5);
-        damageText.setDepth(1000);
+        damageText.setDepth(100);
         
+        // Animation de montée et disparition
         this.scene.tweens.add({
             targets: damageText,
-            y: damageText.y - 20,
+            y: damageText.y - 25,
             alpha: 0,
             duration: 800,
             ease: 'Power2',
@@ -569,7 +910,7 @@ class Enemy {
             this.poisonEffect = null;
         }
         
-        // Enlever le tint si le sprite existe encore
+        // Enlever le tint si le sprite existe encore et pas d'autres effets
         if (this.sprite && this.sprite.clearTint && !this.isStunned && !this.isBurning) {
             this.sprite.clearTint();
         }
@@ -676,82 +1017,139 @@ class Enemy {
     }
     
     playDeathAnimation() {
-        // Masquer la barre de vie, shield et le nom immédiatement
+        // Éviter les appels multiples
+        if (this.isDying && !this.alive) {
+            return;
+        }
+        
+        // Vérifier que le sprite et la scène existent toujours
+        if (!this.sprite || !this.scene || !this.sprite.scene) {
+            // Si le sprite ou la scène n'existent plus, détruire directement
+            this.destroy();
+            return;
+        }
+        
+        // Masquer toutes les barres et éléments visuels immédiatement
         if (this.hpBar) this.hpBar.setVisible(false);
         if (this.hpBarBg) this.hpBarBg.setVisible(false);
+        if (this.hpBarShine) this.hpBarShine.setVisible(false);
+        if (this.hpBarContainer) this.hpBarContainer.setVisible(false);
         if (this.shieldBar) this.shieldBar.setVisible(false);
         if (this.shieldBarBg) this.shieldBarBg.setVisible(false);
+        if (this.shieldBarShine) this.shieldBarShine.setVisible(false);
         if (this.nameText) this.nameText.setVisible(false);
-        // shieldVisual supprimé
+        if (this.shieldVisual) this.shieldVisual.setVisible(false);
         if (this.speedTrail) this.speedTrail.setVisible(false);
         
         // Animation de mort pour pirate_basic (épée)
-        if (this.type === 'pirate_basic' && this.scene.textures.exists('swd_pirate_death')) {
-            // Arrêter l'animation actuelle
-            if (this.sprite.anims) {
-                this.sprite.stop();
-            }
-            
-            // Remplacer par le sprite de mort
-            this.sprite.setTexture('swd_pirate_death', 0);
-            // Chaque frame fait 50x60
-            this.sprite.setDisplaySize(50, 60);
-            this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
-            this.sprite.clearTint();
-            
-            // Jouer l'animation de mort (2 frames en 1 seconde)
-            this.sprite.play('swd_pirate_death_anim');
-            
-            // Détruire après la fin de l'animation
-            this.sprite.once('animationcomplete', () => {
+        if (this.type === 'pirate_basic' && this.scene && this.scene.textures && this.scene.textures.exists('swd_pirate_death')) {
+            try {
+                // Arrêter l'animation actuelle
+                if (this.sprite.anims) {
+                    this.sprite.stop();
+                }
+                
+                // Remplacer par le sprite de mort
+                this.sprite.setTexture('swd_pirate_death', 0);
+                this.sprite.setDisplaySize(30, 36); // Taille harmonisée avec la vie
+                this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
+                if (typeof this.sprite.clearTint === 'function') {
+                    this.sprite.clearTint();
+                }
+                
+                // Jouer l'animation de mort (2 frames en 1 seconde)
+                this.sprite.play('swd_pirate_death_anim');
+                
+                // Détruire après la fin de l'animation
+                this.sprite.once('animationcomplete', () => {
+                    if (this.destroy) {
+                        this.destroy();
+                    }
+                });
+                // Sécurité : détruire après un délai maximum si l'animation ne se termine pas
+                this.scene.time.delayedCall(2000, () => {
+                    if (this.sprite && this.sprite.scene && !this.destroyed) {
+                        if (this.destroy) {
+                            this.destroy();
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('[Enemy] Erreur lors de l\'animation de mort pirate_basic:', e);
+                // En cas d'erreur, détruire directement
                 this.destroy();
-            });
+            }
         } 
         // Animation de mort pour pirate_fast (pistolet)
-        else if (this.type === 'pirate_fast' && this.scene.textures.exists('gun_pirate_death')) {
-            // Arrêter l'animation actuelle
-            if (this.sprite.anims) {
-                this.sprite.stop();
-            }
-            
-            // Remplacer par le sprite de mort
-            this.sprite.setTexture('gun_pirate_death', 0);
-            // Chaque frame fait 55x51
-            this.sprite.setDisplaySize(55, 51);
-            this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
-            this.sprite.clearTint(); // Enlever le tint orange
-            
-            // Jouer l'animation de mort (5 frames en 1 seconde)
-            this.sprite.play('gun_pirate_death_anim');
-            
-            // Détruire après la fin de l'animation
-            this.sprite.once('animationcomplete', () => {
-                this.destroy();
-            });
-        } else {
-            // Pour les autres ennemis : fade out discret
-            this.scene.tweens.add({
-                targets: this.sprite,
-                alpha: 0,
-                duration: 500,
-                ease: 'Linear',
-                onComplete: () => {
-                    this.destroy();
+        else if (this.type === 'pirate_fast' && this.scene && this.scene.textures && this.scene.textures.exists('gun_pirate_death')) {
+            try {
+                // Arrêter l'animation actuelle
+                if (this.sprite.anims) {
+                    this.sprite.stop();
                 }
-            });
+                
+                // Remplacer par le sprite de mort
+                this.sprite.setTexture('gun_pirate_death', 0);
+                this.sprite.setDisplaySize(30, 34); // Taille harmonisée avec la vie
+                this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
+                if (typeof this.sprite.clearTint === 'function') {
+                    this.sprite.clearTint(); // Enlever le tint orange
+                }
+                
+                // Jouer l'animation de mort (5 frames en 1 seconde)
+                this.sprite.play('gun_pirate_death_anim');
+                
+                // Détruire après la fin de l'animation
+                this.sprite.once('animationcomplete', () => {
+                    if (this.destroy) {
+                        this.destroy();
+                    }
+                });
+                // Sécurité : détruire après un délai maximum si l'animation ne se termine pas
+                this.scene.time.delayedCall(2000, () => {
+                    if (this.sprite && this.sprite.scene && !this.destroyed) {
+                        if (this.destroy) {
+                            this.destroy();
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('[Enemy] Erreur lors de l\'animation de mort pirate_fast:', e);
+                // En cas d'erreur, détruire directement
+                this.destroy();
+            }
+        } else {
+            // Pour les autres ennemis : destruction immédiate (pas de fade out pour éviter les problèmes)
+            // Détruire directement pour que l'ennemi disparaisse immédiatement
+            if (this.destroy) {
+                this.destroy();
+            }
         }
     }
 
     destroy() {
+        // Éviter les appels multiples
+        if (this.destroyed) {
+            return;
+        }
+        this.destroyed = true;
+        
         this.stopBurn(); // Arrêter la brûlure avant de détruire
+        this.stopPoison(); // Arrêter le poison avant de détruire
         this.stopStun(); // Arrêter le stun avant de détruire
         if (this.sprite) this.sprite.destroy();
+        // Barres de vie (graphiques)
         if (this.hpBar) this.hpBar.destroy();
         if (this.hpBarBg) this.hpBarBg.destroy();
+        if (this.hpBarShine) this.hpBarShine.destroy();
+        if (this.hpBarContainer) this.hpBarContainer.destroy();
+        // Barres de shield (graphiques)
         if (this.shieldBar) this.shieldBar.destroy();
         if (this.shieldBarBg) this.shieldBarBg.destroy();
+        if (this.shieldBarShine) this.shieldBarShine.destroy();
+        // Autres éléments
         if (this.nameText) this.nameText.destroy();
-        // shieldVisual supprimé
+        if (this.shieldVisual) this.shieldVisual.destroy();
         if (this.speedTrail) this.speedTrail.destroy();
     }
 

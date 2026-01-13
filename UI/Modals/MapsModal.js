@@ -1,74 +1,143 @@
 /**
- * Modal des maps disponibles
+ * Modal des maps - Style moderne One Piece
  */
 class MapsModal extends BaseModal {
     constructor(scene, topMenu) {
-        super(scene, topMenu, '🗺️ MAPS DISPONIBLES', 900, 600);
+        super(scene, topMenu, '🗺️ SÉLECTION DE MAP', 850, 580);
         this.createContent();
     }
     
-    createContent() {
-        const startY = this.contentY + 40;
+    isMapUnlocked(mapId) {
+        const unlockedMaps = this.scene.player.collection.unlockedMaps || ['arlong_park'];
+        return unlockedMaps.includes(mapId);
+    }
+    
+    unlockMap(mapId, cost) {
+        const collection = this.scene.player.collection;
+        const globalStars = collection.getStars();
         
-        // Liste des maps (pour l'instant juste une)
+        if (globalStars < cost) {
+            this.scene.ui.showMessage('Pas assez d\'étoiles !', 1500);
+            return false;
+        }
+        
+        collection.spendStars(cost);
+        
+        if (!collection.unlockedMaps) {
+            collection.unlockedMaps = ['arlong_park'];
+        }
+        collection.unlockedMaps.push(mapId);
+        collection.save();
+        
+        this.scene.ui.showMessage('🎉 Map débloquée !', 1500);
+        
+        this.topMenu.closeModal();
+        this.topMenu.openModal('maps');
+        
+        return true;
+    }
+    
+    createContent() {
+        const startY = this.contentY;
+        const globalStars = this.scene.player.collection.getStars();
+        
+        // Barre d'étoiles
+        const starsBar = this.createCard(this.x, startY + 20, 200, 40, true);
+        
+        const starsText = this.scene.add.text(
+            this.x, startY + 20,
+            `⭐ ${globalStars} étoiles`,
+            {
+                fontSize: '18px',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
+                color: '#ffd700',
+                fontStyle: 'bold'
+            }
+        );
+        starsText.setOrigin(0.5);
+        starsText.setDepth(2003);
+        this.addElement(starsText);
+        
+        // Liste des maps
         const maps = [
             {
                 id: 'arlong_park',
                 name: 'Arlong Park',
                 difficulty: 'Normal',
-                description: 'Le parc d\'Arlong, premier défi de l\'équipage',
-                locked: false
+                description: 'Le repaire d\'Arlong et son équipage',
+                starsCost: 0,
+                color: 0x3498db,
+                icon: '🏝️'
             },
             {
                 id: 'baratie',
                 name: 'Baratie',
                 difficulty: 'Difficile',
-                description: 'Le restaurant flottant',
-                locked: true
+                description: 'Le restaurant flottant de Zeff',
+                starsCost: 15,
+                color: 0xf39c12,
+                icon: '🚢'
             },
             {
                 id: 'alabasta',
                 name: 'Alabasta',
                 difficulty: 'Expert',
-                description: 'Le désert d\'Alabasta',
-                locked: true
+                description: 'Le royaume du désert',
+                starsCost: 30,
+                color: 0xe74c3c,
+                icon: '🏜️'
             }
         ];
         
+        const cardHeight = 120;
+        const cardSpacing = 15;
+        const cardWidth = this.width - 80;
+        
         maps.forEach((map, index) => {
-            const y = startY + index * 140;
+            const y = startY + 70 + index * (cardHeight + cardSpacing);
+            const isUnlocked = this.isMapUnlocked(map.id);
+            const canUnlock = globalStars >= map.starsCost;
+            const isCurrent = map.id === 'arlong_park';
             
-            // Carte
+            // Carte de la map
             const card = this.scene.add.rectangle(
-                this.x, y + 60,
-                this.width - 80, 120,
-                map.locked ? 0x0a0a0a : 0x16213e,
-                map.locked ? 0.5 : 0.9
+                this.x, y + cardHeight / 2,
+                cardWidth, cardHeight,
+                isUnlocked ? this.colors.secondary : 0x0a0a0a,
+                isUnlocked ? 0.95 : 0.7
             );
             card.setDepth(2002);
-            card.setStrokeStyle(2, map.locked ? 0x333333 : 0x3d5a80, 0.8);
+            card.setStrokeStyle(2, isUnlocked ? map.color : 0x333333, isUnlocked ? 0.8 : 0.5);
             this.addElement(card);
             
-            if (map.locked) {
-                // Cadenas
-                const lock = this.scene.add.text(
-                    this.x - this.width / 2 + 100, y + 60,
-                    '🔒',
-                    { fontSize: '48px' }
-                );
-                lock.setOrigin(0.5);
-                lock.setDepth(2003);
-                this.addElement(lock);
-            }
+            // Icône de la map
+            const iconBg = this.scene.add.circle(
+                this.x - cardWidth / 2 + 60, y + cardHeight / 2,
+                35,
+                isUnlocked ? map.color : 0x222222,
+                isUnlocked ? 0.3 : 0.5
+            );
+            iconBg.setDepth(2003);
+            iconBg.setStrokeStyle(2, isUnlocked ? map.color : 0x444444, 0.6);
+            this.addElement(iconBg);
             
-            // Nom
+            const iconText = this.scene.add.text(
+                this.x - cardWidth / 2 + 60, y + cardHeight / 2,
+                isUnlocked ? map.icon : '🔒',
+                { fontSize: '32px' }
+                );
+            iconText.setOrigin(0.5);
+            iconText.setDepth(2004);
+            this.addElement(iconText);
+            
+            // Nom de la map
             const name = this.scene.add.text(
-                this.x - this.width / 2 + 200, y + 30,
+                this.x - cardWidth / 2 + 120, y + 25,
                 map.name,
                 {
-                    fontSize: '24px',
-                    fontFamily: 'Arial',
-                    color: map.locked ? '#666666' : '#ffd700',
+                    fontSize: '22px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: isUnlocked ? '#ffffff' : '#555555',
                     fontStyle: 'bold'
                 }
             );
@@ -77,85 +146,122 @@ class MapsModal extends BaseModal {
             
             // Difficulté
             const difficultyColors = {
-                'Normal': '#51cf66',
-                'Difficile': '#ffa94d',
-                'Expert': '#ff6b6b'
+                'Normal': '#2ecc71',
+                'Difficile': '#f39c12',
+                'Expert': '#e74c3c'
             };
             
+            const diffBadge = this.scene.add.rectangle(
+                this.x - cardWidth / 2 + 180, y + 55,
+                80, 22,
+                Phaser.Display.Color.HexStringToColor(difficultyColors[map.difficulty]).color,
+                isUnlocked ? 0.3 : 0.1
+            );
+            diffBadge.setDepth(2003);
+            this.addElement(diffBadge);
+            
             const difficulty = this.scene.add.text(
-                this.x - this.width / 2 + 200, y + 60,
-                `Difficulté: ${map.difficulty}`,
+                this.x - cardWidth / 2 + 180, y + 55,
+                map.difficulty,
                 {
-                    fontSize: '16px',
-                    fontFamily: 'Arial',
-                    color: map.locked ? '#666666' : difficultyColors[map.difficulty]
+                    fontSize: '12px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: isUnlocked ? difficultyColors[map.difficulty] : '#444444',
+                    fontStyle: 'bold'
                 }
             );
-            difficulty.setDepth(2003);
+            difficulty.setOrigin(0.5);
+            difficulty.setDepth(2004);
             this.addElement(difficulty);
             
             // Description
             const desc = this.scene.add.text(
-                this.x - this.width / 2 + 200, y + 85,
+                this.x - cardWidth / 2 + 120, y + 80,
                 map.description,
                 {
-                    fontSize: '14px',
-                    fontFamily: 'Arial',
-                    color: map.locked ? '#444444' : '#cccccc'
+                    fontSize: '13px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: isUnlocked ? '#8892a0' : '#444444'
                 }
             );
             desc.setDepth(2003);
             this.addElement(desc);
             
-            if (!map.locked && map.id !== 'arlong_park') {
-                // Bouton Jouer (seulement si débloqué et pas la map actuelle)
-                const playBtn = this.scene.add.rectangle(
-                    this.x + this.width / 2 - 120, y + 60,
-                    150, 40,
-                    0x51cf66, 0.9
-                );
-                playBtn.setDepth(2002);
-                playBtn.setStrokeStyle(2, 0xffffff, 0.5);
+            // Bouton d'action (à droite)
+            const btnX = this.x + cardWidth / 2 - 90;
+            const btnY = y + cardHeight / 2;
+            
+            if (isCurrent) {
+                // Map actuelle
+                const currentBadge = this.scene.add.rectangle(btnX, btnY, 140, 40, map.color, 0.3);
+                currentBadge.setDepth(2003);
+                currentBadge.setStrokeStyle(2, map.color, 0.6);
+                this.addElement(currentBadge);
+                
+                const currentText = this.scene.add.text(btnX, btnY, '▶ EN COURS', {
+                    fontSize: '14px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                });
+                currentText.setOrigin(0.5);
+                currentText.setDepth(2004);
+                this.addElement(currentText);
+            } else if (isUnlocked) {
+                // Bouton Jouer
+                const playBtn = this.scene.add.rectangle(btnX, btnY, 140, 40, this.colors.success, 0.9);
+                playBtn.setDepth(2003);
+                playBtn.setStrokeStyle(2, 0x27ae60, 0.6);
                 playBtn.setInteractive({ useHandCursor: true });
                 this.addElement(playBtn);
                 
-                const playText = this.scene.add.text(
-                    this.x + this.width / 2 - 120, y + 60,
-                    'JOUER',
-                    {
-                        fontSize: '16px',
-                        fontFamily: 'Arial',
+                const playText = this.scene.add.text(btnX, btnY, '▶ JOUER', {
+                    fontSize: '15px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
                         color: '#ffffff',
                         fontStyle: 'bold'
-                    }
-                );
+                });
                 playText.setOrigin(0.5);
-                playText.setDepth(2003);
+                playText.setDepth(2004);
                 this.addElement(playText);
                 
-                playBtn.on('pointerover', () => playBtn.setFillStyle(0x69db7c, 0.9));
-                playBtn.on('pointerout', () => playBtn.setFillStyle(0x51cf66, 0.9));
+                playBtn.on('pointerover', () => playBtn.setFillStyle(0x27ae60, 1));
+                playBtn.on('pointerout', () => playBtn.setFillStyle(this.colors.success, 0.9));
                 playBtn.on('pointerdown', () => {
-                    // TODO: Charger la map sélectionnée
                     console.log('Charger map:', map.id);
+                    this.scene.ui.showMessage('Map en cours de développement...', 2000);
                 });
-            } else if (map.id === 'arlong_park') {
-                // Map actuelle
-                const current = this.scene.add.text(
-                    this.x + this.width / 2 - 120, y + 60,
-                    '▶ EN COURS',
+            } else {
+                // Bouton Débloquer
+                const unlockBtn = this.scene.add.rectangle(
+                    btnX, btnY, 140, 40,
+                    canUnlock ? this.colors.accent : 0x444444, 0.9
+                );
+                unlockBtn.setDepth(2003);
+                unlockBtn.setStrokeStyle(2, canUnlock ? 0xffd700 : 0x555555, 0.6);
+                this.addElement(unlockBtn);
+                
+                const unlockText = this.scene.add.text(
+                    btnX, btnY,
+                    `⭐ ${map.starsCost}`,
                     {
-                        fontSize: '16px',
-                        fontFamily: 'Arial',
-                        color: '#ffd700',
+                        fontSize: '15px',
+                        fontFamily: "'Segoe UI', Arial, sans-serif",
+                        color: canUnlock ? '#1a1a2e' : '#666666',
                         fontStyle: 'bold'
                     }
                 );
-                current.setOrigin(0.5);
-                current.setDepth(2003);
-                this.addElement(current);
+                unlockText.setOrigin(0.5);
+                unlockText.setDepth(2004);
+                this.addElement(unlockText);
+                
+                if (canUnlock) {
+                    unlockBtn.setInteractive({ useHandCursor: true });
+                    unlockBtn.on('pointerover', () => unlockBtn.setFillStyle(0xffd700, 1));
+                    unlockBtn.on('pointerout', () => unlockBtn.setFillStyle(this.colors.accent, 0.9));
+                    unlockBtn.on('pointerdown', () => this.unlockMap(map.id, map.starsCost));
+                }
             }
         });
     }
 }
-

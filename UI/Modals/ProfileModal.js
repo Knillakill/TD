@@ -1,164 +1,188 @@
 /**
- * Modal du profil joueur avec ses statistiques
+ * Modal du profil joueur - Style moderne One Piece
  */
 class ProfileModal extends BaseModal {
     constructor(scene, topMenu, player) {
-        super(scene, topMenu, '👤 PROFIL JOUEUR', 800, 600);
+        super(scene, topMenu, '👤 PROFIL CAPITAINE', 750, 600);
         this.player = player;
         this.createContent();
     }
     
     createContent() {
-        const startY = this.contentY + 20;
+        const startY = this.contentY + 10;
         
-        // Avatar (grand cercle)
-        const avatar = this.scene.add.circle(
-            this.x, startY + 80,
-            70,
-            0x3d5a80, 1
-        );
-        avatar.setDepth(2002);
-        avatar.setStrokeStyle(5, 0xffd700, 1);
+        // Carte du profil (section supérieure)
+        const profileCard = this.createCard(this.x, startY + 80, this.width - 60, 140, true);
+        
+        // Avatar avec effet de lueur
+        const avatarGlow = this.scene.add.circle(this.x - 200, startY + 80, 55, this.colors.accent, 0.2);
+        avatarGlow.setDepth(2002);
+        this.addElement(avatarGlow);
+        
+        const avatarBg = this.scene.add.circle(this.x - 200, startY + 80, 50, this.colors.secondary, 1);
+        avatarBg.setDepth(2003);
+        avatarBg.setStrokeStyle(3, this.colors.accent, 1);
+        this.addElement(avatarBg);
+        
+        // Image Luffy ou icône
+        if (this.scene.textures.exists('luffy')) {
+            const avatar = this.scene.add.sprite(this.x - 200, startY + 80, 'luffy');
+            avatar.setDisplaySize(70, 70);
+            avatar.setDepth(2004);
+            if (this.scene.anims.exists('luffy_idle')) {
+                avatar.play('luffy_idle');
+            }
         this.addElement(avatar);
-        
-        // Icône joueur
-        const icon = this.scene.add.text(
-            this.x, startY + 80,
-            '👤',
-            { fontSize: '80px' }
-        );
+        } else {
+            const icon = this.scene.add.text(this.x - 200, startY + 80, '🏴‍☠️', { fontSize: '50px' });
         icon.setOrigin(0.5);
-        icon.setDepth(2003);
+            icon.setDepth(2004);
         this.addElement(icon);
+        }
         
-        // Nom du joueur
-        const name = this.scene.add.text(
-            this.x, startY + 170,
-            'Capitaine',
+        // Infos du joueur
+        const nameLabel = this.scene.add.text(
+            this.x - 100, startY + 50,
+            'CAPITAINE',
             {
-                fontSize: '28px',
-                fontFamily: 'Arial',
+                fontSize: '12px',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
+                color: '#8892a0',
+                letterSpacing: 2
+            }
+        );
+        nameLabel.setDepth(2003);
+        this.addElement(nameLabel);
+        
+        const name = this.scene.add.text(
+            this.x - 100, startY + 70,
+            'MONKEY D. LUFFY',
+            {
+                fontSize: '22px',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
+                color: '#d4af37',
+                fontStyle: 'bold'
+            }
+        );
+        name.setDepth(2003);
+        this.addElement(name);
+        
+        // Étoiles globales
+        const starsBox = this.scene.add.rectangle(this.x + 180, startY + 70, 120, 40, this.colors.secondary, 0.9);
+        starsBox.setDepth(2003);
+        starsBox.setStrokeStyle(2, this.colors.accent, 0.6);
+        this.addElement(starsBox);
+        
+        const starsText = this.scene.add.text(
+            this.x + 180, startY + 70,
+            `⭐ ${this.player.collection.getStars()}`,
+            {
+                fontSize: '20px',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
                 color: '#ffd700',
                 fontStyle: 'bold'
             }
         );
-        name.setOrigin(0.5);
-        name.setDepth(2002);
-        this.addElement(name);
+        starsText.setOrigin(0.5);
+        starsText.setDepth(2004);
+        this.addElement(starsText);
         
-        // Statistiques
+        // Barre de progression collection
+        const unlockedCount = this.player.collection.getUnlockedTowers().length;
+        const totalCount = TOWER_ORDER.length;
+        const progress = unlockedCount / totalCount;
+        
+        const progressLabel = this.scene.add.text(
+            this.x - 100, startY + 105,
+            `Collection: ${unlockedCount}/${totalCount}`,
+            {
+                fontSize: '14px',
+                fontFamily: "'Segoe UI', Arial, sans-serif",
+                color: '#b0b0b0'
+            }
+        );
+        progressLabel.setDepth(2003);
+        this.addElement(progressLabel);
+        
+        const progressBg = this.scene.add.rectangle(this.x + 50, startY + 110, 200, 12, 0x2a2a3a, 1);
+        progressBg.setDepth(2003);
+        this.addElement(progressBg);
+        
+        const progressBar = this.scene.add.rectangle(
+            this.x + 50 - 100 + (200 * progress / 2), startY + 110,
+            200 * progress, 12,
+            this.colors.success, 1
+        );
+        progressBar.setDepth(2004);
+        this.addElement(progressBar);
+        
+        // Section Statistiques
+        const statsY = this.createSection(startY + 155, 'STATISTIQUES', '📊');
+        
         const stats = this.player.collection.getStats();
-        
-        // Convertir le temps de jeu en format lisible
         const hours = Math.floor(stats.playTime / 3600);
         const minutes = Math.floor((stats.playTime % 3600) / 60);
         const playTimeStr = hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
         
         const statsData = [
-            { icon: '⏱️', label: 'Temps de jeu', value: playTimeStr },
-            { icon: '🏗️', label: 'Tours placées', value: stats.towersPlaced },
-            { icon: '☠️', label: 'Ennemis éliminés', value: stats.enemiesKilled },
-            { icon: '🌊', label: 'Vagues complétées', value: stats.wavesCompleted },
-            { icon: '💰', label: 'Or gagné', value: stats.goldEarned },
-            { icon: '🛒', label: 'Or dépensé', value: stats.goldSpent },
-            { icon: '💥', label: 'Dégâts infligés', value: Math.round(stats.damageDealt) },
-            { icon: '⭐', label: 'Étoiles', value: this.player.stars }
+            { icon: '⏱️', label: 'Temps de jeu', value: playTimeStr, color: '#74b9ff' },
+            { icon: '☠️', label: 'Ennemis éliminés', value: stats.enemiesKilled.toLocaleString(), color: '#e74c3c' },
+            { icon: '🌊', label: 'Vagues complétées', value: stats.wavesCompleted, color: '#0891b2' },
+            { icon: '💰', label: 'Or total gagné', value: stats.goldEarned.toLocaleString(), color: '#ffd700' },
+            { icon: '💥', label: 'Dégâts infligés', value: Math.round(stats.damageDealt).toLocaleString(), color: '#ff6b6b' },
+            { icon: '🏗️', label: 'Tours placées', value: stats.towersPlaced, color: '#2ecc71' }
         ];
         
-        const statsStartY = startY + 220;
-        const col1X = this.x - 180;
-        const col2X = this.x + 180;
-        const rowHeight = 45;
+        const gridStartY = statsY + 15;
+        const colWidth = (this.width - 100) / 2;
         
         statsData.forEach((stat, index) => {
-            const isLeftColumn = index % 2 === 0;
-            const x = isLeftColumn ? col1X : col2X;
-            const y = statsStartY + Math.floor(index / 2) * rowHeight;
+            const col = index % 2;
+            const row = Math.floor(index / 2);
+            const x = this.x - this.width / 2 + 70 + col * colWidth;
+            const y = gridStartY + row * 55;
+            
+            // Carte de stat
+            const statCard = this.scene.add.rectangle(
+                x + colWidth / 2 - 20, y + 20,
+                colWidth - 30, 45,
+                this.colors.secondary, 0.7
+            );
+            statCard.setDepth(2002);
+            this.addElement(statCard);
+            
+            // Icône
+            const iconText = this.scene.add.text(x, y + 20, stat.icon, { fontSize: '22px' });
+            iconText.setOrigin(0, 0.5);
+            iconText.setDepth(2003);
+            this.addElement(iconText);
             
             // Label
             const label = this.scene.add.text(
-                x - 60, y,
-                `${stat.icon} ${stat.label}:`,
+                x + 35, y + 10,
+                stat.label,
                 {
-                    fontSize: '16px',
-                    fontFamily: 'Arial',
-                    color: '#e0e0e0'
+                    fontSize: '12px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: '#8892a0'
                 }
             );
-            label.setDepth(2002);
+            label.setDepth(2003);
             this.addElement(label);
             
             // Valeur
             const value = this.scene.add.text(
-                x + 120, y,
+                x + 35, y + 28,
                 stat.value.toString(),
                 {
-                    fontSize: '16px',
-                    fontFamily: 'Arial',
-                    color: '#ffd700',
+                    fontSize: '18px',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: stat.color,
                     fontStyle: 'bold'
                 }
             );
-            value.setOrigin(1, 0);
-            value.setDepth(2002);
+            value.setDepth(2003);
             this.addElement(value);
         });
-        
-        // Collection
-        const unlockedCount = this.player.collection.getUnlockedTowers().length;
-        const totalCount = TOWER_ORDER.length;
-        
-        const collectionText = this.scene.add.text(
-            this.x, statsStartY + Math.ceil(statsData.length / 2) * rowHeight + 20,
-            `📖 Collection: ${unlockedCount}/${totalCount} tours débloquées`,
-            {
-                fontSize: '18px',
-                fontFamily: 'Arial',
-                color: '#51cf66',
-                fontStyle: 'bold'
-            }
-        );
-        collectionText.setOrigin(0.5);
-        collectionText.setDepth(2002);
-        this.addElement(collectionText);
-        
-        // Barre de progression
-        const progressBarY = statsStartY + Math.ceil(statsData.length / 2) * rowHeight + 55;
-        const progressBarWidth = 400;
-        const progress = unlockedCount / totalCount;
-        
-        // Fond
-        const progressBg = this.scene.add.rectangle(
-            this.x, progressBarY,
-            progressBarWidth, 20,
-            0x333333, 1
-        );
-        progressBg.setDepth(2002);
-        this.addElement(progressBg);
-        
-        // Progression
-        const progressBar = this.scene.add.rectangle(
-            this.x - progressBarWidth / 2 + (progressBarWidth * progress / 2), progressBarY,
-            progressBarWidth * progress, 20,
-            0x51cf66, 1
-        );
-        progressBar.setDepth(2003);
-        this.addElement(progressBar);
-        
-        // Pourcentage
-        const percentage = this.scene.add.text(
-            this.x, progressBarY,
-            Math.round(progress * 100) + '%',
-            {
-                fontSize: '14px',
-                fontFamily: 'Arial',
-                color: '#ffffff',
-                fontStyle: 'bold'
-            }
-        );
-        percentage.setOrigin(0.5);
-        percentage.setDepth(2004);
-        this.addElement(percentage);
     }
 }
-

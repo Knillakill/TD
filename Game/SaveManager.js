@@ -9,6 +9,7 @@ class SaveManager {
         this.saveKey = 'onepiece_td_save';
         this.autoSaveInterval = 30000; // Sauvegarde automatique toutes les 30 secondes
         this.encryptionKey = 'OnePiece_TD_2026_Luffy_Mugiwara_Secret_Key_v1.0'; // Clé de cryptage
+        this.skipNextAutoSave = false; // Flag pour éviter que autoSave écrase un restart intentionnel
         this.setupAutoSave();
     }
     
@@ -115,6 +116,12 @@ class SaveManager {
      * Sauvegarde automatique
      */
     autoSave() {
+        // Si un restart intentionnel a été fait, ne pas écraser avec autoSave
+        if (this.skipNextAutoSave) {
+            console.log('[SaveManager] autoSave ignoré (restart en cours)');
+            return;
+        }
+        
         try {
             const saveData = this.collectSaveData();
             const encrypted = this.encrypt(saveData);
@@ -131,12 +138,27 @@ class SaveManager {
     }
     
     /**
-     * Sauvegarde à une vague spécifique (pour les boutons de restart)
+     * Sauvegarde pour reprendre à une vague spécifique (pour les boutons de restart)
+     * @param {number} targetWave - Vague à JOUER au prochain lancement (1 = commencer par vague 1)
+     * @param {boolean} resetProgress - Si true, réinitialise les vagues complétées (pour recommencer)
+     * 
+     * NOTE: currentWave dans la sauvegarde représente la DERNIÈRE vague COMPLÉTÉE.
+     * Donc pour jouer la vague X, on doit sauvegarder currentWave = X - 1.
+     * Ex: targetWave=1 → currentWave=0, targetWave=25 → currentWave=24
      */
-    saveAtWave(waveNumber) {
+    saveAtWave(targetWave, resetProgress = false) {
+        // Désactiver l'autoSave pour éviter qu'il écrase cette sauvegarde intentionnelle
+        // lors du beforeunload déclenché par window.location.reload()
+        this.skipNextAutoSave = true;
+        console.log('[SaveManager] skipNextAutoSave activé pour éviter écrasement');
+        
         try {
             const player = this.scene.player;
             const collection = player.collection;
+            
+            // La vague sauvegardée est la dernière COMPLÉTÉE, donc targetWave - 1
+            // WaveManager.startNextWave() fait currentWave++ avant de préparer la vague
+            const savedWave = Math.max(0, targetWave - 1);
             
             // Réinitialiser les HP
             player.hp = 10;
@@ -150,25 +172,31 @@ class SaveManager {
             // Collecter les réglages
             const settings = this.collectSettings();
             
+            // On GARDE toujours les vagues complétées (étoiles de la map)
+            // Le joueur ne gagnera de nouvelles étoiles que s'il dépasse son record
+            // (le système completedWaves empêche de regagner des étoiles pour les mêmes vagues)
+            let completedWaves = player.completedWaves || {};
+            console.log(`[SaveManager] Conservation des vagues complétées: ${Object.keys(completedWaves).length} étoiles`);
+            
             const saveData = {
                 version: this.saveVersion,
                 timestamp: Date.now(),
                 game: {
-                    currentWave: waveNumber,
-                    lastCheckpoint: this.getLastCheckpoint(waveNumber),
+                    currentWave: savedWave,
+                    lastCheckpoint: this.getLastCheckpoint(savedWave),
                     isGameOver: false
                 },
                 player: {
                     hp: 10,
                     gold: player.gold,
-                    completedWaves: player.completedWaves || {},
+                    completedWaves: completedWaves,
                     towerLevels: towerLevels
                 },
                 collection: {
                     unlockedTowers: collection.getUnlockedTowers(),
                     equippedTowers: collection.getEquippedTowers(),
                     unlockedSlots: collection.unlockedSlots,
-                    stars: collection.stars,
+                    stars: collection.stars,  // Garder les étoiles acquises
                     stats: collection.stats
                 },
                 towers: {
@@ -181,7 +209,17 @@ class SaveManager {
             
             if (encrypted) {
                 localStorage.setItem(this.saveKey, encrypted);
-                console.log(`[SaveManager] Sauvegarde à la vague ${waveNumber} réussie (${placedTowers.length} tours conservées)`);
+                console.log(`[SaveManager] ✅ saveAtWave(${targetWave}) RÉUSSI - savedWave=${savedWave}, isGameOver=${saveData.game.isGameOver}, completedWaves=${Object.keys(completedWaves).length}`);
+                
+                // Vérifier que la sauvegarde est bien écrite
+                const verification = localStorage.getItem(this.saveKey);
+                if (verification === encrypted) {
+                    console.log('[SaveManager] ✅ Vérification: sauvegarde correctement écrite dans localStorage');
+                } else {
+                    console.error('[SaveManager] ❌ Vérification échouée: sauvegarde différente !');
+                }
+            } else {
+                console.error('[SaveManager] ❌ Échec du cryptage');
             }
         } catch (error) {
             console.error('[SaveManager] Erreur lors de la sauvegarde:', error);
@@ -242,7 +280,7 @@ class SaveManager {
         return {
             version: '1.1.0',
             timestamp: Date.now(),
-            mapId: this.scene.mapId || 'map1',
+            mapId: this.scene.mapId || 'map2',
             player: {
                 hp: player.hp,
                 gold: player.gold,
@@ -384,31 +422,63 @@ class SaveManager {
             const player = this.scene.player;
             const collection = player.collection;
 
+            console.log('[SaveManager] applySaveData appelé avec:', {
+                currentWave: saveData.game?.currentWave,
+                isGameOver: saveData.game?.isGameOver,
+                lastCheckpoint: saveData.game?.lastCheckpoint,
+                completedWavesCount: Object.keys(saveData.player?.completedWaves || {}).length
+            });
+
             // Déterminer la vague de départ selon le système de checkpoint
+            // NOTE: startWave représente la DERNIÈRE vague COMPLÉTÉE, pas la vague à jouer
+            // startNextWave() fait currentWave++ donc startWave=0 → joue vague 1
             let startWave = 0;
             if (saveData.game && typeof saveData.game.currentWave !== 'undefined') {
                 if (saveData.game.isGameOver) {
                     // Le joueur est mort, revenir au dernier checkpoint
-                    startWave = saveData.game.lastCheckpoint || 1;
+                    // checkpoint 1 → startWave = 0 (pour jouer la vague 1)
+                    // checkpoint 25 → startWave = 24 (pour jouer la vague 25)
+                    const checkpoint = saveData.game.lastCheckpoint || 1;
+                    startWave = checkpoint - 1;
                     player.hp = 10; // Réinitialiser les HP au maximum (10)
-                    console.log(`[SaveManager] Game Over - Retour au checkpoint ${startWave}`);
+                    console.log(`[SaveManager] Game Over - Retour au checkpoint ${checkpoint}, startWave=${startWave}`);
                 } else {
                     // Le joueur a quitté sans mourir, reprendre à la vague actuelle
-                    // Si currentWave = 0, cela signifie qu'aucune vague n'a été lancée
+                    // currentWave représente déjà la dernière vague complétée
                     startWave = saveData.game.currentWave;
                     player.hp = saveData.player.hp !== undefined ? saveData.player.hp : 10;
-                    console.log(`[SaveManager] Reprise à la vague ${startWave} (depuis sauvegarde: ${saveData.game.currentWave}), HP: ${player.hp}`);
+                    console.log(`[SaveManager] Reprise normale - startWave=${startWave} (prochaine vague: ${startWave + 1}), HP: ${player.hp}`);
                 }
             } else {
                 // Pas de données de vague, commencer à 0
                 player.hp = saveData.player?.hp !== undefined ? saveData.player.hp : 10;
                 console.log('[SaveManager] Pas de données de vague - Démarrage à la vague 0');
             }
+            
+            console.log(`[SaveManager] startWave final = ${startWave}, sera appliqué à scene.waveNumber`);
 
             // Restaurer les données du joueur
             player.gold = saveData.player.gold || 0;
             player.stars = saveData.player.stars || 0;
             player.completedWaves = saveData.player.completedWaves || {};
+            
+            // Synchroniser les étoiles avec les vagues complétées
+            // Le nombre d'étoiles de la map actuelle = nombre de vagues complétées
+            const completedWavesCount = Object.keys(player.completedWaves).length;
+            
+            // Si le joueur a atteint une vague X, toutes les vagues 1 à X-1 devraient être complétées
+            // Corriger si certaines vagues manquent (peut arriver avec des bugs de sauvegarde)
+            const highestWave = Math.max(0, ...Object.keys(player.completedWaves).map(Number));
+            let missingWaves = [];
+            for (let wave = 1; wave <= highestWave; wave++) {
+                if (!player.completedWaves[wave]) {
+                    player.completedWaves[wave] = true;
+                    missingWaves.push(wave);
+                }
+            }
+            if (missingWaves.length > 0) {
+                console.log(`[SaveManager] Vagues manquantes corrigées: ${missingWaves.join(', ')}`);
+            }
             
             // Restaurer les niveaux des tours (garder les valeurs par défaut si non sauvegardées)
             if (saveData.player.towerLevels) {
@@ -423,6 +493,19 @@ class SaveManager {
             collection.unlockedSlots = saveData.collection.unlockedSlots || 6;
             collection.towerStats = saveData.collection.towerStats || {};
             collection.stars = saveData.collection.stars || 0;
+            
+            // Recalculer le nombre de vagues complétées après correction des vagues manquantes
+            const correctedWavesCount = Object.keys(player.completedWaves).length;
+            
+            // APRÈS restauration: synchroniser les étoiles avec les vagues complétées
+            // Les étoiles doivent être >= au nombre de vagues complétées
+            if (collection.stars < correctedWavesCount) {
+                const missingStars = correctedWavesCount - collection.stars;
+                collection.stars = correctedWavesCount;
+                console.log(`[SaveManager] Synchronisation des étoiles: +${missingStars} étoiles manquantes (total: ${collection.stars})`);
+            }
+            
+            console.log(`[SaveManager] Étoiles finales: ${collection.stars}, Vagues complétées: ${correctedWavesCount}`);
 
             // Définir la vague de départ
             this.scene.waveNumber = startWave;

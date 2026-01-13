@@ -10,6 +10,9 @@ class TowerMenu {
         this.dragRangeCircle = null;
         this.dragTowerType = null;
         this.availableTowers = {}; // Suivi des tours disponibles
+        this.hoverRangeCircle = null; // Cercle de portée au survol
+        this.hoverMinRangeCircle = null; // Cercle de portée minimum (pour Jimbe)
+        this.hoverMinRangeText = null; // Texte pour la zone d'exclusion de Jimbe
         this.scrollY = 0;
         this.maxScroll = 0;
         
@@ -145,7 +148,22 @@ class TowerMenu {
     }
     
     createLockedSlot(slotIndex, x, y, width, height) {
+        // S'assurer que slotUnlockCosts est défini
+        if (!this.slotUnlockCosts) {
+            this.slotUnlockCosts = {
+                6: 10,   // Slot 7 (index 6) : 10 étoiles
+                7: 25,   // Slot 8 (index 7) : 25 étoiles
+                8: 50,   // Slot 9 (index 8) : 50 étoiles
+                9: 100   // Slot 10 (index 9) : 100 étoiles
+            };
+        }
+        
         const cost = this.slotUnlockCosts[slotIndex];
+        if (cost === undefined) {
+            console.error(`[TowerMenu] Coût non défini pour le slot ${slotIndex}`);
+            return;
+        }
+        
         const playerStars = this.scene.player.collection.getStars();
         const canUnlock = playerStars >= cost;
         
@@ -244,12 +262,16 @@ class TowerMenu {
             }
         );
         unlockText.setOrigin(0.5);
-        unlockText.setDepth(102);
+        unlockText.setDepth(100); // Même profondeur que le bouton pour ne pas bloquer
         unlockText.setScrollFactor(0);
+        // Ne pas rendre le texte interactif - ne pas appeler setInteractive() du tout
         
         if (canUnlock) {
             unlockBtn.setInteractive({ useHandCursor: true });
-            unlockBtn.on('pointerdown', () => {
+            // Utiliser pointerdown au lieu de pointerup pour être plus réactif
+            unlockBtn.on('pointerdown', (pointer) => {
+                console.log(`[TowerMenu] Clic sur débloquer slot ${slotIndex + 1} (coût: ${cost} étoiles)`);
+                pointer.event.stopPropagation(); // Empêcher la propagation
                 this.unlockSlot(slotIndex);
             });
             unlockBtn.on('pointerover', () => {
@@ -339,24 +361,50 @@ class TowerMenu {
     }
     
     unlockSlot(slotIndex) {
+        // Vérifier que le slotIndex est valide
+        if (!this.slotUnlockCosts.hasOwnProperty(slotIndex)) {
+            console.error(`[TowerMenu] Slot ${slotIndex} n'a pas de coût défini`);
+            this.scene.ui.showMessage('Erreur: slot invalide', 1500);
+            return;
+        }
+        
         const cost = this.slotUnlockCosts[slotIndex];
         const collection = this.scene.player.collection;
         
         // Vérifier si le joueur a assez d'étoiles
-        if (collection.getStars() < cost) {
-            this.scene.ui.showMessage('Pas assez d\'étoiles!', 1500);
+        const currentStars = collection.getStars();
+        if (currentStars < cost) {
+            this.scene.ui.showMessage(`Pas assez d'étoiles! (${currentStars}/${cost})`, 2000);
             return;
         }
         
         // Dépenser les étoiles
-        collection.spendStars(cost);
+        const spent = collection.spendStars(cost);
+        if (!spent) {
+            console.error(`[TowerMenu] Échec du dépense d'étoiles: ${cost}`);
+            this.scene.ui.showMessage('Erreur lors du déblocage', 2000);
+            return;
+        }
         
         // Débloquer le slot
+        const previousSlots = collection.unlockedSlots;
         collection.unlockedSlots = Math.max(collection.unlockedSlots, slotIndex + 1);
         collection.save();
         
+        // Vérifier que le slot a bien été débloqué
+        if (collection.unlockedSlots <= previousSlots) {
+            console.error(`[TowerMenu] Le slot n'a pas été débloqué. unlockedSlots: ${collection.unlockedSlots}, slotIndex: ${slotIndex}`);
+            this.scene.ui.showMessage('Erreur: le slot n\'a pas été débloqué', 2000);
+            // Rembourser les étoiles
+            collection.addStars(cost);
+            collection.save();
+            return;
+        }
+        
+        console.log(`[TowerMenu] Slot ${slotIndex + 1} débloqué avec succès! Coût: ${cost} étoiles`);
+        
         // Message de confirmation
-        this.scene.ui.showMessage(`Slot ${slotIndex + 1} débloqué!`, 1500);
+        this.scene.ui.showMessage(`Slot ${slotIndex + 1} débloqué! (-${cost}⭐)`, 2000);
         
         // Rafraîchir le menu
         this.refreshMenu();
@@ -787,7 +835,8 @@ class TowerMenu {
     
     createTowerCard(towerId, x, y, width, height) {
         const towerData = TOWER_CONFIG[towerId];
-        console.log(towerData)
+        // Récupérer le niveau RÉEL du joueur pour cette tour
+        const playerLevel = this.scene.player.getTowerLevel(towerId);
         const rarity = this.rarityColors[towerData.rarity] || this.rarityColors.common;
         
         // Fond de la carte avec couleur de rareté (plus sombre)
@@ -853,78 +902,133 @@ class TowerMenu {
         name.setDepth(102);
         name.setScrollFactor(0);
         
-        // Niveau avec badge
+        // Niveau avec badge amélioré
         const levelBadge = this.scene.add.rectangle(
             x + width / 2,
-            y + 23,
-            30,
-            12,
-            rarity.border,
-            0.3
+            y + 24,
+            width - 12,
+            16,
+            0x1e293b,
+            0.95
         );
         levelBadge.setDepth(101);
         levelBadge.setScrollFactor(0);
+        levelBadge.setStrokeStyle(2, rarity.border, 0.8);
         
         const level = this.scene.add.text(
             x + width / 2,
-            y + 23,
-            `Nv.${towerData.level || 1}`,
+            y + 24,
+            `NIVEAU ${playerLevel}`,
             {
-                fontSize: '8px',
-                fill: rarity.text,
-                fontFamily: 'monospace'
+                fontSize: '10px',
+                fill: '#fbbf24',
+                fontStyle: 'bold',
+                fontFamily: 'Arial'
             }
         );
         level.setOrigin(0.5);
         level.setDepth(102);
         level.setScrollFactor(0);
         
-        // Zone icône (sprite animé pour Luffy/Zoro, image pour les autres, sinon carré coloré)
+        // Zone icône (sprite animé pour les personnages, sinon carré coloré)
+        // === TAILLES UNIFORMES - Hauteur visuelle cible: ~38px ===
         let icon;
-        const iconY = y + 52; // Position de l'icône ajustée
+        const iconY = y + 52;
+        const targetHeight = 38; // Taille réduite pour bien rentrer dans la carte
+        
+        // Fond rectangulaire sombre avec dégradé pour faire ressortir le sprite
+        const iconBgGlow = this.scene.add.rectangle(
+            x + width / 2,
+            iconY,
+            width - 8,
+            42,
+            0x000000, 0.6
+        );
+        iconBgGlow.setDepth(100);
+        iconBgGlow.setScrollFactor(0);
+        iconBgGlow.setStrokeStyle(2, rarity.border, 0.4);
+        
+        // Pas de deuxième fond - juste le rectangle sombre
+        const iconBg = null;
+        
         if (towerId === 'luffy' && this.scene.textures.exists('luffy')) {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'luffy');
-            icon.setDisplaySize(22, 34); // Réduit pour correspondre à Zoro
+            icon.setDisplaySize(25, targetHeight);
             icon.setFlipX(true);
             icon.play('luffy_idle');
         } else if (towerId === 'zoro' && this.scene.textures.exists('zoro')) {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'zoro');
-            icon.setDisplaySize(22, 48); // Réduit
-            icon.play('zoro_idle');
+            icon.setDisplaySize(18, targetHeight);
+            icon.play('zoro');
         } else if (towerId === 'ussop' && this.scene.textures.exists('ussop')) {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'ussop');
-            icon.setDisplaySize(22, 45); // Taille réduite pour la carte
+            icon.setDisplaySize(34, targetHeight);
             icon.setOrigin(0.5, 0.5);
             icon.play('ussop_idle');
         } else if (towerId === 'chopper' && this.scene.textures.exists('chopper')) {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'chopper');
-            icon.setDisplaySize(22, 30);
+            icon.setDisplaySize(24, 32);
             icon.setOrigin(0.5, 0.5);
             icon.play('chopper_idle');
         } else if (towerId === 'franky' && this.scene.textures.exists('franky')) {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'franky');
-            icon.setDisplaySize(32, 40);
+            icon.setDisplaySize(42, targetHeight);
             icon.setOrigin(0.5, 0.5);
             icon.play('franky_idle');
         } else if (towerId === 'sanji' && this.scene.textures.exists('sanji')) {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'sanji');
-            icon.setDisplaySize(18, 45); // Réduit pour la carte
+            icon.setDisplaySize(16, targetHeight);
             icon.setOrigin(0.5, 0.5);
             icon.play('sanji_idle');
         } else if (towerId === 'nami' && this.scene.textures.exists('nami')) {
             icon = this.scene.add.sprite(x + width / 2, iconY, 'nami');
-            icon.setDisplaySize(24, 52);
+            icon.setDisplaySize(32, targetHeight);
             icon.setOrigin(0.5, 0.5);
             icon.play('nami_idle');
+        } else if (towerId === 'robin' && this.scene.textures.exists('robin')) {
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'robin');
+            icon.setDisplaySize(34, targetHeight);
+            icon.setOrigin(0.5, 0.5);
+            icon.play('robin_idle');
+        } else if (towerId === 'brook' && this.scene.textures.exists('brook')) {
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'brook');
+            icon.setDisplaySize(34, targetHeight);
+            icon.setOrigin(0.5, 0.5);
+            icon.play('brook');
+        } else if (towerId === 'jimbe' && this.scene.textures.exists('jimbe')) {
+            icon = this.scene.add.sprite(x + width / 2, iconY, 'jimbe');
+            icon.setDisplaySize(42, targetHeight);
+            icon.setOrigin(0.5, 0.5);
+            icon.play('jimbe_idle');
         } else if (this.scene.textures.exists(towerId)) {
             icon = this.scene.add.image(x + width / 2, iconY, towerId);
-            icon.setDisplaySize(35, 35);
+            icon.setDisplaySize(34, 34);
         } else {
-            icon = this.scene.add.rectangle(x + width / 2, iconY, 30, 30, towerData.color);
+            icon = this.scene.add.rectangle(x + width / 2, iconY, 28, 28, towerData.color);
         }
-        icon.setDepth(102);
+        icon.setDepth(103);
         icon.setScrollFactor(0);
         icon.setInteractive({ draggable: true, useHandCursor: true });
+        
+        // Effet de surbrillance au survol - léger agrandissement
+        icon.on('pointerover', () => {
+            icon.setTint(0xaaddff); // Teinte bleu clair
+            if (icon.setScale) icon.setScale(1.08); // Agrandissement léger
+            iconBgGlow.setStrokeStyle(3, 0x60a5fa, 1);
+            iconBgGlow.setFillStyle(0x1e3a5f, 0.8);
+            
+            // Afficher la portée sur la map
+            this.showHoverRange(towerId, towerData);
+        });
+        icon.on('pointerout', () => {
+            icon.clearTint();
+            if (icon.setScale) icon.setScale(1.0);
+            iconBgGlow.setStrokeStyle(2, rarity.border, 0.4);
+            iconBgGlow.setFillStyle(0x000000, 0.6);
+            
+            // Cacher la portée
+            this.hideHoverRange();
+        });
         
         // Drag and drop sur le sprite de la tour
         icon.on('dragstart', (pointer) => {
@@ -933,28 +1037,31 @@ class TowerMenu {
             }
         });
         
-        // Bouton INFOS (style moderne) - position ajustée
+        // === BOUTONS SUR LA MÊME LIGNE ===
+        const buttonY = y + 90;
+        const buttonWidth = (width - 16) / 2; // Deux boutons côte à côte
+        const buttonHeight = 20;
+        
+        // Bouton INFOS (gauche) - Bleu
         const infosBtn = this.scene.add.rectangle(
-            x + width / 2,
-            y + 78,
-            width - 12,
-            16,
-            0x334155,
+            x + 6 + buttonWidth / 2,
+            buttonY,
+            buttonWidth,
+            buttonHeight,
+            0x3b82f6,
             1
         );
         infosBtn.setDepth(101);
         infosBtn.setScrollFactor(0);
         infosBtn.setInteractive({ useHandCursor: true });
-        infosBtn.setStrokeStyle(1, 0x475569, 0.5);
+        infosBtn.setStrokeStyle(2, 0x60a5fa, 0.9);
         
         const infosText = this.scene.add.text(
-            x + width / 2,
-            y + 78,
-            'ⓘ INFOS',
+            x + 6 + buttonWidth / 2,
+            buttonY,
+            'ℹ️',
             {
-                fontSize: '8px',
-                fill: '#cbd5e1',
-                fontStyle: 'bold',
+                fontSize: '12px',
                 fontFamily: 'Arial'
             }
         );
@@ -962,28 +1069,26 @@ class TowerMenu {
         infosText.setDepth(102);
         infosText.setScrollFactor(0);
         
-        // Bouton DÉPLOYER (style moderne) - position ajustée
+        // Bouton DÉPLOYER (droite) - plus visible avec couleur vive
         const deployBtn = this.scene.add.rectangle(
-            x + width / 2,
-            y + 96,
-            width - 12,
-            16,
-            0x0891b2,
+            x + width - 6 - buttonWidth / 2,
+            buttonY,
+            buttonWidth,
+            buttonHeight,
+            0x059669,
             1
         );
         deployBtn.setDepth(101);
         deployBtn.setScrollFactor(0);
         deployBtn.setInteractive({ useHandCursor: true });
-        deployBtn.setStrokeStyle(1, 0x06b6d4, 0.7);
+        deployBtn.setStrokeStyle(2, 0x10b981, 0.9);
         
         const deployText = this.scene.add.text(
-            x + width / 2,
-            y + 96,
-            '⚓ DÉPLOYER',
+            x + width - 6 - buttonWidth / 2,
+            buttonY,
+            '⚔️',
             {
-                fontSize: '8px',
-                fill: '#f0f9ff',
-                fontStyle: 'bold',
+                fontSize: '12px',
                 fontFamily: 'Arial'
             }
         );
@@ -997,13 +1102,17 @@ class TowerMenu {
         });
         
         infosBtn.on('pointerover', () => {
-            infosBtn.setFillStyle(0x475569);
-            infosBtn.setStrokeStyle(1, 0x64748b, 0.8);
+            infosBtn.setFillStyle(0x60a5fa);
+            infosBtn.setStrokeStyle(2, 0x93c5fd, 1);
+            infosBtn.setScale(1.05);
+            infosText.setScale(1.05);
         });
         
         infosBtn.on('pointerout', () => {
-            infosBtn.setFillStyle(0x334155);
-            infosBtn.setStrokeStyle(1, 0x475569, 0.5);
+            infosBtn.setFillStyle(0x3b82f6);
+            infosBtn.setStrokeStyle(2, 0x60a5fa, 0.9);
+            infosBtn.setScale(1);
+            infosText.setScale(1);
         });
         
         deployBtn.on('pointerdown', (pointer) => {
@@ -1015,14 +1124,18 @@ class TowerMenu {
         
         deployBtn.on('pointerover', () => {
             if (this.availableTowers[towerId]) {
-                deployBtn.setFillStyle(0x06b6d4);
-                deployBtn.setStrokeStyle(1, 0x22d3ee, 0.9);
+                deployBtn.setFillStyle(0x10b981);
+                deployBtn.setStrokeStyle(2, 0x34d399, 1);
+                deployBtn.setScale(1.05);
+                deployText.setScale(1.05);
             }
         });
         
         deployBtn.on('pointerout', () => {
-            deployBtn.setFillStyle(0x0891b2);
-            deployBtn.setStrokeStyle(1, 0x06b6d4, 0.7);
+            deployBtn.setFillStyle(0x059669);
+            deployBtn.setStrokeStyle(2, 0x10b981, 0.9);
+            deployBtn.setScale(1);
+            deployText.setScale(1);
         });
         
         // Stocker les références
@@ -1030,10 +1143,12 @@ class TowerMenu {
             cardBg: cardBg,
             cardBorder: cardBorder,
             cardMug: cardMug,
+            iconBgGlow: iconBgGlow,
             icon: icon,
             name: name,
             level: level,
             levelBadge: levelBadge,
+            rarityBar: rarityBar,
             infosBtn: infosBtn,
             infosText: infosText,
             deployBtn: deployBtn,
@@ -1042,7 +1157,6 @@ class TowerMenu {
     }
     
     showTowerInfo(towerId) {
-        // Si une modal est déjà ouverte, la fermer d'abord puis ouvrir la nouvelle
         if (this.modal) {
             this.closeModal();
         }
@@ -1052,312 +1166,421 @@ class TowerMenu {
         const towerData = getTowerStats(towerId, playerLevel);
         const centerX = this.scene.cameras.main.width / 2;
         const centerY = this.scene.cameras.main.height / 2;
-        const modalWidth = 380;
-        const modalHeight = 480;
+        const modalWidth = 420;
+        const modalHeight = 520;
+        
+        // Couleurs thème
+        const colors = {
+            primary: 0x1a1a2e,
+            secondary: 0x16213e,
+            accent: 0xd4af37,
+            border: 0x2d4a6f,
+            success: 0x2ecc71,
+            danger: 0xe74c3c
+        };
         
         this.modal = {};
         this.currentInfoTower = towerId;
         
-        // Fond sombre derrière la modal
+        // Overlay sombre
         this.modal.overlay = this.scene.add.rectangle(
             centerX, centerY,
             this.scene.cameras.main.width,
             this.scene.cameras.main.height,
-            0x000000, 0.7
+            0x000000, 0.85
         );
         this.modal.overlay.setDepth(500);
         this.modal.overlay.setScrollFactor(0);
         this.modal.overlay.setInteractive();
         this.modal.overlay.on('pointerdown', () => this.closeModal());
         
-        // Fond de la modal
-        this.modal.bg = this.scene.add.rectangle(
-            centerX, centerY,
-            modalWidth, modalHeight,
-            0x1a1a1a, 1
-        );
+        // Ombre
+        const shadow = this.scene.add.rectangle(centerX + 6, centerY + 6, modalWidth, modalHeight, 0x000000, 0.5);
+        shadow.setDepth(500);
+        shadow.setScrollFactor(0);
+        this.modal.shadow = shadow;
+        
+        // Bordure extérieure
+        const bgOuter = this.scene.add.rectangle(centerX, centerY, modalWidth + 4, modalHeight + 4, colors.border, 1);
+        bgOuter.setDepth(501);
+        bgOuter.setScrollFactor(0);
+        this.modal.bgOuter = bgOuter;
+        
+        // Fond principal
+        this.modal.bg = this.scene.add.rectangle(centerX, centerY, modalWidth, modalHeight, colors.primary, 1);
         this.modal.bg.setDepth(501);
         this.modal.bg.setScrollFactor(0);
-        this.modal.bg.setStrokeStyle(3, 0x444444);
-        this.modal.bg.setInteractive();  // Rendre interactif pour bloquer les clics
+        // Rendre le fond interactif pour bloquer les clics (empêcher la fermeture)
+        this.modal.bg.setInteractive();
+        this.modal.bg.on('pointerdown', (pointer) => {
+            pointer.event.stopPropagation();
+        });
         
-        // Titre "DONNÉES UNITÉ"
+        // Barre de titre
+        const titleBar = this.scene.add.rectangle(centerX, centerY - modalHeight/2 + 30, modalWidth - 20, 40, colors.secondary, 1);
+        titleBar.setDepth(502);
+        titleBar.setScrollFactor(0);
+        this.modal.titleBar = titleBar;
+        
+        // Ligne dorée sous titre
+        const titleLine = this.scene.add.rectangle(centerX, centerY - modalHeight/2 + 52, modalWidth - 40, 2, colors.accent, 0.8);
+        titleLine.setDepth(502);
+        titleLine.setScrollFactor(0);
+        this.modal.titleLine = titleLine;
+        
+        // Titre
         this.modal.title = this.scene.add.text(
-            centerX - modalWidth/2 + 20,
-            centerY - modalHeight/2 + 15,
-            'DONNÉES UNITÉ',
+            centerX, centerY - modalHeight/2 + 30,
+            '⚔️ FICHE PERSONNAGE',
             {
-                fontSize: '16px',
-                fill: '#ffffff',
+                fontSize: '18px',
+                color: '#d4af37',
                 fontStyle: 'bold',
-                fontFamily: 'monospace'
+                fontFamily: "'Segoe UI', Arial, sans-serif"
             }
         );
-        this.modal.title.setDepth(502);
+        this.modal.title.setOrigin(0.5);
+        this.modal.title.setDepth(503);
         this.modal.title.setScrollFactor(0);
         
-        // Bouton X pour fermer
-        this.modal.closeBtn = this.scene.add.text(
-            centerX + modalWidth/2 - 25,
-            centerY - modalHeight/2 + 12,
-            'X',
-            {
-                fontSize: '20px',
-                fill: '#ff6666',
-                fontStyle: 'bold',
-                fontFamily: 'monospace'
-            }
-        );
-        this.modal.closeBtn.setDepth(502);
+        // Bouton fermer
+        const closeBtnBg = this.scene.add.circle(centerX + modalWidth/2 - 30, centerY - modalHeight/2 + 30, 15, colors.danger, 0.9);
+        closeBtnBg.setDepth(503);
+        closeBtnBg.setScrollFactor(0);
+        closeBtnBg.setInteractive({ useHandCursor: true });
+        closeBtnBg.on('pointerover', () => closeBtnBg.setFillStyle(0xff6b6b, 1));
+        closeBtnBg.on('pointerout', () => closeBtnBg.setFillStyle(colors.danger, 0.9));
+        closeBtnBg.on('pointerdown', () => this.closeModal());
+        this.modal.closeBtnBg = closeBtnBg;
+        
+        this.modal.closeBtn = this.scene.add.text(centerX + modalWidth/2 - 30, centerY - modalHeight/2 + 29, '✕', {
+            fontSize: '16px', color: '#ffffff', fontStyle: 'bold'
+        });
+        this.modal.closeBtn.setOrigin(0.5);
+        this.modal.closeBtn.setDepth(504);
         this.modal.closeBtn.setScrollFactor(0);
-        this.modal.closeBtn.setInteractive({ useHandCursor: true });
-        this.modal.closeBtn.on('pointerdown', () => this.closeModal());
-        this.modal.closeBtn.on('pointerover', () => this.modal.closeBtn.setColor('#ff0000'));
-        this.modal.closeBtn.on('pointerout', () => this.modal.closeBtn.setColor('#ff6666'));
         
-        // Barre de navigation (nom + niveau)
-        const navY = centerY - modalHeight/2 + 55;
-        this.modal.navBg = this.scene.add.rectangle(
-            centerX, navY,
-            modalWidth - 20, 35,
-            0x2a4a2a, 1
-        );
-        this.modal.navBg.setDepth(501);
-        this.modal.navBg.setScrollFactor(0);
+        // Section personnage (nom + navigation)
+        const charY = centerY - modalHeight/2 + 85;
+        const charCard = this.scene.add.rectangle(centerX, charY, modalWidth - 40, 50, colors.secondary, 0.9);
+        charCard.setDepth(502);
+        charCard.setScrollFactor(0);
+        charCard.setStrokeStyle(2, colors.accent, 0.6);
+        this.modal.charCard = charCard;
         
-        // Flèche gauche
-        this.modal.leftArrow = this.scene.add.text(
-            centerX - modalWidth/2 + 30, navY,
-            '<',
-            {
-                fontSize: '24px',
-                fill: '#00ff00',
-                fontStyle: 'bold',
-                fontFamily: 'monospace'
-            }
-        );
+        // Flèches navigation
+        this.modal.leftArrow = this.scene.add.text(centerX - modalWidth/2 + 45, charY, '◀', {
+            fontSize: '22px', color: '#d4af37', fontStyle: 'bold'
+        });
         this.modal.leftArrow.setOrigin(0.5);
-        this.modal.leftArrow.setDepth(502);
+        this.modal.leftArrow.setDepth(503);
         this.modal.leftArrow.setScrollFactor(0);
         this.modal.leftArrow.setInteractive({ useHandCursor: true });
+        this.modal.leftArrow.on('pointerover', () => this.modal.leftArrow.setColor('#ffd700'));
+        this.modal.leftArrow.on('pointerout', () => this.modal.leftArrow.setColor('#d4af37'));
         this.modal.leftArrow.on('pointerdown', () => this.navigateTower(-1));
         
-        // Nom + Niveau
-        this.modal.towerName = this.scene.add.text(
-            centerX, navY,
-            `${towerData.name.toUpperCase()} [${playerLevel}]`,
-            {
-                fontSize: '16px',
-                fill: '#00ff00',
-                fontStyle: 'bold',
-                fontFamily: 'monospace'
-            }
-        );
-        this.modal.towerName.setOrigin(0.5);
-        this.modal.towerName.setDepth(502);
-        this.modal.towerName.setScrollFactor(0);
-        
-        // Flèche droite
-        this.modal.rightArrow = this.scene.add.text(
-            centerX + modalWidth/2 - 30, navY,
-            '>',
-            {
-                fontSize: '24px',
-                fill: '#00ff00',
-                fontStyle: 'bold',
-                fontFamily: 'monospace'
-            }
-        );
+        this.modal.rightArrow = this.scene.add.text(centerX + modalWidth/2 - 45, charY, '▶', {
+            fontSize: '22px', color: '#d4af37', fontStyle: 'bold'
+        });
         this.modal.rightArrow.setOrigin(0.5);
-        this.modal.rightArrow.setDepth(502);
+        this.modal.rightArrow.setDepth(503);
         this.modal.rightArrow.setScrollFactor(0);
         this.modal.rightArrow.setInteractive({ useHandCursor: true });
+        this.modal.rightArrow.on('pointerover', () => this.modal.rightArrow.setColor('#ffd700'));
+        this.modal.rightArrow.on('pointerout', () => this.modal.rightArrow.setColor('#d4af37'));
         this.modal.rightArrow.on('pointerdown', () => this.navigateTower(1));
         
-        // Stats
-        const statsStartY = navY + 35;
-        const labelX = centerX - modalWidth/2 + 30;
-        const valueX = centerX + modalWidth/2 - 30;
-        const lineHeight = 28;
+        // Nom + niveau
+        this.modal.towerName = this.scene.add.text(centerX, charY, `${towerData.name.toUpperCase()}`, {
+            fontSize: '20px', color: '#ffffff', fontStyle: 'bold', fontFamily: "'Segoe UI', Arial, sans-serif"
+        });
+        this.modal.towerName.setOrigin(0.5);
+        this.modal.towerName.setDepth(503);
+        this.modal.towerName.setScrollFactor(0);
+        
+        // Badge niveau
+        const lvlBadge = this.scene.add.rectangle(centerX + 80, charY, 50, 24, colors.accent, 0.9);
+        lvlBadge.setDepth(503);
+        lvlBadge.setScrollFactor(0);
+        this.modal.lvlBadge = lvlBadge;
+        
+        const lvlText = this.scene.add.text(centerX + 80, charY, `Nv.${playerLevel}`, {
+            fontSize: '12px', color: '#1a1a2e', fontStyle: 'bold', fontFamily: "'Segoe UI', Arial, sans-serif"
+        });
+        lvlText.setOrigin(0.5);
+        lvlText.setDepth(504);
+        lvlText.setScrollFactor(0);
+        this.modal.lvlText = lvlText;
+        
+        // Stats avec icônes
+        const statsStartY = charY + 45;
+        const labelX = centerX - modalWidth/2 + 40;
+        const valueX = centerX + modalWidth/2 - 40;
+        const lineHeight = 32;
         
         const stats = [
-            { label: 'Puissance', value: towerData.damage, color: '#ffffff' },
-            { label: 'Recharge', value: `${towerData.fireRate.toFixed(2)}s`, color: '#ffffff' },
-            { label: 'Critique', value: `${towerData.critChance.toFixed(1)}%`, color: '#ffffff' },
-            { label: 'Portée', value: Math.round(towerData.range), color: '#ffffff' },
-            { label: 'Forme', value: towerData.shape, color: '#ffffff' },
-            { label: 'Terrain', value: towerData.terrain, color: '#ffffff' },
-            { label: 'Cible', value: towerData.target, color: '#ffffff' }
+            { icon: '⚔️', label: 'Puissance', value: towerData.damage, color: '#ff6b6b' },
+            { icon: '⏱️', label: 'Recharge', value: `${towerData.fireRate.toFixed(2)}s`, color: '#74b9ff' },
+            { icon: '💥', label: 'Critique', value: `${towerData.critChance.toFixed(1)}%`, color: '#ffeaa7' },
+            { icon: '🎯', label: 'Portée', value: Math.round(towerData.range), color: '#55efc4' },
+            { icon: '📐', label: 'Forme', value: towerData.shape || 'Cercle', color: '#a29bfe' },
+            { icon: '🎪', label: 'Cible', value: towerData.target || 'Premier', color: '#fd79a8' }
         ];
         
         this.modal.statLabels = [];
         this.modal.statValues = [];
+        this.modal.statBgs = []; // Stocker les fonds des stats pour les détruire à la fermeture
         
         stats.forEach((stat, index) => {
             const y = statsStartY + index * lineHeight;
             
-            const label = this.scene.add.text(labelX, y, stat.label, {
-                fontSize: '14px',
-                fill: '#888888',
-                fontFamily: 'monospace'
+            // Ligne de stat
+            const statBg = this.scene.add.rectangle(centerX, y + 10, modalWidth - 50, 26, colors.secondary, index % 2 === 0 ? 0.4 : 0.2);
+            statBg.setDepth(502);
+            statBg.setScrollFactor(0);
+            this.modal.statBgs.push(statBg); // Stocker pour destruction
+            
+            const label = this.scene.add.text(labelX, y + 10, `${stat.icon} ${stat.label}`, {
+                fontSize: '14px', color: '#8892a0', fontFamily: "'Segoe UI', Arial, sans-serif"
             });
-            label.setDepth(502);
+            label.setOrigin(0, 0.5);
+            label.setDepth(503);
             label.setScrollFactor(0);
             this.modal.statLabels.push(label);
             
-            const value = this.scene.add.text(valueX, y, String(stat.value), {
-                fontSize: '14px',
-                fill: stat.color,
-                fontStyle: 'bold',
-                fontFamily: 'monospace'
+            const value = this.scene.add.text(valueX, y + 10, String(stat.value), {
+                fontSize: '15px', color: stat.color, fontStyle: 'bold', fontFamily: "'Segoe UI', Arial, sans-serif"
             });
-            value.setOrigin(1, 0);
-            value.setDepth(502);
+            value.setOrigin(1, 0.5);
+            value.setDepth(503);
             value.setScrollFactor(0);
             this.modal.statValues.push(value);
         });
         
-        // Flèches pour Cible (dernière stat)
-        const cibleY = statsStartY + 6 * lineHeight;
-        this.modal.cibleLeft = this.scene.add.text(
-            centerX - 50, cibleY,
-            '<',
-            {
-                fontSize: '14px',
-                fill: '#ff6666',
-                fontFamily: 'monospace'
-            }
-        );
-        this.modal.cibleLeft.setDepth(502);
-        this.modal.cibleLeft.setScrollFactor(0);
+        // Section passive
+        const passiveY = statsStartY + stats.length * lineHeight + 15;
+        const passiveBg = this.scene.add.rectangle(centerX, passiveY + 25, modalWidth - 50, 55, colors.secondary, 0.7);
+        passiveBg.setDepth(502);
+        passiveBg.setScrollFactor(0);
+        passiveBg.setStrokeStyle(1, colors.border, 0.5);
+        this.modal.passiveBg = passiveBg;
         
-        this.modal.cibleRight = this.scene.add.text(
-            centerX + 80, cibleY,
-            '>',
-            {
-                fontSize: '14px',
-                fill: '#ff6666',
-                fontFamily: 'monospace'
-            }
-        );
-        this.modal.cibleRight.setDepth(502);
-        this.modal.cibleRight.setScrollFactor(0);
+        const passiveLabel = this.scene.add.text(centerX, passiveY + 8, '✨ PASSIF', {
+            fontSize: '11px', color: '#d4af37', fontStyle: 'bold', letterSpacing: 2
+        });
+        passiveLabel.setOrigin(0.5);
+        passiveLabel.setDepth(503);
+        passiveLabel.setScrollFactor(0);
+        this.modal.passiveLabel = passiveLabel;
         
-        // Section passive (fond sombre)
-        const passiveY = statsStartY + 7.5 * lineHeight;
-        this.modal.passiveBg = this.scene.add.rectangle(
-            centerX, passiveY + 30,
-            modalWidth - 30, 70,
-            0x2a2a2a, 1
-        );
-        this.modal.passiveBg.setDepth(501);
-        this.modal.passiveBg.setScrollFactor(0);
-        
-        // Texte passif (vide pour l'instant)
-        this.modal.passiveText = this.scene.add.text(
-            centerX, passiveY + 30,
-            towerData.passive || '',
-            {
-                fontSize: '13px',
-                fill: '#00ff00',
-                fontFamily: 'monospace',
-                align: 'center',
-                wordWrap: { width: modalWidth - 50 }
-            }
-        );
+        this.modal.passiveText = this.scene.add.text(centerX, passiveY + 35, towerData.passive || 'Aucun passif', {
+            fontSize: '13px', color: towerData.passive ? '#55efc4' : '#6c7a89', fontFamily: "'Segoe UI', Arial, sans-serif",
+            align: 'center', wordWrap: { width: modalWidth - 70 }
+        });
         this.modal.passiveText.setOrigin(0.5);
-        this.modal.passiveText.setDepth(502);
+        this.modal.passiveText.setDepth(503);
         this.modal.passiveText.setScrollFactor(0);
         
-        // Boutons de level up en bas
-        const btnY = centerY + modalHeight/2 - 35;
+        // Section amélioration
+        const btnY = centerY + modalHeight/2 - 50;
         const currentLevel = this.scene.player.getTowerLevel(towerId);
         const maxLevel = towerConfig.maxLevel;
         const upgradeCost = getUpgradeCost(towerId, currentLevel);
         const canUpgrade = currentLevel < maxLevel && this.scene.player.gold >= upgradeCost;
         
-        // Affichage du niveau actuel
-        this.modal.levelDisplay = this.scene.add.text(
-            centerX - 100, btnY,
-            `Nv.${currentLevel}/${maxLevel}`,
-            {
-                fontSize: '14px',
-                fill: '#ffff00',
-                fontStyle: 'bold',
-                fontFamily: 'monospace'
-            }
-        );
-        this.modal.levelDisplay.setOrigin(0.5);
-        this.modal.levelDisplay.setDepth(502);
+        // Barre de niveau
+        const lvlBarBg = this.scene.add.rectangle(centerX - 50, btnY - 30, 200, 8, 0x2a2a3a, 1);
+        lvlBarBg.setDepth(502);
+        lvlBarBg.setScrollFactor(0);
+        this.modal.lvlBarBg = lvlBarBg;
+        
+        const lvlProgress = currentLevel / maxLevel;
+        const lvlBar = this.scene.add.rectangle(centerX - 50 - 100 + (200 * lvlProgress / 2), btnY - 30, 200 * lvlProgress, 8, colors.accent, 1);
+        lvlBar.setDepth(503);
+        lvlBar.setScrollFactor(0);
+        this.modal.lvlBar = lvlBar;
+        
+        // Texte niveau
+        this.modal.levelDisplay = this.scene.add.text(centerX + 70, btnY - 30, `${currentLevel}/${maxLevel}`, {
+            fontSize: '13px', color: '#d4af37', fontStyle: 'bold', fontFamily: "'Segoe UI', Arial, sans-serif"
+        });
+        this.modal.levelDisplay.setOrigin(0, 0.5);
+        this.modal.levelDisplay.setDepth(503);
         this.modal.levelDisplay.setScrollFactor(0);
         
-        // Bouton Level Up (+1)
-        const btnUpgrade = this.scene.add.rectangle(
-            centerX + 20, btnY,
-            120, 30,
-            canUpgrade ? 0x2d5a27 : 0x444444, 1
-        );
-        btnUpgrade.setDepth(501);
-        btnUpgrade.setScrollFactor(0);
-        btnUpgrade.setStrokeStyle(2, canUpgrade ? 0x4a8c3f : 0x666666);
-        if (canUpgrade) {
-            btnUpgrade.setInteractive({ useHandCursor: true });
-            btnUpgrade.on('pointerdown', () => this.upgradeTowerFromModal(towerId));
-            btnUpgrade.on('pointerover', () => btnUpgrade.setFillStyle(0x3d7a37));
-            btnUpgrade.on('pointerout', () => btnUpgrade.setFillStyle(0x2d5a27));
-        }
+        // Or disponible
+        const goldInfo = this.scene.add.text(centerX - 150, btnY - 30, `💰 ${this.scene.player.gold}`, {
+            fontSize: '13px', color: '#ffd700', fontFamily: "'Segoe UI', Arial, sans-serif"
+        });
+        goldInfo.setOrigin(0, 0.5);
+        goldInfo.setDepth(503);
+        goldInfo.setScrollFactor(0);
+        this.modal.goldInfo = goldInfo;
         
-        const btnUpgradeText = this.scene.add.text(
-            centerX + 20, btnY,
-            currentLevel >= maxLevel ? 'MAX' : `+1 (${upgradeCost}💰)`,
-            {
-                fontSize: '13px',
-                fill: canUpgrade ? '#ffffff' : '#888888',
-                fontStyle: 'bold',
-                fontFamily: 'monospace'
-            }
-        );
-        btnUpgradeText.setOrigin(0.5);
-        btnUpgradeText.setDepth(502);
-        btnUpgradeText.setScrollFactor(0);
+        // Boutons d'amélioration
+        const btnWidth = 100;
+        const btnGap = 15;
+        const btnStartX = centerX - btnWidth - btnGap;
         
-        // Bouton Level Up (+10)
+        // Stocker les références pour la mise à jour des boutons
+        this.modal.upgradeBtns = [];
+        this.modal.previewTexts = []; // Pour la prévisualisation des stats
+        
+        // Créer les textes de prévisualisation (verts, à côté des valeurs)
+        stats.forEach((stat, index) => {
+            const y = statsStartY + index * lineHeight;
+            const previewText = this.scene.add.text(valueX + 10, y + 10, '', {
+                fontSize: '13px', color: '#2ecc71', fontStyle: 'bold', fontFamily: "'Segoe UI', Arial, sans-serif"
+            });
+            previewText.setOrigin(0, 0.5);
+            previewText.setDepth(504);
+            previewText.setScrollFactor(0);
+            previewText.setVisible(false);
+            this.modal.previewTexts.push(previewText);
+        });
+        
+        // Fonction pour afficher la prévisualisation
+        const showPreview = (levels) => {
+            const futureLevel = Math.min(currentLevel + levels, maxLevel);
+            const futureStats = getTowerStats(towerId, futureLevel);
+            const currentStats = getTowerStats(towerId, currentLevel);
+            
+            const statDiffs = [
+                { diff: futureStats.damage - currentStats.damage, format: (v) => `+${v}` },
+                { diff: currentStats.fireRate - futureStats.fireRate, format: (v) => `-${v.toFixed(2)}s` },
+                { diff: futureStats.critChance - currentStats.critChance, format: (v) => `+${v.toFixed(1)}%` },
+                { diff: futureStats.range - currentStats.range, format: (v) => `+${Math.round(v)}` },
+                { diff: 0, format: () => '' }, // Forme ne change pas
+                { diff: 0, format: () => '' }  // Cible ne change pas
+            ];
+            
+            statDiffs.forEach((stat, index) => {
+                if (stat.diff > 0) {
+                    this.modal.previewTexts[index].setText(stat.format(stat.diff));
+                    this.modal.previewTexts[index].setVisible(true);
+                } else {
+                    this.modal.previewTexts[index].setVisible(false);
+                }
+            });
+        };
+        
+        // Fonction pour cacher la prévisualisation
+        const hidePreview = () => {
+            this.modal.previewTexts.forEach(text => text.setVisible(false));
+        };
+        
+        // Fonction pour créer un bouton d'amélioration
+        const createUpgradeBtn = (x, levels, cost, canUpgradeNow) => {
+            const btn = this.scene.add.rectangle(x, btnY, btnWidth, 35, canUpgradeNow ? colors.success : 0x444444, 0.9);
+            btn.setDepth(502);
+            btn.setScrollFactor(0);
+            btn.setStrokeStyle(2, canUpgradeNow ? 0x27ae60 : 0x555555, 0.6);
+            btn.setInteractive({ useHandCursor: true });
+            
+            const text = this.scene.add.text(x, btnY, currentLevel + levels > maxLevel ? 'MAX' : `+${levels} (${cost})`, {
+                fontSize: '13px', color: canUpgradeNow ? '#ffffff' : '#666666', fontStyle: 'bold', fontFamily: "'Segoe UI', Arial, sans-serif"
+            });
+            text.setOrigin(0.5);
+            text.setDepth(503);
+            text.setScrollFactor(0);
+            
+            btn.on('pointerdown', () => {
+                if (this.canUpgradeNow(towerId, levels)) {
+                    if (levels === 1) {
+                        this.upgradeTowerFromModal(towerId);
+                    } else {
+                        this.upgradeTowerMultiple(towerId, levels);
+                    }
+                }
+            });
+            
+            btn.on('pointerover', () => {
+                if (this.canUpgradeNow(towerId, levels)) {
+                    btn.setFillStyle(0x27ae60, 1);
+                    showPreview(levels);
+                }
+            });
+            
+            btn.on('pointerout', () => {
+                const canNow = this.canUpgradeNow(towerId, levels);
+                btn.setFillStyle(canNow ? colors.success : 0x444444, 0.9);
+                hidePreview();
+            });
+            
+            return { btn, text, levels, cost };
+        };
+        
+        // Bouton +1
+        const btn1 = createUpgradeBtn(btnStartX, 1, upgradeCost, canUpgrade);
+        this.modal.btnUpgrade = btn1.btn;
+        this.modal.btnUpgradeText = btn1.text;
+        this.modal.upgradeBtns.push({ ...btn1, x: btnStartX });
+        
+        // Bouton +5
+        const cost5 = this.calculateMultiUpgradeCost(towerId, currentLevel, 5);
+        const canUpgrade5 = currentLevel + 5 <= maxLevel && this.scene.player.gold >= cost5;
+        const btn5 = createUpgradeBtn(centerX, 5, cost5, canUpgrade5);
+        this.modal.btnUpgrade5 = btn5.btn;
+        this.modal.btnUpgrade5Text = btn5.text;
+        this.modal.upgradeBtns.push({ ...btn5, x: centerX });
+        
+        // Bouton +10
         const cost10 = this.calculateMultiUpgradeCost(towerId, currentLevel, 10);
         const canUpgrade10 = currentLevel + 10 <= maxLevel && this.scene.player.gold >= cost10;
+        const btn10X = btnStartX + btnWidth + btnGap + btnWidth + btnGap;
+        const btn10 = createUpgradeBtn(btn10X, 10, cost10, canUpgrade10);
+        this.modal.btnUpgrade10 = btn10.btn;
+        this.modal.btnUpgrade10Text = btn10.text;
+        this.modal.upgradeBtns.push({ ...btn10, x: btn10X });
         
-        const btnUpgrade10 = this.scene.add.rectangle(
-            centerX + 150, btnY,
-            100, 30,
-            canUpgrade10 ? 0x2d5a27 : 0x444444, 1
-        );
-        btnUpgrade10.setDepth(501);
-        btnUpgrade10.setScrollFactor(0);
-        btnUpgrade10.setStrokeStyle(2, canUpgrade10 ? 0x4a8c3f : 0x666666);
-        if (canUpgrade10) {
-            btnUpgrade10.setInteractive({ useHandCursor: true });
-            btnUpgrade10.on('pointerdown', () => this.upgradeTowerMultiple(towerId, 10));
-            btnUpgrade10.on('pointerover', () => btnUpgrade10.setFillStyle(0x3d7a37));
-            btnUpgrade10.on('pointerout', () => btnUpgrade10.setFillStyle(0x2d5a27));
+        // Timer pour mise à jour en temps réel des boutons et de l'or
+        this.modal.updateTimer = this.scene.time.addEvent({
+            delay: 100, // Vérifier toutes les 100ms
+            callback: () => this.updateModalButtons(towerId, colors),
+            loop: true
+        });
+    }
+    
+    // Vérifier si on peut améliorer maintenant
+    canUpgradeNow(towerId, levels) {
+        const currentLevel = this.scene.player.getTowerLevel(towerId);
+        const maxLevel = TOWER_CONFIG[towerId].maxLevel;
+        const cost = levels === 1 ? 
+            getUpgradeCost(towerId, currentLevel) : 
+            this.calculateMultiUpgradeCost(towerId, currentLevel, levels);
+        return currentLevel + levels <= maxLevel && this.scene.player.gold >= cost;
+    }
+    
+    // Mettre à jour les boutons en temps réel
+    updateModalButtons(towerId, colors) {
+        if (!this.modal || !this.modal.upgradeBtns) return;
+        
+        const currentLevel = this.scene.player.getTowerLevel(towerId);
+        const maxLevel = TOWER_CONFIG[towerId].maxLevel;
+        
+        // Mettre à jour l'affichage de l'or
+        if (this.modal.goldInfo) {
+            this.modal.goldInfo.setText(`💰 ${this.scene.player.gold}`);
         }
         
-        const btnUpgrade10Text = this.scene.add.text(
-            centerX + 150, btnY,
-            `+10 (${cost10}💰)`,
-            {
-                fontSize: '12px',
-                fill: canUpgrade10 ? '#ffffff' : '#888888',
-                fontStyle: 'bold',
-                fontFamily: 'monospace'
-            }
-        );
-        btnUpgrade10Text.setOrigin(0.5);
-        btnUpgrade10Text.setDepth(502);
-        btnUpgrade10Text.setScrollFactor(0);
-        
-        this.modal.btnUpgrade = btnUpgrade;
-        this.modal.btnUpgradeText = btnUpgradeText;
-        this.modal.btnUpgrade10 = btnUpgrade10;
-        this.modal.btnUpgrade10Text = btnUpgrade10Text;
+        // Mettre à jour chaque bouton
+        this.modal.upgradeBtns.forEach(btnData => {
+            const levels = btnData.levels;
+            const cost = levels === 1 ? 
+                getUpgradeCost(towerId, currentLevel) : 
+                this.calculateMultiUpgradeCost(towerId, currentLevel, levels);
+            const canNow = currentLevel + levels <= maxLevel && this.scene.player.gold >= cost;
+            
+            // Mettre à jour l'apparence du bouton
+            btnData.btn.setFillStyle(canNow ? colors.success : 0x444444, 0.9);
+            btnData.btn.setStrokeStyle(2, canNow ? 0x27ae60 : 0x555555, 0.6);
+            
+            // Mettre à jour le texte du bouton
+            const textContent = currentLevel + levels > maxLevel ? 'MAX' : `+${levels} (${cost})`;
+            btnData.text.setText(textContent);
+            btnData.text.setColor(canNow ? '#ffffff' : '#666666');
+        });
     }
     
     // Calculer le coût pour plusieurs niveaux
@@ -1376,6 +1599,14 @@ class TowerMenu {
             // Rafraîchir le modal
             this.closeModal();
             this.showTowerInfo(towerId);
+            
+            // Rafraîchir le menu pour mettre à jour le niveau sur les cartes
+            this.refreshMenu();
+            
+            // Sauvegarder les niveaux
+            if (this.scene.saveManager) {
+                this.scene.saveManager.autoSave();
+            }
             
             // Mettre à jour l'affichage des stats du joueur
             if (this.scene.enemyInfoPanel) {
@@ -1400,6 +1631,14 @@ class TowerMenu {
             this.closeModal();
             this.showTowerInfo(towerId);
             
+            // Rafraîchir le menu pour mettre à jour le niveau sur les cartes
+            this.refreshMenu();
+            
+            // Sauvegarder les niveaux
+            if (this.scene.saveManager) {
+                this.scene.saveManager.autoSave();
+            }
+            
             // Mettre à jour l'affichage des stats du joueur
             if (this.scene.enemyInfoPanel) {
                 this.scene.enemyInfoPanel.updatePlayerStats(this.scene.player);
@@ -1422,11 +1661,28 @@ class TowerMenu {
     closeModal() {
         if (!this.modal) return;
         
+        // Arrêter le timer de mise à jour
+        if (this.modal.updateTimer) {
+            this.modal.updateTimer.remove();
+            this.modal.updateTimer = null;
+        }
+        
         // Détruire tous les éléments de la modal
         Object.keys(this.modal).forEach(key => {
             const item = this.modal[key];
+            if (key === 'updateTimer') return; // Déjà géré
+            if (key === 'upgradeBtns') {
+                // Structure spéciale avec btn et text
+                item.forEach(btnData => {
+                    if (btnData.btn) btnData.btn.destroy();
+                    if (btnData.text) btnData.text.destroy();
+                });
+                return;
+            }
             if (Array.isArray(item)) {
-                item.forEach(el => el.destroy());
+                item.forEach(el => {
+                    if (el && el.destroy) el.destroy();
+                });
             } else if (item && item.destroy) {
                 item.destroy();
             }
@@ -1448,6 +1704,9 @@ class TowerMenu {
         // Les tours ne coûtent pas d'or lors de la pose
         // Elles sont déjà achetées/débloquées dans la boutique
         
+        // Cacher la portée au survol si elle est affichée
+        this.hideHoverRange();
+        
         // Activer le mode placement par clic
         if (this.scene.placementSystem) {
             this.scene.placementSystem.activateClickPlacement(towerId);
@@ -1456,6 +1715,9 @@ class TowerMenu {
     }
     
     startDrag(towerId, pointer, buttonBg) {
+        // Cacher la portée au survol si elle est affichée
+        this.hideHoverRange();
+        
         // Vérifier si la tour est disponible
         if (!this.availableTowers[towerId]) {
             this.scene.ui.showMessage('Déjà placé!', 1000);
@@ -1482,7 +1744,7 @@ class TowerMenu {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'zoro');
             this.dragSprite.setDisplaySize(28, 60); // Ratio 39:85, réduit
             this.dragSprite.setAlpha(0.8);
-            this.dragSprite.play('zoro_idle');
+            this.dragSprite.play('zoro');
         } else if (towerId === 'ussop' && this.scene.textures.exists('ussop')) {
             this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'ussop');
             this.dragSprite.setDisplaySize(28, 55); // Même taille que sur la map
@@ -1509,6 +1771,11 @@ class TowerMenu {
             this.dragSprite.setDisplaySize(30, 65); // 3 frames de 40x86 réduit
             this.dragSprite.setAlpha(0.8);
             this.dragSprite.play('nami_idle');
+        } else if (towerId === 'jimbe' && this.scene.textures.exists('jimbe')) {
+            this.dragSprite = this.scene.add.sprite(pointer.x, pointer.y, 'jimbe');
+            this.dragSprite.setDisplaySize(40, 55); // 4 frames de 101x85 réduit
+            this.dragSprite.setAlpha(0.8);
+            this.dragSprite.play('jimbe_idle');
         } else if (this.scene.textures.exists(towerId)) {
             this.dragSprite = this.scene.add.image(
                 pointer.x,
@@ -1555,6 +1822,8 @@ class TowerMenu {
         );
         this.dragRangeCircle.setStrokeStyle(2, towerData.color, 0.5);
         this.dragRangeCircle.setDepth(299);
+        // IMPORTANT: Ne pas rendre ce cercle interactif - il est uniquement visuel
+        // Ne pas appeler setInteractive() du tout pour éviter les erreurs hitAreaCallback
         
         // Écouter les mouvements de la souris
         this.scene.input.on('pointermove', this.onDragMove, this);
@@ -1577,13 +1846,54 @@ class TowerMenu {
         this.dragRangeCircle.x = pointer.x;
         this.dragRangeCircle.y = pointer.y;
         
-        // Vérifier si on est sur un emplacement valide
+        // Vérifier si on est sur un emplacement (libre ou occupé)
         if (this.scene.placementSystem) {
-            const isValid = this.scene.placementSystem.checkValidPlacement(pointer.x, pointer.y);
+            const nearestSpot = this.scene.placementSystem.findNearestSpot(pointer.x, pointer.y, 50, true);
+            const canPlaceOnNearest = nearestSpot && (nearestSpot.occupied || this.scene.placementSystem.canPlaceOnTerrain(this.dragTowerType, nearestSpot.terrain));
             
-            // Changer la couleur selon la validité
-            if (isValid) {
-                // Utiliser setTint pour les sprites animés, setFillStyle pour les cercles
+            // Mettre à jour l'affichage des spots (seulement les compatibles)
+            this.scene.placementSystem.placementSpots.forEach(spot => {
+                // Vérifier la compatibilité terrain pour les spots non occupés
+                const isCompatible = spot.occupied || this.scene.placementSystem.canPlaceOnTerrain(this.dragTowerType, spot.terrain);
+                
+                if (!isCompatible) {
+                    // Incompatible - rester invisible
+                    return;
+                }
+                
+                if (spot === nearestSpot && canPlaceOnNearest) {
+                    // Spot le plus proche et compatible - mettre en évidence
+                    spot.circle.setScale(1.2);
+                    if (spot.occupied) {
+                        // Emplacement occupé = remplacement possible (orange)
+                        spot.circle.setFillStyle(0xffa500, 0.7);
+                        spot.circle.setStrokeStyle(4, 0xffa500, 1);
+                    } else {
+                        // Emplacement libre (vert vif)
+                        spot.circle.setFillStyle(0x00ff00, 0.7);
+                        spot.circle.setStrokeStyle(4, 0x00ff00, 1);
+                    }
+                } else if (!spot.occupied) {
+                    // Autres spots compatibles - apparence normale
+                    spot.circle.setScale(1);
+                    spot.circle.setFillStyle(0x00ff00, 0.4);
+                    spot.circle.setStrokeStyle(3, 0x00ff00, 0.8);
+                }
+            });
+            
+            // Changer la couleur du sprite selon la validité
+            if (canPlaceOnNearest) {
+                if (nearestSpot.occupied) {
+                    // Remplacement possible (orange)
+                    if (this.dragSprite.setTint) {
+                        this.dragSprite.setTint(0xffa500);
+                        this.dragSprite.setAlpha(0.8);
+                    } else if (this.dragSprite.setFillStyle) {
+                        this.dragSprite.setFillStyle(0xffa500, 0.8);
+                    }
+                    this.dragRangeCircle.setStrokeStyle(2, 0xffa500, 0.5);
+                } else {
+                    // Placement possible (vert)
                 if (this.dragSprite.setTint) {
                     this.dragSprite.clearTint();
                     this.dragSprite.setAlpha(0.8);
@@ -1591,7 +1901,9 @@ class TowerMenu {
                 this.dragSprite.setFillStyle(TOWER_CONFIG[this.dragTowerType].color, 0.8);
                 }
                 this.dragRangeCircle.setStrokeStyle(2, 0x00ff00, 0.5);
+                }
             } else {
+                // Pas d'emplacement compatible proche (rouge)
                 if (this.dragSprite.setTint) {
                     this.dragSprite.setTint(0xff0000);
                     this.dragSprite.setAlpha(0.5);
@@ -1638,6 +1950,11 @@ class TowerMenu {
             this.dragRangeCircle = null;
         }
         
+        // Cacher les emplacements (ils sont invisibles par défaut)
+        if (this.scene.placementSystem) {
+            this.scene.placementSystem.hideAllSpots();
+        }
+        
         // Retirer les écouteurs
         this.scene.input.off('pointermove', this.onDragMove, this);
         this.scene.input.off('pointerup', this.onDragEnd, this);
@@ -1651,10 +1968,10 @@ class TowerMenu {
         if (this.buttons[towerId]) {
             const button = this.buttons[towerId];
             
-            // Changer le bouton DÉPLOYER en RETIRER
-            button.deployText.setText('⛔ RETIRER');
+            // Changer le bouton DÉPLOYER en RETIRER (avec emoji)
+            button.deployText.setText('🔙');
             button.deployBtn.setFillStyle(0xdc2626); // Rouge
-            button.deployBtn.setStrokeStyle(1, 0xef4444, 0.7);
+            button.deployBtn.setStrokeStyle(2, 0xef4444, 0.9);
             
             // Assombrir légèrement l'icône
             button.icon.setAlpha(0.6);
@@ -1686,13 +2003,17 @@ class TowerMenu {
             button.deployBtn.removeAllListeners('pointerover');
             button.deployBtn.on('pointerover', () => {
                 button.deployBtn.setFillStyle(0xef4444);
-                button.deployBtn.setStrokeStyle(1, 0xf87171, 0.9);
+                button.deployBtn.setStrokeStyle(2, 0xf87171, 1);
+                button.deployBtn.setScale(1.05);
+                button.deployText.setScale(1.05);
             });
             
             button.deployBtn.removeAllListeners('pointerout');
             button.deployBtn.on('pointerout', () => {
                 button.deployBtn.setFillStyle(0xdc2626);
-                button.deployBtn.setStrokeStyle(1, 0xef4444, 0.7);
+                button.deployBtn.setStrokeStyle(2, 0xef4444, 0.9);
+                button.deployBtn.setScale(1);
+                button.deployText.setScale(1);
             });
         }
     }
@@ -1705,10 +2026,10 @@ class TowerMenu {
         if (this.buttons[towerId]) {
             const button = this.buttons[towerId];
             
-            // Remettre le bouton DÉPLOYER
-            button.deployText.setText('⚓ DÉPLOYER');
-            button.deployBtn.setFillStyle(0x0891b2); // Cyan
-            button.deployBtn.setStrokeStyle(1, 0x06b6d4, 0.7);
+            // Remettre le bouton DÉPLOYER (avec emoji)
+            button.deployText.setText('⚔️');
+            button.deployBtn.setFillStyle(0x059669); // Vert
+            button.deployBtn.setStrokeStyle(2, 0x10b981, 0.9);
             
             // Remettre l'opacité normale
             button.icon.setAlpha(1);
@@ -1730,15 +2051,19 @@ class TowerMenu {
             button.deployBtn.removeAllListeners('pointerover');
             button.deployBtn.on('pointerover', () => {
                 if (this.availableTowers[towerId]) {
-                    button.deployBtn.setFillStyle(0x06b6d4);
-                    button.deployBtn.setStrokeStyle(1, 0x22d3ee, 0.9);
+                    button.deployBtn.setFillStyle(0x10b981);
+                    button.deployBtn.setStrokeStyle(2, 0x34d399, 1);
+                    button.deployBtn.setScale(1.05);
+                    button.deployText.setScale(1.05);
                 }
             });
             
             button.deployBtn.removeAllListeners('pointerout');
             button.deployBtn.on('pointerout', () => {
-                button.deployBtn.setFillStyle(0x0891b2);
-                button.deployBtn.setStrokeStyle(1, 0x06b6d4, 0.7);
+                button.deployBtn.setFillStyle(0x059669);
+                button.deployBtn.setStrokeStyle(2, 0x10b981, 0.9);
+                button.deployBtn.setScale(1);
+                button.deployText.setScale(1);
             });
         }
     }
@@ -1822,10 +2147,31 @@ class TowerMenu {
         this.lockedSlots = {};
         this.availableTowers = {};
         
-        // Réinitialiser les tours équipées comme disponibles
+        // S'assurer que slotUnlockCosts est défini
+        if (!this.slotUnlockCosts) {
+            this.slotUnlockCosts = {
+                6: 10,   // Slot 7 (index 6) : 10 étoiles
+                7: 25,   // Slot 8 (index 7) : 25 étoiles
+                8: 50,   // Slot 9 (index 8) : 50 étoiles
+                9: 100   // Slot 10 (index 9) : 100 étoiles
+            };
+        }
+        
+        // Récupérer les tours déjà placées sur la map
+        const placedTowerIds = new Set();
+        if (this.scene.placementSystem && this.scene.placementSystem.placementSpots) {
+            this.scene.placementSystem.placementSpots.forEach(spot => {
+                if (spot.occupied && spot.towerId) {
+                    placedTowerIds.add(spot.towerId);
+                }
+            });
+        }
+        
+        // Réinitialiser les tours équipées comme disponibles, sauf celles déjà placées
         const equippedTowers = this.scene.player.collection.getEquippedTowers();
         equippedTowers.forEach(towerId => {
-            this.availableTowers[towerId] = true;
+            // Si la tour est déjà sur la map, elle n'est pas disponible
+            this.availableTowers[towerId] = !placedTowerIds.has(towerId);
         });
         
         // Recréer les emplacements
@@ -1859,9 +2205,100 @@ class TowerMenu {
             }
         }
         
+        // Mettre à jour visuellement les tours déjà placées sur la map
+        placedTowerIds.forEach(towerId => {
+            if (this.buttons[towerId]) {
+                this.markTowerAsUsed(towerId);
+            }
+        });
+        
         // Recalculer le scroll max (5 lignes pour 10 emplacements)
         const totalRows = 5;
         this.maxScroll = Math.max(0, (totalRows * (cardHeight + gapY)) - (this.menuHeight - 170));
+    }
+    
+    /**
+     * Affiche la portée d'une tour au survol dans le menu
+     */
+    showHoverRange(towerId, towerData) {
+        // Cacher les cercles précédents s'ils existent
+        this.hideHoverRange();
+        
+        // Obtenir le niveau actuel de la tour
+        const playerLevel = this.scene.player ? this.scene.player.getTowerLevel(towerId) : 1;
+        const stats = getTowerStats(towerId, playerLevel);
+        
+        if (!stats) return;
+        
+        // Position au centre de la map (approximative, on pourrait améliorer en suivant la souris)
+        const mapCenterX = 300 + 550; // MAP_OFFSET_X + MAP_WIDTH/2
+        const mapCenterY = 400; // MAP_HEIGHT/2
+        
+        // Créer le cercle de portée maximum
+        this.hoverRangeCircle = this.scene.add.circle(
+            mapCenterX,
+            mapCenterY,
+            stats.range,
+            towerData.color,
+            0.1
+        );
+        this.hoverRangeCircle.setStrokeStyle(2, towerData.color, 0.6);
+        this.hoverRangeCircle.setDepth(10);
+        this.hoverRangeCircle.setScrollFactor(1); // Suit la caméra de la map
+        // IMPORTANT: Ne pas rendre ce cercle interactif - il est uniquement visuel
+        // Ne pas appeler setInteractive() du tout pour éviter les erreurs hitAreaCallback
+        
+        // Pour Jimbe, afficher aussi la portée minimum (zone d'exclusion)
+        if (towerId === 'jimbe' && stats.minRange > 0) {
+            // Cercle de portée minimum - zone où Jimbe ne peut PAS attaquer
+            this.hoverMinRangeCircle = this.scene.add.circle(
+                mapCenterX,
+                mapCenterY,
+                stats.minRange,
+                0xff0000, // Rouge vif
+                0.25 // Remplissage plus opaque pour mieux voir
+            );
+            this.hoverMinRangeCircle.setStrokeStyle(3, 0xff0000, 1); // Trait épais et rouge vif
+            this.hoverMinRangeCircle.setDepth(11); // Au-dessus du cercle de portée max
+            this.hoverMinRangeCircle.setScrollFactor(1);
+            // IMPORTANT: Ne pas rendre ce cercle interactif - il est uniquement visuel
+            // Ne pas appeler setInteractive() du tout pour éviter les erreurs hitAreaCallback
+            
+            // Ajouter un texte pour indiquer "Zone d'exclusion"
+            this.hoverMinRangeText = this.scene.add.text(
+                mapCenterX,
+                mapCenterY - stats.minRange - 20,
+                'Zone d\'exclusion',
+                {
+                    fontSize: '14px',
+                    fill: '#ff0000',
+                    fontStyle: 'bold',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                }
+            );
+            this.hoverMinRangeText.setOrigin(0.5, 0.5);
+            this.hoverMinRangeText.setDepth(12);
+            this.hoverMinRangeText.setScrollFactor(1);
+        }
+    }
+    
+    /**
+     * Cache la portée affichée au survol
+     */
+    hideHoverRange() {
+        if (this.hoverRangeCircle) {
+            this.hoverRangeCircle.destroy();
+            this.hoverRangeCircle = null;
+        }
+        if (this.hoverMinRangeCircle) {
+            this.hoverMinRangeCircle.destroy();
+            this.hoverMinRangeCircle = null;
+        }
+        if (this.hoverMinRangeText) {
+            this.hoverMinRangeText.destroy();
+            this.hoverMinRangeText = null;
+        }
     }
     
 }

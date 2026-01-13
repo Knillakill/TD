@@ -162,7 +162,20 @@ class TopMenu {
     }
     
     openStatsModal() {
-        this.activeModal = new StatsModal(this.scene, this);
+        // Afficher les stats dans le panneau de gauche au lieu d'une modale
+        if (this.scene.enemyInfoPanel) {
+            // Basculer le mode stats
+            if (this.scene.enemyInfoPanel.towerStatsMode) {
+                // Si déjà en mode stats, fermer
+                this.scene.enemyInfoPanel.hideTowerStats();
+                this.closeModal();
+            } else {
+                // Ouvrir le mode stats de combat
+                this.scene.enemyInfoPanel.showCombatStats();
+            }
+        }
+        // Pas de modale à stocker, mais on garde l'onglet actif visuellement
+        this.activeModal = null;
     }
     
     openPokedexModal() {

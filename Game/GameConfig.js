@@ -13,6 +13,10 @@ const GameConfig = {
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
-    }
+    },
+    // Garder le jeu actif même quand l'onglet n'est pas visible
+    disableVisibilityChange: true,
+    // Empêcher la pause quand le jeu perd le focus
+    pauseOnBlur: false
 };
 
