@@ -10,95 +10,142 @@ const ENEMY_CONFIG = {
         id: 'pirate_basic',
         name: 'Pirate',
         description: 'Simple pirate du village',
-        hp: 12,
-        armor: 0,
-        speed: 35,
+        hp: 500,  // HP moyen pour vague 10-15 (inspiré Pokepath: ennemis moyens 400-600)
+        speed: 40,  // Moyen
         regen: 0,
         color: 0x8B4513,
         size: 10,
-        reward: 3,
+        reward: 12,  // Inspiré Pokepath: ennemis moyens 10-15g
         // Vulnérabilités (true = vulnérable, false = résistant)
         stunVuln: true,
         slowVuln: true,
         burnVuln: true,
         poisonVuln: true,
-        tier: 1
+        tier: 3
     },
     
     pirate_recruit: {
         id: 'pirate_recruit',
         name: 'Recrue',
         description: 'Nouveau membre de l\'équipage',
-        hp: 8,
-        armor: 0,
-        speed: 40,
+        hp: 400,  // HP moyen pour vague 10-15 (inspiré Pokepath)
+        speed: 48,  // Plus rapide
         regen: 0,
         color: 0xA0522D,
         size: 9,
-        reward: 2,
+        reward: 10,  // Inspiré Pokepath
         stunVuln: true,
         slowVuln: true,
         burnVuln: true,
         poisonVuln: true,
-        tier: 1
+        tier: 3
     },
     
     pirate_basic2: {
         id: 'pirate_basic2',
         name: 'Vétéran',
         description: 'Pirate expérimenté',
-        hp: 18,
-        armor: 2,
-        speed: 32,
+        hp: 600,  // HP moyen pour vague 10-15 (inspiré Pokepath)
+        speed: 32,  // Plus lent mais plus résistant
         regen: 0,
         color: 0x654321,
         size: 11,
-        reward: 4,
+        reward: 14,  // Inspiré Pokepath
         stunVuln: true,
         slowVuln: true,
         burnVuln: true,
         poisonVuln: true,
-        tier: 1
+        tier: 3
+    },
+    
+    pirate_fast: {
+        id: 'pirate_fast',
+        name: 'Éclaireur',
+        description: 'Pirate rapide',
+        hp: 350,  // HP faible pour vague 15-20 (inspiré Pokepath: rapides = faible HP)
+        speed: 75,  // Très rapide (inspiré Pokepath: vitesse élevée)
+        regen: 0,
+        color: 0x8B4513,
+        size: 9,
+        reward: 15,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 4
+    },
+    
+    pirate_shield: {
+        id: 'pirate_shield',
+        name: 'Bouclier',
+        description: 'Pirate défensif',
+        hp: 800,  // HP élevé pour vague 15-20 (inspiré Pokepath: tanks 700-1000)
+        shield: 20,
+        speed: 20,  // Lent (inspiré Pokepath: tanks lents)
+        regen: 0,
+        color: 0x696969,
+        size: 12,
+        reward: 18,  // Inspiré Pokepath
+        stunVuln: false,  // Protégé par le bouclier
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 4
+    },
+    
+    pirate_assassin: {
+        id: 'pirate_assassin',
+        name: 'Assassin',
+        description: 'Tueur silencieux',
+        hp: 450,  // HP moyen pour vague 15-20 (inspiré Pokepath)
+        speed: 80,  // Très rapide (inspiré Pokepath: assassins rapides)
+        regen: 0,
+        color: 0x2F4F4F,
+        size: 9,
+        reward: 16,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: false,  // Immunisé au poison (expert)
+        tier: 4
     },
     
     // ============================================
-    // === TIER 2 : HOMMES-POISSONS BASIQUES (Vagues 3-10) ===
+    // === TIER 5 : HOMMES-POISSONS BASIQUES (Vagues 20-30) ===
     // ============================================
     
     fishman_grunt: {
         id: 'fishman_grunt',
         name: 'Homme-Poisson',
         description: 'Soldat d\'Arlong',
-        hp: 20,
-        armor: 3,
-        speed: 38,
-        regen: 0.5,
+        hp: 800,  // HP élevé pour vague 20-25 (inspiré Pokepath: ennemis moyens-forts 700-1000)
+        speed: 45,  // Moyen
+        regen: 1,  // Régénération légère (inspiré Pokepath)
         color: 0x4682B4,
         size: 11,
-        reward: 5,
+        reward: 20,  // Inspiré Pokepath: ennemis moyens 15-25g
         stunVuln: true,
         slowVuln: false,  // Habitué à l'eau, résiste au slow
         burnVuln: true,
         poisonVuln: true,
-        tier: 2
+        tier: 5
     },
     
     fishman_swimmer: {
         id: 'fishman_swimmer',
         name: 'Nageur',
         description: 'Homme-poisson rapide',
-        hp: 14,
-        armor: 0,
-        speed: 55,
-        regen: 0,
+        hp: 600,  // HP moyen pour vague 20-25 (inspiré Pokepath: rapides = moins HP)
+        speed: 65,  // Rapide (inspiré Pokepath)
+        regen: 0.5,  // Régénération légère
         color: 0x00CED1,
         size: 9,
-        reward: 4,
+        reward: 18,  // Inspiré Pokepath
         stunVuln: true,
         slowVuln: false,  // Trop rapide dans l'eau
         burnVuln: true,
         poisonVuln: true,
-        tier: 2
+        tier: 5
     },
     
     // ============================================
@@ -110,7 +157,6 @@ const ENEMY_CONFIG = {
         name: 'Éclaireur',
         description: 'Coureur rapide',
         hp: 10,
-        armor: 0,
         speed: 70,
         regen: 0,
         color: 0xFF4500,
@@ -127,36 +173,34 @@ const ENEMY_CONFIG = {
         id: 'fishman_spear',
         name: 'Lancier',
         description: 'Homme-poisson armé',
-        hp: 25,
-        armor: 5,
-        speed: 30,
-        regen: 0,
+        hp: 900,  // HP élevé pour vague 20-25 (inspiré Pokepath)
+        speed: 38,  // Moyen
+        regen: 0.5,  // Régénération légère
         color: 0x2F4F4F,
         size: 12,
-        reward: 6,
+        reward: 22,  // Inspiré Pokepath
         stunVuln: false,  // Bonne garde
         slowVuln: true,
         burnVuln: true,
         poisonVuln: true,
-        tier: 3
+        tier: 5
     },
     
     fishman_brawler: {
         id: 'fishman_brawler',
         name: 'Bagarreur',
         description: 'Homme-poisson costaud',
-        hp: 30,
-        armor: 8,
-        speed: 28,
-        regen: 0.3,
+        hp: 1100,  // HP très élevé pour vague 20-25 (inspiré Pokepath: tanks 1000-1500)
+        speed: 30,  // Lent (inspiré Pokepath: tanks lents)
+        regen: 1,  // Régénération (inspiré Pokepath)
         color: 0x8B0000,
         size: 13,
-        reward: 7,
+        reward: 25,  // Inspiré Pokepath
         stunVuln: true,
         slowVuln: true,
         burnVuln: false,  // Peau épaisse
         poisonVuln: true,
-        tier: 3
+        tier: 5
     },
     
     // ============================================
@@ -169,7 +213,6 @@ const ENEMY_CONFIG = {
         description: 'Défenseur avec bouclier',
         hp: 35,
         shield: 20,
-        armor: 10,
         speed: 25,
         regen: 0.5,
         color: 0x708090,
@@ -186,13 +229,12 @@ const ENEMY_CONFIG = {
         id: 'fishman_elite',
         name: 'Élite',
         description: 'Garde d\'élite d\'Arlong',
-        hp: 40,
-        armor: 12,
-        speed: 35,
-        regen: 1,
+        hp: 1000,  // HP élevé (inspiré Pokepath: élites 900-1200)
+        speed: 42,  // Moyen
+        regen: 1,  // Régénération (inspiré Pokepath)
         color: 0x191970,
         size: 13,
-        reward: 10,
+        reward: 24,  // Inspiré Pokepath: élites 20-30g
         stunVuln: false,
         slowVuln: false,
         burnVuln: true,
@@ -204,13 +246,12 @@ const ENEMY_CONFIG = {
         id: 'fishman_berserker',
         name: 'Berserker',
         description: 'Homme-poisson enragé',
-        hp: 28,
-        armor: 3,
-        speed: 50,
+        hp: 700,  // HP moyen (inspiré Pokepath: rapides = moins HP)
+        speed: 70,  // Très rapide (inspiré Pokepath)
         regen: 0,
         color: 0xDC143C,
         size: 11,
-        reward: 8,
+        reward: 20,  // Inspiré Pokepath
         stunVuln: false,  // Trop enragé
         slowVuln: true,
         burnVuln: true,
@@ -226,13 +267,12 @@ const ENEMY_CONFIG = {
         id: 'fishman_officer',
         name: 'Officier',
         description: 'Commandant d\'Arlong',
-        hp: 55,
-        armor: 15,
-        speed: 30,
-        regen: 1.5,
+        hp: 1300,  // HP élevé (inspiré Pokepath: officiers 1200-1500)
+        speed: 35,  // Lent mais résistant
+        regen: 1.5,  // Régénération (inspiré Pokepath)
         color: 0x4B0082,
         size: 14,
-        reward: 12,
+        reward: 28,  // Inspiré Pokepath: officiers 25-35g
         stunVuln: false,
         slowVuln: true,
         burnVuln: true,
@@ -244,14 +284,13 @@ const ENEMY_CONFIG = {
         id: 'fishman_merman',
         name: 'Triton',
         description: 'Noble homme-poisson',
-        hp: 45,
+        hp: 950,  // HP élevé (inspiré Pokepath)
         shield: 15,
-        armor: 8,
-        speed: 40,
-        regen: 2,
+        speed: 50,  // Rapide
+        regen: 2,  // Régénération (inspiré Pokepath)
         color: 0x00BFFF,
         size: 12,
-        reward: 11,
+        reward: 26,  // Inspiré Pokepath
         stunVuln: true,
         slowVuln: false,
         burnVuln: true,
@@ -264,7 +303,6 @@ const ENEMY_CONFIG = {
         name: 'Assassin',
         description: 'Tueur silencieux',
         hp: 22,
-        armor: 0,
         speed: 60,
         regen: 0,
         color: 0x2F4F4F,
@@ -285,14 +323,13 @@ const ENEMY_CONFIG = {
         id: 'fishman_champion',
         name: 'Champion',
         description: 'Guerrier d\'élite',
-        hp: 70,
+        hp: 1500,  // HP très élevé (inspiré Pokepath: champions 1400-1800)
         shield: 25,
-        armor: 18,
-        speed: 32,
-        regen: 2,
+        speed: 38,  // Moyen
+        regen: 2,  // Régénération (inspiré Pokepath)
         color: 0x800080,
         size: 15,
-        reward: 15,
+        reward: 32,  // Inspiré Pokepath: champions 30-40g
         stunVuln: false,
         slowVuln: false,
         burnVuln: true,
@@ -304,13 +341,12 @@ const ENEMY_CONFIG = {
         id: 'fishman_shaman',
         name: 'Shaman',
         description: 'Soigneur mystique',
-        hp: 35,
-        armor: 5,
-        speed: 28,
-        regen: 5,  // Forte régén
+        hp: 650,  // HP moyen mais régénération (inspiré Pokepath: soigneurs)
+        speed: 28,  // Lent
+        regen: 5,  // Forte régénération (inspiré Pokepath: certains ont 3-5/s)
         color: 0x98FB98,
         size: 11,
-        reward: 14,
+        reward: 30,  // Inspiré Pokepath
         stunVuln: true,
         slowVuln: true,
         burnVuln: false,  // Protection magique
@@ -322,13 +358,12 @@ const ENEMY_CONFIG = {
         id: 'octopus_warrior',
         name: 'Poulpe Guerrier',
         description: 'Guerrier tentaculaire',
-        hp: 60,
-        armor: 10,
-        speed: 25,
-        regen: 1,
+        hp: 1200,  // HP élevé (inspiré Pokepath: tanks 1000-1500)
+        speed: 25,  // Lent (inspiré Pokepath: tanks lents)
+        regen: 1,  // Régénération légère
         color: 0xFF69B4,
         size: 16,
-        reward: 13,
+        reward: 28,  // Inspiré Pokepath
         stunVuln: true,
         slowVuln: false,  // 8 tentacules = difficile à ralentir
         burnVuln: true,
@@ -344,13 +379,12 @@ const ENEMY_CONFIG = {
         id: 'sea_beast',
         name: 'Bête Marine',
         description: 'Créature des profondeurs',
-        hp: 90,
-        armor: 20,
-        speed: 22,
-        regen: 3,
+        hp: 3000,  // HP très élevé (inspiré Pokepath: monstres marins 2500-4000)
+        speed: 22,  // Très lent (inspiré Pokepath: tanks 0.6-0.8x)
+        regen: 3,  // Régénération (inspiré Pokepath: certains ont 3-4/s)
         color: 0x006400,
         size: 18,
-        reward: 18,
+        reward: 50,  // Inspiré Pokepath: monstres puissants 40-60g
         stunVuln: false,
         slowVuln: false,
         burnVuln: true,  // Peau humide
@@ -358,17 +392,266 @@ const ENEMY_CONFIG = {
         tier: 7
     },
     
+    // ============================================
+    // === TIER 1 : ANIMAUX FAIBLES (Vagues 1-5) ===
+    // ============================================
+    
+    chauvesouris: {
+        id: 'chauvesouris',
+        name: 'Chauve-souris',
+        description: 'Prédateur nocturne',
+        hp: 60,  // HP faible pour vague 1 (inspiré Pokepath: zubat 60)
+        speed: 80,  // Très rapide (inspiré Pokepath: vitesse élevée)
+        regen: 0,
+        color: 0x1C1C1C,
+        size: 8,
+        reward: 4,  // Inspiré Pokepath: zubat 4g
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 1,
+        sprite: 'chauvesouris'
+    },
+    
+    spider: {
+        id: 'spider',
+        name: 'Araignée',
+        description: 'Prédateur venimeux',
+        hp: 100,  // HP moyen pour vague 1 (inspiré Pokepath)
+        speed: 55,  // Moyen
+        regen: 0,
+        color: 0x8B0000,
+        size: 9,
+        reward: 5,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: false,  // Immunisé au poison
+        tier: 1,
+        sprite: 'spider'
+    },
+    
+    snake: {
+        id: 'snake',
+        name: 'Serpent',
+        description: 'Reptile venimeux',
+        hp: 120,  // HP moyen pour vague 1 (inspiré Pokepath)
+        speed: 40,  // Lent mais plus résistant
+        regen: 0,
+        color: 0x228B22,
+        size: 10,
+        reward: 5,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: false,  // Immunisé au poison
+        tier: 1,
+        sprite: 'snake'
+    },
+    
+    crow: {
+        id: 'crow',
+        name: 'Corbeau',
+        description: 'Oiseau de proie',
+        hp: 80,  // HP faible pour vague 1 (inspiré Pokepath)
+        speed: 70,  // Rapide
+        regen: 0,
+        color: 0x000000,
+        size: 10,
+        reward: 6,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 1,
+        sprite: 'crow'
+    },
+    
+    // ============================================
+    // === TIER 2 : ANIMAUX MOYENS (Vagues 5-15) ===
+    // ============================================
+    
+    wolf: {
+        id: 'wolf',
+        name: 'Loup',
+        description: 'Prédateur sauvage',
+        hp: 350,  // HP moyen pour vague 5 (inspiré Pokepath: prédateurs 300-500)
+        speed: 65,  // Rapide (inspiré Pokepath)
+        regen: 0,
+        color: 0x808080,
+        size: 11,
+        reward: 10,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 2,
+        sprite: 'wolf'
+    },
+    
+    shadowbat: {
+        id: 'shadowbat',
+        name: 'Chauve-souris Ombre',
+        description: 'Créature des ténèbres',
+        hp: 280,  // HP moyen pour vague 5 (inspiré Pokepath)
+        speed: 75,  // Très rapide
+        regen: 0.5,
+        color: 0x4B0082,
+        size: 11,
+        reward: 12,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: false,  // Vol rapide
+        burnVuln: false,  // Résistant aux ténèbres
+        poisonVuln: true,
+        tier: 2,
+        sprite: 'shadowbat'
+    },
+    
+    raptor: {
+        id: 'raptor',
+        name: 'Raptor',
+        description: 'Prédateur rapide',
+        hp: 400,  // HP moyen pour vague 5 (inspiré Pokepath)
+        speed: 60,  // Rapide
+        regen: 0,
+        color: 0x556B2F,
+        size: 13,
+        reward: 14,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 2,
+        sprite: 'raptor'
+    },
+    
+    // ============================================
+    // === TIER 3 : ANIMAUX FORTS + PIRATES (Vagues 10-20) ===
+    // ============================================
+    
+    golem: {
+        id: 'golem',
+        name: 'Golem',
+        description: 'Créature de pierre',
+        hp: 1200,  // HP très élevé pour vague 10 (inspiré Pokepath: golem 1550)
+        speed: 12,  // Très lent (inspiré Pokepath: 0.8x)
+        regen: 0,
+        color: 0x696969,
+        size: 16,
+        reward: 20,  // Inspiré Pokepath: golem 25g
+        stunVuln: false,  // Trop lourd
+        slowVuln: false,  // Déjà lent
+        burnVuln: false,  // Résistant au feu
+        poisonVuln: false,  // Pas de sang
+        tier: 3,
+        sprite: 'golem'
+    },
+    
+    kungfu: {
+        id: 'kungfu',
+        name: 'Guerrier',
+        description: 'Combattant martial',
+        hp: 450,  // HP moyen pour vague 10 (inspiré Pokepath)
+        speed: 50,  // Rapide
+        regen: 0,
+        color: 0xFF4500,
+        size: 12,
+        reward: 15,  // Inspiré Pokepath
+        stunVuln: false,  // Discipline martiale
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 3,
+        sprite: 'kungfu'
+    },
+    
+    prisoner: {
+        id: 'prisoner',
+        name: 'Prisonnier',
+        description: 'Évadé dangereux',
+        hp: 550,  // HP moyen pour vague 10 (inspiré Pokepath)
+        speed: 45,  // Moyen
+        regen: 0,
+        color: 0x2F4F4F,
+        size: 13,
+        reward: 16,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 3,
+        sprite: 'prisoner'
+    },
+    
+    pterosaur: {
+        id: 'pterosaur',
+        name: 'Ptérosaure',
+        description: 'Reptile volant préhistorique',
+        hp: 700,  // HP élevé pour vague 10 (inspiré Pokepath)
+        speed: 55,  // Rapide (volant)
+        regen: 1,  // Régénération légère
+        color: 0x8B7355,
+        size: 15,
+        reward: 18,  // Inspiré Pokepath
+        stunVuln: false,  // Vol puissant
+        slowVuln: false,  // Vol rapide
+        burnVuln: true,
+        poisonVuln: true,
+        tier: 3,
+        sprite: 'pterosaur'
+    },
+    
+    // ============================================
+    // === TIER 4 : CRÉATURES PUISSANTES (Vagues 40-50) ===
+    // ============================================
+    
+    gorilla: {
+        id: 'gorilla',
+        name: 'Gorille',
+        description: 'Primate puissant',
+        hp: 2500,  // HP très élevé pour vague 40 (inspiré Pokepath: primates puissants)
+        speed: 32,  // Moyen
+        regen: 1,  // Régénération légère
+        color: 0x2F4F4F,
+        size: 18,
+        reward: 45,  // Inspiré Pokepath: ennemis puissants 40-50g
+        stunVuln: false,  // Très résistant
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: false,  // Constitution robuste
+        tier: 4,
+        sprite: 'gorilla'
+    },
+    
+    jellyfish: {
+        id: 'jellyfish',
+        name: 'Méduse',
+        description: 'Créature venimeuse',
+        hp: 1800,  // HP élevé pour vague 40 (inspiré Pokepath)
+        speed: 38,  // Moyen
+        regen: 2,  // Régénération (inspiré Pokepath: certains ont regen)
+        color: 0xFF69B4,
+        size: 12,
+        reward: 40,  // Inspiré Pokepath
+        stunVuln: true,
+        slowVuln: false,  // Flotte dans l'eau
+        burnVuln: false,  // Résistant (eau)
+        poisonVuln: false,  // Immunisé au poison
+        tier: 4,
+        sprite: 'jellyfish'
+    },
+    
     mohmoo_calf: {
         id: 'mohmoo_calf',
         name: 'Bébé Mohmoo',
         description: 'Veau de monstre marin',
-        hp: 80,
-        armor: 15,
-        speed: 30,
-        regen: 2,
+        hp: 2200,  // HP élevé (inspiré Pokepath: créatures marines 2000-3000)
+        speed: 30,  // Lent
+        regen: 2,  // Régénération (inspiré Pokepath)
         color: 0x87CEEB,
         size: 17,
-        reward: 16,
+        reward: 42,  // Inspiré Pokepath
         stunVuln: true,
         slowVuln: true,
         burnVuln: true,
@@ -380,13 +663,12 @@ const ENEMY_CONFIG = {
         id: 'shark_hunter',
         name: 'Requin Chasseur',
         description: 'Prédateur aquatique',
-        hp: 65,
-        armor: 12,
-        speed: 50,
-        regen: 1,
+        hp: 1800,  // HP élevé (inspiré Pokepath)
+        speed: 55,  // Rapide (inspiré Pokepath: prédateurs rapides)
+        regen: 1,  // Régénération légère
         color: 0x778899,
         size: 14,
-        reward: 17,
+        reward: 38,  // Inspiré Pokepath
         stunVuln: false,  // Prédateur féroce
         slowVuln: false,  // Très rapide dans l'eau
         burnVuln: true,
@@ -402,14 +684,13 @@ const ENEMY_CONFIG = {
         id: 'fishman_general',
         name: 'Général',
         description: 'Haut commandant',
-        hp: 120,
+        hp: 3500,  // HP très élevé (inspiré Pokepath: généraux 3000-5000)
         shield: 40,
-        armor: 25,
-        speed: 28,
-        regen: 3,
+        speed: 28,  // Lent
+        regen: 3,  // Régénération (inspiré Pokepath)
         color: 0x4A0080,
         size: 17,
-        reward: 25,
+        reward: 60,  // Inspiré Pokepath: généraux 50-70g
         stunVuln: false,
         slowVuln: false,
         burnVuln: false,  // Armure ignifugée
@@ -421,13 +702,12 @@ const ENEMY_CONFIG = {
         id: 'sea_king_spawn',
         name: 'Rejeton du Roi',
         description: 'Jeune Roi des Mers',
-        hp: 150,
-        armor: 30,
-        speed: 20,
-        regen: 4,
+        hp: 4000,  // HP très élevé (inspiré Pokepath: rois des mers 3500-5000)
+        speed: 20,  // Très lent
+        regen: 4,  // Régénération (inspiré Pokepath)
         color: 0x2E8B57,
         size: 20,
-        reward: 28,
+        reward: 65,  // Inspiré Pokepath
         stunVuln: false,
         slowVuln: true,
         burnVuln: true,
@@ -443,14 +723,13 @@ const ENEMY_CONFIG = {
         id: 'ancient_fishman',
         name: 'Ancien',
         description: 'Homme-poisson millénaire',
-        hp: 200,
+        hp: 8000,  // HP très élevé (inspiré Pokepath: anciens 7000-10000)
         shield: 50,
-        armor: 35,
-        speed: 22,
-        regen: 5,
+        speed: 22,  // Très lent
+        regen: 5,  // Régénération (inspiré Pokepath)
         color: 0x2F4F4F,
         size: 18,
-        reward: 35,
+        reward: 80,  // Inspiré Pokepath: anciens 70-90g
         stunVuln: false,
         slowVuln: false,
         burnVuln: false,
@@ -462,13 +741,12 @@ const ENEMY_CONFIG = {
         id: 'sea_king',
         name: 'Roi des Mers',
         description: 'Monstre légendaire',
-        hp: 250,
-        armor: 40,
-        speed: 18,
-        regen: 6,
+        hp: 12000,  // HP très élevé (inspiré Pokepath: rois 10000-15000)
+        speed: 18,  // Très lent
+        regen: 6,  // Régénération (inspiré Pokepath)
         color: 0x1E90FF,
         size: 22,
-        reward: 40,
+        reward: 100,  // Inspiré Pokepath: rois 90-120g
         stunVuln: false,
         slowVuln: false,
         burnVuln: true,
@@ -480,73 +758,71 @@ const ENEMY_CONFIG = {
     // === MINI-BOSS (Tous les 10 niveaux) ===
     // ============================================
     
-    // VAGUE 10 - Chew (le premier à apparaître)
+    // VAGUE 25 - Chew (Boss niveau 25)
     chew: {
         id: 'chew',
         name: 'CHEW',
         description: 'Homme-poisson cracheur d\'eau',
-        hp: 100,
-        armor: 15,
-        speed: 28,
-        regen: 2,
+        hp: 5000,  // HP de base pour vague 25 (inspiré Pokepath: boss moyens 3000-8000)
+        speed: 32,  // Moyen
+        regen: 3,  // Régénération (inspiré Pokepath)
         color: 0x4169E1,
         size: 16,
-        reward: 50,
+        reward: 100,  // Inspiré Pokepath: boss 100-300g
         stunVuln: true,
         slowVuln: false,  // Maître de l'eau
         burnVuln: true,   // Vulnérable au feu
-        poisonVuln: true,
-        tier: 10,
-        isMiniBoss: true,
-        bossWave: 10,
-        // Après la vague 10, Chew peut réapparaître
-        reappearWeight: 3  // Poids de réapparition (plus faible = plus rare)
-    },
-    
-    // VAGUE 20 - Kuroobi
-    kuroobi: {
-        id: 'kuroobi',
-        name: 'KUROOBI',
-        description: 'Maître du Fish-Man Karate',
-        hp: 180,
-        shield: 50,
-        armor: 25,
-        speed: 32,
-        regen: 3,
-        color: 0x800000,
-        size: 17,
-        reward: 80,
-        stunVuln: false,  // Trop puissant
-        slowVuln: true,
-        burnVuln: true,
-        poisonVuln: false,  // Discipline martiale
-        tier: 20,
-        isMiniBoss: true,
-        bossWave: 20,
-        reappearWeight: 2
-    },
-    
-    // VAGUE 25 - Hatchan (Boss niveau 25)
-    hatchan: {
-        id: 'hatchan',
-        name: 'HATCHAN',
-        description: 'Poulpe à 6 épées',
-        hp: 250,
-        shield: 80,
-        armor: 20,
-        speed: 26,
-        regen: 4,
-        color: 0xFF6347,
-        size: 18,
-        reward: 120,
-        stunVuln: true,
-        slowVuln: false,  // 6 bras = difficile à arrêter
-        burnVuln: false,  // Encre protectrice
         poisonVuln: true,
         tier: 25,
         isMiniBoss: true,
         bossWave: 25,
         reappearWeight: 2
+    },
+    
+    // VAGUE 50 - Hachi (Boss niveau 50) - pas encore de sprite, utiliser gorilla temporairement
+    hachi: {
+        id: 'hachi',
+        name: 'HACHI',
+        description: 'Poulpe à 6 épées',
+        hp: 15000,  // HP de base pour vague 50 (inspiré Pokepath: boss forts 10000-20000)
+        shield: 150,
+        speed: 28,  // Lent
+        regen: 6,  // Régénération (inspiré Pokepath)
+        color: 0xFF6347,
+        size: 18,
+        reward: 250,  // Inspiré Pokepath: boss forts 200-400g
+        stunVuln: true,
+        slowVuln: false,  // 6 bras = difficile à arrêter
+        burnVuln: false,  // Encre protectrice
+        poisonVuln: true,
+        tier: 50,
+        isMiniBoss: true,
+        bossWave: 50,
+        reappearWeight: 1.5,
+        sprite: 'gorilla'  // Placeholder jusqu'à ce que le sprite soit disponible
+    },
+    
+    // VAGUE 75 - Kuroobi (Boss niveau 75) - pas encore de sprite, utiliser pterosaur temporairement
+    kuroobi: {
+        id: 'kuroobi',
+        name: 'KUROOBI',
+        description: 'Maître du Fish-Man Karate',
+        hp: 25000,  // HP de base pour vague 75 (inspiré Pokepath: boss très forts 20000-35000)
+        shield: 200,
+        speed: 35,  // Moyen
+        regen: 8,  // Régénération (inspiré Pokepath)
+        color: 0x800000,
+        size: 19,
+        reward: 400,  // Inspiré Pokepath: boss très forts 350-500g
+        stunVuln: false,  // Trop puissant
+        slowVuln: true,
+        burnVuln: true,
+        poisonVuln: false,  // Discipline martiale
+        tier: 75,
+        isMiniBoss: true,
+        bossWave: 75,
+        reappearWeight: 1,
+        sprite: 'pterosaur'  // Placeholder jusqu'à ce que le sprite soit disponible
     },
     
     // VAGUE 40 - Pisaro (Marine corrompu)
@@ -556,7 +832,6 @@ const ENEMY_CONFIG = {
         description: 'Officier marine corrompu',
         hp: 300,
         shield: 100,
-        armor: 35,
         speed: 24,
         regen: 5,
         color: 0x1C1C1C,
@@ -577,13 +852,12 @@ const ENEMY_CONFIG = {
         id: 'mohmoo',
         name: 'MOHMOO',
         description: 'Monstre marin géant',
-        hp: 450,
-        armor: 40,
-        speed: 18,
-        regen: 8,
+        hp: 18000,  // HP très élevé (inspiré Pokepath: boss forts 15000-20000)
+        speed: 18,  // Très lent
+        regen: 8,  // Régénération (inspiré Pokepath)
         color: 0x87CEEB,
         size: 24,
-        reward: 200,
+        reward: 300,  // Inspiré Pokepath: boss forts 250-350g
         stunVuln: true,  // Peut être étourdi malgré sa taille
         slowVuln: true,
         burnVuln: true,
@@ -599,14 +873,13 @@ const ENEMY_CONFIG = {
         id: 'saw_fishman',
         name: 'NEZ-LONG',
         description: 'Homme-poisson scie',
-        hp: 380,
+        hp: 20000,  // HP très élevé (inspiré Pokepath: boss très forts 18000-25000)
         shield: 120,
-        armor: 45,
-        speed: 30,
-        regen: 6,
+        speed: 30,  // Lent
+        regen: 6,  // Régénération (inspiré Pokepath)
         color: 0x708090,
         size: 19,
-        reward: 250,
+        reward: 350,  // Inspiré Pokepath: boss très forts 300-400g
         stunVuln: false,
         slowVuln: false,
         burnVuln: true,
@@ -622,14 +895,13 @@ const ENEMY_CONFIG = {
         id: 'shadow_beast',
         name: 'OMBRE DES MERS',
         description: 'Créature de légende',
-        hp: 500,
+        hp: 28000,  // HP très élevé (inspiré Pokepath: légendaires 25000-35000)
         shield: 150,
-        armor: 50,
-        speed: 35,
-        regen: 7,
+        speed: 35,  // Moyen
+        regen: 7,  // Régénération (inspiré Pokepath)
         color: 0x2F2F2F,
         size: 20,
-        reward: 300,
+        reward: 450,  // Inspiré Pokepath: légendaires 400-500g
         stunVuln: false,
         slowVuln: false,
         burnVuln: false,
@@ -645,14 +917,13 @@ const ENEMY_CONFIG = {
         id: 'sea_king_alpha',
         name: 'ROI ALPHA',
         description: 'Roi des Mers dominant',
-        hp: 650,
+        hp: 35000,  // HP très élevé (inspiré Pokepath: rois 30000-40000)
         shield: 200,
-        armor: 55,
-        speed: 22,
-        regen: 10,
+        speed: 22,  // Très lent
+        regen: 10,  // Régénération (inspiré Pokepath)
         color: 0x00008B,
         size: 22,
-        reward: 400,
+        reward: 500,  // Inspiré Pokepath: rois 450-550g
         stunVuln: false,
         slowVuln: true,   // Lent mais puissant
         burnVuln: true,
@@ -668,14 +939,13 @@ const ENEMY_CONFIG = {
         id: 'arlong_shadow',
         name: 'OMBRE D\'ARLONG',
         description: 'Manifestation de haine',
-        hp: 800,
+        hp: 40000,  // HP très élevé (inspiré Pokepath: ombres 35000-45000)
         shield: 250,
-        armor: 60,
-        speed: 28,
-        regen: 12,
+        speed: 28,  // Lent
+        regen: 12,  // Régénération (inspiré Pokepath)
         color: 0x4A0082,
         size: 21,
-        reward: 500,
+        reward: 600,  // Inspiré Pokepath: ombres 550-650g
         stunVuln: false,
         slowVuln: false,
         burnVuln: true,
@@ -694,14 +964,13 @@ const ENEMY_CONFIG = {
         id: 'arlong',
         name: 'ARLONG',
         description: 'Capitaine des Pirates du Soleil',
-        hp: 1500,
+        hp: 50000,  // HP très élevé (inspiré Pokepath: boss légendaires 40000-50000+)
         shield: 400,
-        armor: 70,
-        speed: 25,
-        regen: 15,
+        speed: 25,  // Lent mais puissant
+        regen: 15,  // Régénération très élevée (inspiré Pokepath)
         color: 0x0000CD,
         size: 26,
-        reward: 1000,
+        reward: 1000,  // Inspiré Pokepath: boss légendaires 500-1000g
         stunVuln: false,
         slowVuln: false,
         burnVuln: true,   // Vulnérable au feu (comme tous les hommes-poissons)
@@ -725,26 +994,16 @@ const HORDE_STAT_DIVISOR = 2.5; // Les ennemis ont 2.5x moins de HP
  * @returns {number} - Multiplicateur de HP (déjà divisé pour le mode horde)
  */
 function getWaveHpScaling(waveNumber) {
-    // Progression qui augmente avec le nombre de vague
-    // Vague 1 = x0.4, Vague 25 = x1.5, Vague 50 = x2.4, Vague 75 = x3.5, Vague 100 = x6
+    // Progression inspirée de Pokepath TD : scaling plus doux au début, plus agressif en fin
+    // Vague 1 = x0.5, Vague 25 = x1.2, Vague 50 = x2.0, Vague 75 = x3.0, Vague 100 = x5.0
     // Divisé par HORDE_STAT_DIVISOR pour compenser le nombre d'ennemis
-    // Le scaling augmente de manière significative avec chaque vague
-    const linear = 0.06 * waveNumber;
-    const quadratic = 0.0008 * waveNumber * waveNumber;
-    const baseScaling = 1 + linear + quadratic;
+    // Le scaling augmente progressivement avec chaque vague (inspiré Pokepath)
+    const linear = 0.04 * waveNumber;
+    const quadratic = 0.0005 * waveNumber * waveNumber;
+    const baseScaling = 0.5 + linear + quadratic; // Commence à 0.5 pour vague 1
     
     // Diviser par le facteur de horde
     return baseScaling / HORDE_STAT_DIVISOR;
-}
-
-/**
- * Calcule le scaling de l'armure en fonction de la vague
- * @param {number} waveNumber - Numéro de la vague
- * @returns {number} - Bonus d'armure
- */
-function getWaveArmorScaling(waveNumber) {
-    // Armure réduite pour le mode horde (était 0.15 par niveau)
-    return waveNumber * 0.08;
 }
 
 /**
@@ -769,7 +1028,6 @@ function getEnemyStats(enemyType, waveNumber) {
     if (!config) return null;
     
     const hpScaling = getWaveHpScaling(waveNumber);
-    const armorBonus = getWaveArmorScaling(waveNumber);
     const rewardScaling = getWaveRewardScaling(waveNumber);
     
     // Les boss et mini-boss gardent plus de stats
@@ -780,7 +1038,6 @@ function getEnemyStats(enemyType, waveNumber) {
         ...config,
         hp: Math.round(config.hp * hpScaling * bossMultiplier),
         shield: config.shield ? Math.round(config.shield * hpScaling * 0.5 * bossMultiplier) : 0,
-        armor: Math.round((config.armor + armorBonus) / (isBossType ? 1 : 1.5)),
         reward: Math.round(config.reward * rewardScaling)
     };
 }
@@ -802,11 +1059,14 @@ function getUnlockedMiniBosses(waveNumber) {
 
 // Distribution des ennemis par vague (vagues 1-20 définies manuellement)
 // === MODE HORDE : Plus d'ennemis avec moins de stats ===
+// NOTE: Les vagues 1-20 utilisent maintenant la génération automatique avec max 4 types
+// Cette distribution est conservée pour référence mais n'est plus utilisée
 const WAVE_ENEMY_DISTRIBUTION = {
-    // === ACTE 1: Premiers pirates (Vagues 1-5) - 10 à 14 ennemis ===
+    // === ACTE 1: Premiers animaux (Vagues 1-5) - Animaux uniquement ===
     1: [
-        'pirate_recruit', 'pirate_recruit', 'pirate_recruit', 'pirate_recruit', 'pirate_recruit',
-        'pirate_basic', 'pirate_basic', 'pirate_recruit', 'pirate_recruit', 'pirate_basic'
+        'chauvesouris', 'chauvesouris', 'chauvesouris', 'chauvesouris', 'chauvesouris',
+        'spider', 'spider', 'spider', 'spider', 'spider',
+        'snake', 'snake', 'snake', 'snake', 'crow'
     ],
     2: [
         'pirate_basic', 'pirate_basic', 'pirate_recruit', 'pirate_recruit', 'pirate_recruit',

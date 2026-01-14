@@ -302,6 +302,92 @@ class GameScene extends Phaser.Scene {
         
         // Charger l'icône berry (monnaie)
         this.load.image('berry', 'assets/berry.webp');
+        
+        // ============================================
+        // === CHARGEMENT DES NOUVEAUX ENNEMIS ===
+        // ============================================
+        
+        // Tier 1: Animaux faibles (vagues 1+)
+        // Chauvesouris: 161x59 -> 4 frames de 40x59 (161/4 = 40.25, arrondi à 40)
+        this.load.spritesheet('chauvesouris', 'assetsenemy/chauvesouris.png', {
+            frameWidth: 40,
+            frameHeight: 59
+        });
+        
+        // Spider: 414x33 -> 6 frames de 69x33 (exact: 414/6 = 69)
+        this.load.spritesheet('spider', 'assetsenemy/spider.png', {
+            frameWidth: 69,
+            frameHeight: 33
+        });
+        
+        // Snake: 456x40 -> 6 frames de 76x40 (exact: 456/6 = 76)
+        this.load.spritesheet('snake', 'assetsenemy/snake.png', {
+            frameWidth: 76,
+            frameHeight: 40
+        });
+        
+        // Crow: 414x59 -> 6 frames de 69x59 (exact: 414/6 = 69)
+        this.load.spritesheet('crow', 'assetsenemy/crow.png', {
+            frameWidth: 69,
+            frameHeight: 59
+        });
+        
+        // Tier 2: Animaux moyens (vagues 5+)
+        // Wolf: 564x46 -> 6 frames de 94x46 (exact: 564/6 = 94)
+        this.load.spritesheet('wolf', 'assetsenemy/wolf.png', {
+            frameWidth: 94,
+            frameHeight: 46
+        });
+        
+        // Shadowbat: 584x60 -> 8 frames de 73x60 (exact: 584/8 = 73)
+        this.load.spritesheet('shadowbat', 'assetsenemy/shadowbat.png', {
+            frameWidth: 73,
+            frameHeight: 60
+        });
+        
+        // Raptor: 630x69 -> 5 frames de 126x69 (exact: 630/5 = 126)
+        this.load.spritesheet('raptor', 'assetsenemy/raptor.png', {
+            frameWidth: 126,
+            frameHeight: 69
+        });
+        
+        // Tier 3: Animaux forts (vagues 10+)
+        // Golem: 636x90 -> 6 frames de 106x90 (exact: 636/6 = 106)
+        this.load.spritesheet('golem', 'assetsenemy/golem.png', {
+            frameWidth: 106,
+            frameHeight: 90
+        });
+        
+        // Kungfu: 244x40 -> 4 frames de 61x40 (exact: 244/4 = 61)
+        this.load.spritesheet('kungfu', 'assetsenemy/kungfu.png', {
+            frameWidth: 61,
+            frameHeight: 40
+        });
+        
+        // Prisoner: 608x68 -> 8 frames de 76x68 (exact: 608/8 = 76)
+        this.load.spritesheet('prisoner', 'assetsenemy/prisoner.png', {
+            frameWidth: 76,
+            frameHeight: 68
+        });
+        
+        // Pterosaur: 1350x114 -> 9 frames de 150x114 (exact: 1350/9 = 150)
+        this.load.spritesheet('pterosaur', 'assetsenemy/pterosaur.png', {
+            frameWidth: 150,
+            frameHeight: 114
+        });
+        
+        // Tier 4: Animaux puissants (vagues 40+)
+        // Gorilla: 930x88 -> 10 frames de 93x88 (exact: 930/10 = 93) - pas changé
+        this.load.spritesheet('gorilla', 'assetsenemy/gorilla.png', {
+            frameWidth: 93,
+            frameHeight: 88
+        });
+        
+        // Jellyfish: 360x49 -> 6 frames de 60x49 (exact: 360/6 = 60)
+        this.load.spritesheet('jellyfish', 'assetsenemy/jellyfish.png', {
+            frameWidth: 60,
+            frameHeight: 49
+        });
     }
 
     create() {
@@ -1071,6 +1157,120 @@ class GameScene extends Phaser.Scene {
             });
             console.log('✅ Animation jimbe_projectile créée avec 7 frames');
         }
+        
+        // ============================================
+        // === ANIMATIONS DES NOUVEAUX ENNEMIS ===
+        // ============================================
+        
+        // Tier 1: Animaux faibles (vagues 1+)
+        // Chauvesouris: 7 frames
+        this.anims.create({
+            key: 'chauvesouris',
+            frames: this.anims.generateFrameNumbers('chauvesouris', { start: 0, end: 3 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Spider: 9 frames
+        this.anims.create({
+            key: 'spider',
+            frames: this.anims.generateFrameNumbers('spider', { start: 0, end: 5 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        // Snake: 12 frames
+        this.anims.create({
+            key: 'snake',
+            frames: this.anims.generateFrameNumbers('snake', { start: 0, end: 5 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        // Crow: 6 frames
+        this.anims.create({
+            key: 'crow',
+            frames: this.anims.generateFrameNumbers('crow', { start: 0, end: 5 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Tier 2: Animaux moyens (vagues 5+)
+        // Wolf: 12 frames
+        this.anims.create({
+            key: 'wolf',
+            frames: this.anims.generateFrameNumbers('wolf', { start: 0, end: 5 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        // Shadowbat: 8 frames
+        this.anims.create({
+            key: 'shadowbat',
+            frames: this.anims.generateFrameNumbers('shadowbat', { start: 0, end: 7 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        // Raptor: 9 frames
+        this.anims.create({
+            key: 'raptor',
+            frames: this.anims.generateFrameNumbers('raptor', { start: 0, end: 4 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        // Tier 3: Animaux forts (vagues 10+)
+        // Golem: 6 frames
+        this.anims.create({
+            key: 'golem',
+            frames: this.anims.generateFrameNumbers('golem', { start: 0, end: 5 }),
+            frameRate: 6,
+            repeat: -1
+        });
+        
+        // Kungfu: 4 frames
+        this.anims.create({
+            key: 'kungfu',
+            frames: this.anims.generateFrameNumbers('kungfu', { start: 0, end: 3 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Prisoner: 8 frames
+        this.anims.create({
+            key: 'prisoner',
+            frames: this.anims.generateFrameNumbers('prisoner', { start: 0, end: 7 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Pterosaur: 10 frames
+        this.anims.create({
+            key: 'pterosaur',
+            frames: this.anims.generateFrameNumbers('pterosaur', { start: 0, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        // Tier 4: Animaux puissants (vagues 40+)
+        // Gorilla: 10 frames
+        this.anims.create({
+            key: 'gorilla',
+            frames: this.anims.generateFrameNumbers('gorilla', { start: 0, end: 9 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        // Jellyfish: 8 frames
+        this.anims.create({
+            key: 'jellyfish',
+            frames: this.anims.generateFrameNumbers('jellyfish', { start: 0, end: 5 }),
+            frameRate: 8,
+            repeat: -1
+        });
+        
+        console.log('✅ Animations des nouveaux ennemis créées');
     }
 }
 

@@ -167,31 +167,31 @@ class PokedexModal extends BaseModal {
             const btnY = y + 115;
             const btnColor = isEquipped ? this.colors.success : this.colors.borderLight;
             
-            const equipBtn = this.scene.add.rectangle(
+                const equipBtn = this.scene.add.rectangle(
                 x, btnY,
                 itemWidth - 20, 28,
                 btnColor, 0.9
-            );
-            equipBtn.setDepth(2002);
+                );
+                equipBtn.setDepth(2002);
             equipBtn.setStrokeStyle(1, 0xffffff, 0.2);
-            this.addElement(equipBtn);
-            
-            const equipText = this.scene.add.text(
+                this.addElement(equipBtn);
+                
+                const equipText = this.scene.add.text(
                 x, btnY,
                 isEquipped ? '✓ ÉQUIPÉ' : 'ÉQUIPER',
-                {
-                    fontSize: '11px',
+                    {
+                        fontSize: '11px',
                     fontFamily: "'Segoe UI', Arial, sans-serif",
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }
-            );
-            equipText.setOrigin(0.5);
-            equipText.setDepth(2003);
-            this.addElement(equipText);
-            
+                        color: '#ffffff',
+                        fontStyle: 'bold'
+                    }
+                );
+                equipText.setOrigin(0.5);
+                equipText.setDepth(2003);
+                this.addElement(equipText);
+                
             // Interactions
-            if (towerId !== 'luffy') {
+                if (towerId !== 'luffy') {
                 equipBtn.setInteractive({ useHandCursor: true });
                 
                 equipBtn.on('pointerover', () => {
@@ -207,7 +207,7 @@ class PokedexModal extends BaseModal {
                 equipBtn.on('pointerdown', () => {
                     if (isEquipped) {
                         const success = this.player.collection.unequipTower(towerId);
-                        if (success) {
+                    if (success) {
                             if (this.scene.placementSystem) {
                                 this.scene.placementSystem.removeAllTowersOfType(towerId);
                             }
@@ -221,9 +221,9 @@ class PokedexModal extends BaseModal {
                         if (success) {
                             if (this.scene.saveManager) this.scene.saveManager.autoSave();
                             if (this.scene.towerMenu) this.scene.towerMenu.refreshMenu();
-                            this.topMenu.closeModal();
-                            this.topMenu.openTab('pokedex');
-                        } else {
+                        this.topMenu.closeModal();
+                        this.topMenu.openTab('pokedex');
+                    } else {
                             this.showEquipError();
                         }
                     }

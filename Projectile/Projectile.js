@@ -102,18 +102,28 @@ class PiercingProjectile {
         this.startX = x;
         this.startY = y;
         
-        // Créer un sprite de laser (ligne épaisse)
+        // Stocker la position actuelle
+        this.x = x;
+        this.y = y;
+        
+        // Créer un conteneur pour le projectile
+        this.container = scene.add.container(x, y);
+        this.container.setDepth(5);
+        
+        // Créer un sprite de laser (ligne épaisse) avec un cercle
         this.sprite = scene.add.graphics();
         this.sprite.lineStyle(8, color, 1);
         this.sprite.beginPath();
-        this.sprite.moveTo(x, y);
-        this.sprite.lineTo(x + Math.cos(this.angle) * 30, y + Math.sin(this.angle) * 30);
+        this.sprite.moveTo(0, 0);
+        this.sprite.lineTo(Math.cos(this.angle) * 30, Math.sin(this.angle) * 30);
         this.sprite.strokePath();
-        this.sprite.setDepth(5);
         
         // Ajouter un cercle lumineux à l'avant
-        this.glow = scene.add.circle(x, y, 6, color, 0.9);
+        this.glow = scene.add.circle(0, 0, 6, color, 0.9);
         this.glow.setDepth(6);
+        
+        // Ajouter les éléments au conteneur
+        this.container.add([this.sprite, this.glow]);
     }
     
     update(delta) {
@@ -129,13 +139,13 @@ class PiercingProjectile {
         const dx = Math.cos(this.angle) * distance;
         const dy = Math.sin(this.angle) * distance;
         
-        this.sprite.x += dx;
-        this.sprite.y += dy;
-        this.glow.x += dx;
-        this.glow.y += dy;
+        // Mettre à jour la position
+        this.x += dx;
+        this.y += dy;
+        this.container.setPosition(this.x, this.y);
         
         // Vérifier si on a dépassé la portée maximale
-        const totalDist = Phaser.Math.Distance.Between(this.startX, this.startY, this.sprite.x, this.sprite.y);
+        const totalDist = Phaser.Math.Distance.Between(this.startX, this.startY, this.x, this.y);
         if (totalDist >= this.maxRange) {
             this.destroy();
             return false;
@@ -146,8 +156,8 @@ class PiercingProjectile {
             if (!enemy.alive || this.hitEnemies.has(enemy)) return;
             
             const dist = Phaser.Math.Distance.Between(
-                this.sprite.x,
-                this.sprite.y,
+                this.x,
+                this.y,
                 enemy.sprite.x,
                 enemy.sprite.y
             );
@@ -181,8 +191,8 @@ class PiercingProjectile {
         this.sprite.clear();
         this.sprite.lineStyle(8, 0x06b6d4, 1);
         this.sprite.beginPath();
-        this.sprite.moveTo(this.sprite.x - Math.cos(this.angle) * 30, this.sprite.y - Math.sin(this.angle) * 30);
-        this.sprite.lineTo(this.sprite.x, this.sprite.y);
+        this.sprite.moveTo(-Math.cos(this.angle) * 30, -Math.sin(this.angle) * 30);
+        this.sprite.lineTo(0, 0);
         this.sprite.strokePath();
         
         return true;
@@ -190,6 +200,9 @@ class PiercingProjectile {
     
     destroy() {
         this.active = false;
+        if (this.container) {
+            this.container.destroy();
+        }
         if (this.sprite) {
             this.sprite.destroy();
         }

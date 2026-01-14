@@ -686,6 +686,46 @@ class Tower {
                     this.sprite.play('ussop_idle');
                 });
                 
+                // Effet visuel de tir (sniper)
+                // Ligne de visée
+                const aimLine = this.scene.add.graphics();
+                aimLine.setDepth(5);
+                aimLine.lineStyle(2, 0xeab308, 0.6);
+                aimLine.beginPath();
+                aimLine.moveTo(this.sprite.x, this.sprite.y);
+                aimLine.lineTo(enemy.sprite.x, enemy.sprite.y);
+                aimLine.strokePath();
+                
+                this.scene.tweens.add({
+                    targets: aimLine,
+                    alpha: 0,
+                    duration: 150,
+                    onComplete: () => aimLine.destroy()
+                });
+                
+                // Particules de poison vertes
+                for (let i = 0; i < 5; i++) {
+                    const angle = angleToEnemy + (Math.random() - 0.5) * 0.3;
+                    const dist = 15 + Math.random() * 20;
+                    const px = this.sprite.x + Math.cos(angle) * dist;
+                    const py = this.sprite.y + Math.sin(angle) * dist;
+                    
+                    const particle = this.scene.add.circle(px, py, 3, 0x00ff00, 0.8);
+                    particle.setDepth(6);
+                    
+                    this.scene.tweens.add({
+                        targets: particle,
+                        x: enemy.sprite.x + (Math.random() - 0.5) * 20,
+                        y: enemy.sprite.y + (Math.random() - 0.5) * 20,
+                        alpha: 0,
+                        scale: 0.5,
+                        duration: 300,
+                        delay: i * 30,
+                        ease: 'Power2',
+                        onComplete: () => particle.destroy()
+                    });
+                }
+                
                 // Calculer les dégâts avec critique
                 let damage = this.damage;
                 const isCrit = Math.random() * 100 < this.critChance;
@@ -732,6 +772,53 @@ class Tower {
                     this.sprite.setFlipX(this.lastFlipX);
                     this.sprite.play('chopper_idle');
                 });
+                
+                // Effet visuel de soin (vert/rose)
+                // Cercle de soin autour de Chopper
+                const healCircle = this.scene.add.circle(
+                    this.sprite.x,
+                    this.sprite.y,
+                    25,
+                    0x00ff00,
+                    0.3
+                );
+                healCircle.setDepth(6);
+                healCircle.setStrokeStyle(2, 0xff69b4, 0.8);
+                
+                this.scene.tweens.add({
+                    targets: healCircle,
+                    scaleX: 1.5,
+                    scaleY: 1.5,
+                    alpha: 0,
+                    duration: 400,
+                    ease: 'Power2',
+                    onComplete: () => healCircle.destroy()
+                });
+                
+                // Particules de soin (cœurs roses)
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const heart = this.scene.add.text(
+                        this.sprite.x,
+                        this.sprite.y,
+                        '❤️',
+                        { fontSize: '16px' }
+                    );
+                    heart.setOrigin(0.5);
+                    heart.setDepth(7);
+                    
+                    this.scene.tweens.add({
+                        targets: heart,
+                        x: this.sprite.x + Math.cos(angle) * 40,
+                        y: this.sprite.y + Math.sin(angle) * 40 - 20,
+                        alpha: 0,
+                        scale: 0.5,
+                        duration: 500,
+                        delay: i * 30,
+                        ease: 'Power2',
+                        onComplete: () => heart.destroy()
+                    });
+                }
                 
                 // Calculer les dégâts
                 let damage = this.damage;
@@ -791,6 +878,83 @@ class Tower {
                     this.sprite.setFlipX(this.lastFlipX);
                     this.sprite.play('jimbe_idle');
                 });
+                
+                // Effet visuel aquatique (vagues bleues)
+                // Onde aquatique qui part de Jimbe
+                const waterWave = this.scene.add.graphics();
+                waterWave.setDepth(5);
+                waterWave.lineStyle(4, 0x0ea5e9, 0.8);
+                waterWave.beginPath();
+                waterWave.arc(
+                    this.sprite.x,
+                    this.sprite.y,
+                    15,
+                    0,
+                    Math.PI * 2
+                );
+                waterWave.strokePath();
+                
+                this.scene.tweens.add({
+                    targets: waterWave,
+                    alpha: 0,
+                    duration: 400,
+                    ease: 'Power2',
+                    onUpdate: () => {
+                        waterWave.clear();
+                        const progress = 1 - waterWave.alpha;
+                        const radius = 15 + (this.range * 0.3 - 15) * progress;
+                        waterWave.lineStyle(4, 0x0ea5e9, waterWave.alpha);
+                        waterWave.beginPath();
+                        waterWave.arc(
+                            this.sprite.x,
+                            this.sprite.y,
+                            radius,
+                            0,
+                            Math.PI * 2
+                        );
+                        waterWave.strokePath();
+                    },
+                    onComplete: () => waterWave.destroy()
+                });
+                
+                // Ligne d'eau vers la cible
+                const waterLine = this.scene.add.graphics();
+                waterLine.setDepth(5);
+                waterLine.lineStyle(3, 0x0ea5e9, 0.6);
+                waterLine.beginPath();
+                waterLine.moveTo(this.sprite.x, this.sprite.y);
+                waterLine.lineTo(enemy.sprite.x, enemy.sprite.y);
+                waterLine.strokePath();
+                
+                this.scene.tweens.add({
+                    targets: waterLine,
+                    alpha: 0,
+                    duration: 200,
+                    onComplete: () => waterLine.destroy()
+                });
+                
+                // Particules d'eau
+                for (let i = 0; i < 6; i++) {
+                    const angle = angleToEnemy + (Math.random() - 0.5) * 0.4;
+                    const dist = 20 + Math.random() * 30;
+                    const px = this.sprite.x + Math.cos(angle) * dist;
+                    const py = this.sprite.y + Math.sin(angle) * dist;
+                    
+                    const droplet = this.scene.add.circle(px, py, 4, 0x0ea5e9, 0.7);
+                    droplet.setDepth(6);
+                    
+                    this.scene.tweens.add({
+                        targets: droplet,
+                        x: enemy.sprite.x + (Math.random() - 0.5) * 15,
+                        y: enemy.sprite.y + (Math.random() - 0.5) * 15,
+                        alpha: 0,
+                        scale: 0.3,
+                        duration: 400,
+                        delay: i * 40,
+                        ease: 'Power2',
+                        onComplete: () => droplet.destroy()
+                    });
+                }
                 
                 // Calculer les dégâts avec critique
                 let damage = this.damage;
@@ -907,16 +1071,16 @@ class Tower {
                         if (d <= this.range) {
                             const wasAlive = e.alive;
                             e.takeDamage(damage);
-                            this.totalDamage += damage;
-                            
-                            // Appliquer la brûlure si l'ennemi est encore vivant
+                this.totalDamage += damage;
+                
+                // Appliquer la brûlure si l'ennemi est encore vivant
                             if (e.alive && e.applyBurn) {
                                 e.applyBurn(0, burnDuration, this); // damagePerTick ignoré, calculé dans applyBurn
-                            }
-                            
+                }
+                
                             if (wasAlive && !e.alive) {
-                                this.enemyKills++;
-                            }
+                    this.enemyKills++;
+                }
                         }
                     }
                 });
@@ -956,6 +1120,59 @@ class Tower {
                     
                     // Fallback: rester en idle
                     this.sprite.setTexture('nami');
+                }
+                
+                // Effet visuel de foudre (jaune/orange)
+                // Éclairs depuis Nami vers l'ennemi
+                for (let i = 0; i < 3; i++) {
+                    const lightning = this.scene.add.graphics();
+                    lightning.setDepth(6);
+                    lightning.lineStyle(3, 0xfbbf24, 0.9);
+                    
+                    // Ligne zigzag vers l'ennemi
+                    const steps = 5;
+                    lightning.beginPath();
+                    lightning.moveTo(this.sprite.x, this.sprite.y);
+                    for (let j = 1; j <= steps; j++) {
+                        const t = j / steps;
+                        const offsetX = (Math.random() - 0.5) * 15;
+                        const offsetY = (Math.random() - 0.5) * 15;
+                        const x = this.sprite.x + (enemy.sprite.x - this.sprite.x) * t + offsetX;
+                        const y = this.sprite.y + (enemy.sprite.y - this.sprite.y) * t + offsetY;
+                        lightning.lineTo(x, y);
+                    }
+                    lightning.strokePath();
+                    
+                    this.scene.tweens.add({
+                        targets: lightning,
+                        alpha: 0,
+                        duration: 150,
+                        delay: i * 50,
+                        onComplete: () => lightning.destroy()
+                    });
+                }
+                
+                // Particules électriques
+                for (let i = 0; i < 6; i++) {
+                    const angle = angleToEnemy + (Math.random() - 0.5) * 0.4;
+                    const dist = 20 + Math.random() * 40;
+                    const px = this.sprite.x + Math.cos(angle) * dist;
+                    const py = this.sprite.y + Math.sin(angle) * dist;
+                    
+                    const spark = this.scene.add.circle(px, py, 4, 0xffff00, 1);
+                    spark.setDepth(7);
+                    
+                    this.scene.tweens.add({
+                        targets: spark,
+                        x: enemy.sprite.x + (Math.random() - 0.5) * 20,
+                        y: enemy.sprite.y + (Math.random() - 0.5) * 20,
+                        alpha: 0,
+                        scale: 0.3,
+                        duration: 200,
+                        delay: i * 30,
+                        ease: 'Power2',
+                        onComplete: () => spark.destroy()
+                    });
                 }
                 
                 // Calculer les dégâts avec critique
@@ -1003,6 +1220,67 @@ class Tower {
                     this.sprite.setFlipX(this.lastFlipX);
                     this.sprite.play('franky_idle');
                 });
+                
+                // Effet visuel laser (cyan/bleu)
+                // Flash de chargement
+                const chargeFlash = this.scene.add.circle(
+                    this.sprite.x,
+                    this.sprite.y,
+                    20,
+                    0x06b6d4,
+                    0.9
+                );
+                chargeFlash.setDepth(6);
+                
+                this.scene.tweens.add({
+                    targets: chargeFlash,
+                    scaleX: 0.3,
+                    scaleY: 0.3,
+                    alpha: 0,
+                    duration: 200,
+                    ease: 'Power2',
+                    onComplete: () => chargeFlash.destroy()
+                });
+                
+                // Ligne de laser vers la cible
+                const laserLine = this.scene.add.graphics();
+                laserLine.setDepth(6);
+                laserLine.lineStyle(6, 0x06b6d4, 1);
+                laserLine.lineGradientStyle(6, 0xffffff, 0x06b6d4, 0x00d4ff, 0x06b6d4, 1, 1, 0.8, 0.5);
+                laserLine.beginPath();
+                laserLine.moveTo(this.sprite.x, this.sprite.y);
+                laserLine.lineTo(enemy.sprite.x, enemy.sprite.y);
+                laserLine.strokePath();
+                
+                this.scene.tweens.add({
+                    targets: laserLine,
+                    alpha: 0,
+                    duration: 300,
+                    onComplete: () => laserLine.destroy()
+                });
+                
+                // Particules d'énergie
+                for (let i = 0; i < 10; i++) {
+                    const angle = angleToEnemy + (Math.random() - 0.5) * 0.2;
+                    const dist = 25 + Math.random() * 50;
+                    const px = this.sprite.x + Math.cos(angle) * dist;
+                    const py = this.sprite.y + Math.sin(angle) * dist;
+                    
+                    const spark = this.scene.add.circle(px, py, 3, 0x00d4ff, 1);
+                    spark.setDepth(7);
+                    
+                    this.scene.tweens.add({
+                        targets: spark,
+                        x: enemy.sprite.x + (Math.random() - 0.5) * 30,
+                        y: enemy.sprite.y + (Math.random() - 0.5) * 30,
+                        alpha: 0,
+                        scale: 0.2,
+                        duration: 250,
+                        delay: i * 20,
+                        ease: 'Power2',
+                        onComplete: () => spark.destroy()
+                    });
+                }
                 
                 // Calculer les dégâts avec critique
                 let damage = this.damage;
@@ -1138,27 +1416,77 @@ class Tower {
                     this.sprite.play('brook');
                 });
                 
-                // Effet visuel rapide (éclairs blancs)
-                for (let i = 0; i < 3; i++) {
+                // Effet visuel rapide amélioré (glace/musique)
+                // Cercle de glace qui s'étend
+                const iceCircle = this.scene.add.graphics();
+                iceCircle.setDepth(5);
+                iceCircle.fillGradientStyle(0xe2e8f0, 0xe2e8f0, 0x87ceeb, 0xb0e0e6, 0.4, 0.4, 0.2, 0.2);
+                iceCircle.fillCircle(this.sprite.x, this.sprite.y, 10);
+                
+                this.scene.tweens.add({
+                    targets: iceCircle,
+                    alpha: 0,
+                    duration: 300,
+                    ease: 'Power2',
+                    onUpdate: () => {
+                        iceCircle.clear();
+                        const progress = 1 - iceCircle.alpha;
+                        const currentRadius = 10 + (this.range * 0.5 - 10) * progress;
+                        iceCircle.fillGradientStyle(0xe2e8f0, 0xe2e8f0, 0x87ceeb, 0xb0e0e6, 
+                            0.4 * iceCircle.alpha, 0.4 * iceCircle.alpha, 
+                            0.2 * iceCircle.alpha, 0.2 * iceCircle.alpha);
+                        iceCircle.fillCircle(this.sprite.x, this.sprite.y, currentRadius);
+                    },
+                    onComplete: () => iceCircle.destroy()
+                });
+                
+                // Éclairs blancs rapides (améliorés)
+                for (let i = 0; i < 5; i++) {
                     const flashLine = this.scene.add.graphics();
                     flashLine.setDepth(6);
-                    flashLine.lineStyle(2, 0xe2e8f0, 0.8);
+                    flashLine.lineStyle(3, 0xffffff, 0.9);
                     
-                    const randomOffset = (Math.random() - 0.5) * 20;
+                    const randomOffset = (Math.random() - 0.5) * 25;
+                    const randomAngle = angleToEnemy + (Math.random() - 0.5) * 0.3;
+                    const endX = enemy.sprite.x + Math.cos(randomAngle) * 30 + randomOffset;
+                    const endY = enemy.sprite.y + Math.sin(randomAngle) * 30 + randomOffset;
+                    
                     flashLine.beginPath();
                     flashLine.moveTo(this.sprite.x, this.sprite.y);
-                    flashLine.lineTo(
-                        enemy.sprite.x + randomOffset,
-                        enemy.sprite.y + randomOffset
-                    );
+                    flashLine.lineTo(endX, endY);
                     flashLine.strokePath();
                     
                     this.scene.tweens.add({
                         targets: flashLine,
                         alpha: 0,
-                        duration: 150,
-                        delay: i * 20,
+                        duration: 100,
+                        delay: i * 15,
                         onComplete: () => flashLine.destroy()
+                    });
+                }
+                
+                // Particules de glace
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const ice = this.scene.add.circle(
+                        this.sprite.x + Math.cos(angle) * 20,
+                        this.sprite.y + Math.sin(angle) * 20,
+                        4,
+                        0x87ceeb,
+                        0.8
+                    );
+                    ice.setDepth(7);
+                    
+                    this.scene.tweens.add({
+                        targets: ice,
+                        x: this.sprite.x + Math.cos(angle) * this.range * 0.6,
+                        y: this.sprite.y + Math.sin(angle) * this.range * 0.6,
+                        alpha: 0,
+                        scale: 0.3,
+                        duration: 250,
+                        delay: i * 20,
+                        ease: 'Power2',
+                        onComplete: () => ice.destroy()
                     });
                 }
                 
@@ -1421,7 +1749,7 @@ class Tower {
             
             // Effet visuel : teinte violette sur l'ennemi (seulement si c'est un sprite)
             if (enemy.sprite && typeof enemy.sprite.setTint === 'function') {
-                enemy.sprite.setTint(0xaa55ff);
+            enemy.sprite.setTint(0xaa55ff);
             }
             
             // Supprimer le ralentissement après la durée
@@ -1434,7 +1762,7 @@ class Tower {
                     enemy.speed = enemy.originalSpeed;
                     enemy.currentSlowAmount = 0;
                     if (enemy.sprite && typeof enemy.sprite.clearTint === 'function') {
-                        enemy.sprite.clearTint();
+                    enemy.sprite.clearTint();
                     }
                 }
             });

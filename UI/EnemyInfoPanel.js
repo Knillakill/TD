@@ -118,6 +118,27 @@ class EnemyInfoPanel {
         // Les ennemis sans sprite utilisent un cercle coloré
         // width/height définissent la taille d'affichage visuelle pour compenser les différences de spritesheet
         const spriteMapping = {
+            // === TIER 1: Animaux faibles (vagues 1+) ===
+            'chauvesouris': { sprite: 'chauvesouris', anim: 'chauvesouris', width: 24, height: 28 },
+            'spider': { sprite: 'spider', anim: 'spider', width: 22, height: 26 },
+            'snake': { sprite: 'snake', anim: 'snake', width: 24, height: 28 },
+            'crow': { sprite: 'crow', anim: 'crow', width: 26, height: 30 },
+            
+            // === TIER 2: Animaux moyens (vagues 5+) ===
+            'wolf': { sprite: 'wolf', anim: 'wolf', width: 28, height: 30 },
+            'shadowbat': { sprite: 'shadowbat', anim: 'shadowbat', width: 26, height: 28 },
+            'raptor': { sprite: 'raptor', anim: 'raptor', width: 28, height: 30 },
+            
+            // === TIER 3: Animaux forts (vagues 10+) ===
+            'golem': { sprite: 'golem', anim: 'golem', width: 32, height: 36 },
+            'kungfu': { sprite: 'kungfu', anim: 'kungfu', width: 24, height: 28 },
+            'prisoner': { sprite: 'prisoner', anim: 'prisoner', width: 28, height: 32 },
+            'pterosaur': { sprite: 'pterosaur', anim: 'pterosaur', width: 36, height: 40 },
+            
+            // === TIER 4: Animaux puissants (vagues 40+) ===
+            'gorilla': { sprite: 'gorilla', anim: 'gorilla', width: 38, height: 42 },
+            'jellyfish': { sprite: 'jellyfish', anim: 'jellyfish', width: 30, height: 32 },
+            
             // === TIER 1: Pirates basiques ===
             // swd_pirate_walk: frame ~35x50, personnage occupe ~80%
             'pirate_basic': { sprite: 'swd_pirate_walk', anim: 'swd_pirate_walk', tint: null, width: 22, height: 32 },
@@ -291,7 +312,6 @@ class EnemyInfoPanel {
         // Stats
         const stats = [
             { label: 'SANTÉ', key: 'hp', color: '#ff6b6b' },
-            { label: 'ARMURE', key: 'armor', color: '#a0a0a0' },
             { label: 'VITESSE', key: 'speed', color: '#4ecdc4' },
             { label: 'PUISSANCE', key: 'power', color: '#ff9f43' },
             { label: 'RÉGÉ.', key: 'regen', color: '#2ecc71', suffix: '/s' },

@@ -22,7 +22,6 @@ class Enemy {
         this.size = config.size;
         this.reward = config.reward;
         this.name = config.name;
-        this.armor = config.armor || 0;
         this.regen = config.regen || 0;
         this.isBoss = config.isBoss || false;
         this.isMiniBoss = config.isMiniBoss || false;
@@ -121,6 +120,89 @@ class Enemy {
             this.sprite.setOrigin(0.5, 0.85);
             this.sprite.play('fishman2');
             spriteHeight = Math.round(54 * 0.85);
+            
+        } else if (config.sprite && scene.textures.exists(config.sprite)) {
+            // Nouveaux ennemis avec sprites dédiés
+            this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, config.sprite);
+            let spriteWidth = targetHeight * 0.9;
+            spriteHeight = targetHeight; // Utiliser la variable du constructeur, pas créer une nouvelle
+            
+            // Ajustements spécifiques par type (largeur et hauteur)
+            if (this.type === 'spider') {
+                spriteWidth = targetHeight * 1.2;
+                spriteHeight = targetHeight * 0.6; // Spider est plus large et moins haut
+            } else if (this.type === 'snake') {
+                spriteWidth = targetHeight * 1.1;
+                spriteHeight = targetHeight * 0.7;
+            } else if (this.type === 'wolf') {
+                spriteWidth = targetHeight * 1.3;
+                spriteHeight = targetHeight * 0.85;
+            } else if (this.type === 'crow') {
+                spriteWidth = targetHeight * 0.8;
+                spriteHeight = targetHeight * 0.7;
+            } else if (this.type === 'chauvesouris') {
+                spriteWidth = targetHeight * 1.0;
+                spriteHeight = targetHeight * 0.6;
+            } else if (this.type === 'shadowbat') {
+                spriteWidth = targetHeight * 1.0;
+                spriteHeight = targetHeight * 0.65;
+            } else if (this.type === 'raptor') {
+                spriteWidth = targetHeight * 2.0; // Bien plus grand
+                spriteHeight = targetHeight * 1.4; // Bien plus grand
+            } else if (this.type === 'pterosaur') {
+                spriteWidth = targetHeight * 2.5; // Bien plus grand
+                spriteHeight = targetHeight * 1.5; // Bien plus grand
+            } else if (this.type === 'golem') {
+                spriteWidth = targetHeight * 1.8; // Bien plus grand
+                spriteHeight = targetHeight * 1.8; // Bien plus grand
+            } else if (this.type === 'gorilla') {
+                spriteWidth = targetHeight * 1.1;
+                spriteHeight = targetHeight * 1.1;
+            } else if (this.type === 'jellyfish') {
+                spriteWidth = targetHeight * 0.8;
+                spriteHeight = targetHeight * 0.9;
+            } else if (this.type === 'kungfu') {
+                spriteWidth = targetHeight * 0.9;
+                spriteHeight = targetHeight * 0.95;
+            } else if (this.type === 'prisoner') {
+                spriteWidth = targetHeight * 1.7; // Bien plus grand
+                spriteHeight = targetHeight * 1.7; // Bien plus grand
+            }
+            
+            this.sprite.setDisplaySize(spriteWidth, spriteHeight);
+            this.sprite.setOrigin(0.5, 0.85);
+            
+            // Retourner horizontalement wolf, spider, golem et prisoner
+            if (this.type === 'wolf' || this.type === 'spider' || this.type === 'golem' || this.type === 'prisoner') {
+                this.sprite.setFlipX(true);
+            } else {
+                this.sprite.setFlipX(false);
+            }
+            
+            // Jouer l'animation si elle existe
+            // Attendre que les animations soient chargées
+            if (scene.anims && scene.anims.exists(config.sprite)) {
+                this.sprite.play(config.sprite);
+            } else {
+                // Essayer de jouer quand même - l'animation pourrait être créée après
+                try {
+                    if (this.sprite.anims && this.sprite.anims.animationManager.exists(config.sprite)) {
+                        this.sprite.play(config.sprite);
+                    } else {
+                        // Si l'animation n'existe pas encore, attendre un peu
+                        scene.time.delayedCall(100, () => {
+                            if (this.sprite && this.sprite.scene && this.sprite.scene.anims && this.sprite.scene.anims.exists(config.sprite)) {
+                                this.sprite.play(config.sprite);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn(`[Enemy] Animation '${config.sprite}' non trouvée pour ${this.type}, utilisation de la première frame`);
+                }
+            }
+            
+            // Utiliser la hauteur ajustée (déjà définie dans les conditions ci-dessus)
+            spriteHeight = Math.round(spriteHeight * 0.85);
             
         } else if (this.type.startsWith('fishman_') && scene.textures.exists('fishman')) {
             // Hommes-poissons - sprite animé avec tint selon le type
@@ -255,6 +337,12 @@ class Enemy {
         const initialHpPercent = this.hp / this.maxHp;
         this.updateHpBarVisual(initialHpPercent);
         
+        // S'assurer que les barres sont visibles
+        this.hpBar.setVisible(true);
+        this.hpBarBg.setVisible(true);
+        this.hpBarShine.setVisible(true);
+        this.hpBarContainer.setVisible(true);
+        
         // Barre de bouclier (pour les tanks) - style cristal/énergie
         if (this.maxShield > 0) {
             const shieldY = barY - this.barHeight - 3;
@@ -354,10 +442,18 @@ class Enemy {
         this.hpBarBg.setDepth(this.sprite.depth + 1);
         
         // Redessiner la barre de vie à la nouvelle position
-        const hpPercent = Math.max(0, this.hp / this.maxHp);
-        this.updateHpBarVisual(hpPercent);
-        this.hpBar.setDepth(this.sprite.depth + 2);
-        this.hpBarShine.setDepth(this.sprite.depth + 3);
+        if (this.hpBar && this.hpBarBg) {
+            const hpPercent = Math.max(0, this.hp / this.maxHp);
+            this.updateHpBarVisual(hpPercent);
+            this.hpBar.setDepth(this.sprite.depth + 2);
+            this.hpBarShine.setDepth(this.sprite.depth + 3);
+            
+            // S'assurer que les barres sont visibles
+            this.hpBar.setVisible(true);
+            this.hpBarBg.setVisible(true);
+            if (this.hpBarShine) this.hpBarShine.setVisible(true);
+            if (this.hpBarContainer) this.hpBarContainer.setVisible(true);
+        }
         
         // Mettre à jour la barre de shield si elle existe
         if (this.shieldBar && this.shield > 0) {
@@ -435,14 +531,8 @@ class Enemy {
     }
 
     takeDamage(damage) {
-        // Réduction par l'armure (formule: dégâts * 100 / (100 + armure))
-        // Armure 10 = 9% réduction, Armure 50 = 33% réduction, Armure 100 = 50% réduction
-        let effectiveDamage = damage;
-        if (this.armor > 0) {
-            effectiveDamage = Math.max(1, Math.round(damage * 100 / (100 + this.armor)));
-        }
-        
-        let remainingDamage = effectiveDamage;
+        // Les dégâts sont appliqués directement (système d'armure supprimé)
+        let remainingDamage = damage;
         
         // Le bouclier absorbe les dégâts en premier
         if (this.shield > 0) {
@@ -557,11 +647,11 @@ class Enemy {
         
         // Partie basse (plus sombre)
         this.hpBar.fillStyle(darkColor, 1);
-        this.hpBar.fillRoundedRect(barX, barY + this.barHeight * 0.5, currentWidth, this.barHeight * 0.5, { tl: 0, tr: 0, bl: 2, br: 2 });
+        this.hpBar.fillRoundedRect(barX, barY + this.barHeight * 0.5, currentWidth, this.barHeight * 0.5, 2);
         
         // Partie haute (couleur principale)
         this.hpBar.fillStyle(mainColor, 1);
-        this.hpBar.fillRoundedRect(barX, barY, currentWidth, this.barHeight * 0.6, { tl: 2, tr: 2, bl: 0, br: 0 });
+        this.hpBar.fillRoundedRect(barX, barY, currentWidth, this.barHeight * 0.6, 2);
         
         // Effet de brillance en haut
         this.hpBarShine.clear();
@@ -591,11 +681,11 @@ class Enemy {
         
         // Partie basse
         this.shieldBar.fillStyle(darkColor, 1);
-        this.shieldBar.fillRoundedRect(barX, barY + this.barHeight * 0.5, currentWidth, this.barHeight * 0.5, { tl: 0, tr: 0, bl: 2, br: 2 });
+        this.shieldBar.fillRoundedRect(barX, barY + this.barHeight * 0.5, currentWidth, this.barHeight * 0.5, 2);
         
         // Partie haute
         this.shieldBar.fillStyle(mainColor, 1);
-        this.shieldBar.fillRoundedRect(barX, barY, currentWidth, this.barHeight * 0.6, { tl: 2, tr: 2, bl: 0, br: 0 });
+        this.shieldBar.fillRoundedRect(barX, barY, currentWidth, this.barHeight * 0.6, 2);
         
         // Brillance
         if (this.shieldBarShine) {
@@ -1044,26 +1134,26 @@ class Enemy {
         // Animation de mort pour pirate_basic (épée)
         if (this.type === 'pirate_basic' && this.scene && this.scene.textures && this.scene.textures.exists('swd_pirate_death')) {
             try {
-                // Arrêter l'animation actuelle
-                if (this.sprite.anims) {
-                    this.sprite.stop();
-                }
-                
-                // Remplacer par le sprite de mort
-                this.sprite.setTexture('swd_pirate_death', 0);
+            // Arrêter l'animation actuelle
+            if (this.sprite.anims) {
+                this.sprite.stop();
+            }
+            
+            // Remplacer par le sprite de mort
+            this.sprite.setTexture('swd_pirate_death', 0);
                 this.sprite.setDisplaySize(30, 36); // Taille harmonisée avec la vie
-                this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
+            this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
                 if (typeof this.sprite.clearTint === 'function') {
-                    this.sprite.clearTint();
+            this.sprite.clearTint();
                 }
-                
-                // Jouer l'animation de mort (2 frames en 1 seconde)
-                this.sprite.play('swd_pirate_death_anim');
-                
-                // Détruire après la fin de l'animation
-                this.sprite.once('animationcomplete', () => {
+            
+            // Jouer l'animation de mort (2 frames en 1 seconde)
+            this.sprite.play('swd_pirate_death_anim');
+            
+            // Détruire après la fin de l'animation
+            this.sprite.once('animationcomplete', () => {
                     if (this.destroy) {
-                        this.destroy();
+                this.destroy();
                     }
                 });
                 // Sécurité : détruire après un délai maximum si l'animation ne se termine pas
@@ -1083,33 +1173,33 @@ class Enemy {
         // Animation de mort pour pirate_fast (pistolet)
         else if (this.type === 'pirate_fast' && this.scene && this.scene.textures && this.scene.textures.exists('gun_pirate_death')) {
             try {
-                // Arrêter l'animation actuelle
-                if (this.sprite.anims) {
-                    this.sprite.stop();
-                }
-                
-                // Remplacer par le sprite de mort
-                this.sprite.setTexture('gun_pirate_death', 0);
+            // Arrêter l'animation actuelle
+            if (this.sprite.anims) {
+                this.sprite.stop();
+            }
+            
+            // Remplacer par le sprite de mort
+            this.sprite.setTexture('gun_pirate_death', 0);
                 this.sprite.setDisplaySize(30, 34); // Taille harmonisée avec la vie
-                this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
+            this.sprite.setOrigin(0.5, 0.85); // Ancrer aux pieds
                 if (typeof this.sprite.clearTint === 'function') {
-                    this.sprite.clearTint(); // Enlever le tint orange
+            this.sprite.clearTint(); // Enlever le tint orange
                 }
-                
-                // Jouer l'animation de mort (5 frames en 1 seconde)
-                this.sprite.play('gun_pirate_death_anim');
-                
-                // Détruire après la fin de l'animation
-                this.sprite.once('animationcomplete', () => {
+            
+            // Jouer l'animation de mort (5 frames en 1 seconde)
+            this.sprite.play('gun_pirate_death_anim');
+            
+            // Détruire après la fin de l'animation
+            this.sprite.once('animationcomplete', () => {
                     if (this.destroy) {
-                        this.destroy();
+                this.destroy();
                     }
                 });
                 // Sécurité : détruire après un délai maximum si l'animation ne se termine pas
                 this.scene.time.delayedCall(2000, () => {
                     if (this.sprite && this.sprite.scene && !this.destroyed) {
                         if (this.destroy) {
-                            this.destroy();
+                    this.destroy();
                         }
                     }
                 });
