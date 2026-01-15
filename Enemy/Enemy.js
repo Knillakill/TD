@@ -59,14 +59,12 @@ class Enemy {
             targetHeight = ENEMY_HEIGHT_ELITE;
         }
         
-        if (this.type === 'pirate_basic' && scene.textures.exists('swd_pirate_walk')) {
+        if (this.type === 'greenfhishmen' && scene.textures.exists('greenfhishmen')) {
             // Pirate à l'épée (ratio ~0.84)
-            this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'swd_pirate_walk');
-            this.sprite.setDisplaySize(35, ENEMY_HEIGHT_NORMAL);
-            this.sprite.setOrigin(0.5, 0.85);
+            this.sprite = scene.add.sprite(this.path[0].x, this.path[0].y, 'greenfhishmen');
+            this.sprite.setDisplaySize(50, 50 );
             this.sprite.setFlipX(false);
-            this.sprite.play('swd_pirate_walk');
-            spriteHeight = Math.round(ENEMY_HEIGHT_NORMAL * 0.85);
+            this.sprite.play('greenfhishmen');
             
         } else if ((this.type === 'pirate_basic2' || this.type === 'pirate_recruit') && scene.textures.exists('swd_pirate_walk')) {
             // Vétéran/Recrue - même sprite avec tint
@@ -140,7 +138,7 @@ class Enemy {
             } else if (this.type === 'crow') {
                 spriteWidth = targetHeight * 0.8;
                 spriteHeight = targetHeight * 0.7;
-            } else if (this.type === 'chauvesouris') {
+            } else if (this.type === 'greenfhishmen') {
                 spriteWidth = targetHeight * 1.0;
                 spriteHeight = targetHeight * 0.6;
             } else if (this.type === 'shadowbat') {

@@ -12,6 +12,10 @@ class GameScene extends Phaser.Scene {
         
         // Charger le spritesheet du pirate à l'épée (SwdPirate - pirate_basic)
         // 253x50 pixels - 6 frames de 42x50
+        this.load.spritesheet('greenfhishmen', 'assets/greenfhishmen.png', {
+            frameWidth: 195,
+            frameHeight: 190
+        });
         this.load.spritesheet('swd_pirate_walk', 'assets/SwdPirates.png', {
             frameWidth: 42,
             frameHeight: 50
@@ -309,10 +313,10 @@ class GameScene extends Phaser.Scene {
         
         // Tier 1: Animaux faibles (vagues 1+)
         // Chauvesouris: 161x59 -> 4 frames de 40x59 (161/4 = 40.25, arrondi à 40)
-        this.load.spritesheet('chauvesouris', 'assetsenemy/chauvesouris.png', {
+        /* this.load.spritesheet('chauvesouris', 'assetsenemy/chauvesouris.png', {
             frameWidth: 40,
             frameHeight: 59
-        });
+        }); */
         
         // Spider: 414x33 -> 6 frames de 69x33 (exact: 414/6 = 69)
         this.load.spritesheet('spider', 'assetsenemy/spider.png', {
@@ -1163,10 +1167,10 @@ class GameScene extends Phaser.Scene {
         // ============================================
         
         // Tier 1: Animaux faibles (vagues 1+)
-        // Chauvesouris: 7 frames
+        // greenfhishmen: 7 frames
         this.anims.create({
-            key: 'chauvesouris',
-            frames: this.anims.generateFrameNumbers('chauvesouris', { start: 0, end: 3 }),
+            key: 'greenfhishmen',
+            frames: this.anims.generateFrameNumbers('greenfhishmen', { start: 0, end: 5 }),
             frameRate: 8,
             repeat: -1
         });
